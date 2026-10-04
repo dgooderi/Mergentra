@@ -304,6 +304,7 @@ async function loadCommitGraph(gitPath, repositoryPath, branchName, currentWorkt
         hash,
         remote: fullName.startsWith('refs/remotes/'),
         symbolic: symbolicTarget !== '',
+        checkedOut: !fullName.startsWith('refs/remotes/') && name === branchName,
         worktreePath: worktreeByBranch.get(name) || null
       };
     })
@@ -474,6 +475,7 @@ async function loadCommitGraph(gitPath, repositoryPath, branchName, currentWorkt
       name: reference.name,
       hash: reference.hash,
       remote: reference.remote,
+      checkedOut: reference.checkedOut,
       color: reference.color,
       lane: reference.lane,
       worktreePath: reference.worktreePath

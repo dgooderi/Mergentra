@@ -103,8 +103,28 @@ function renderGraph(graph) {
   visibleReferences = new Set(graph.references.map((reference) => reference.name));
   selectedTimePreset = 'all';
   timeRange = null;
+  customRangeValues = null;
+  const startInput = document.getElementById('time-range-start');
+  const endInput = document.getElementById('time-range-end');
+  startInput.value = '';
+  endInput.value = '';
+  if (saved?.preset === 'custom' && saved.custom) {
+    const start = new Date(`${saved.custom.start}T00:00:00`);
+    const end = new Date(`${saved.custom.end}T00:00:00`);
+    if (Number.isFinite(start.getTime()) && Number.isFinite(end.getTime())) {
+      end.setDate(end.getDate() + 1);
+      selectedTimePreset = 'custom';
+      timeRange = { start: start.getTime(), end: end.getTime() };
+      customRangeValues = saved.custom;
+      startInput.value = saved.custom.start;
+      endInput.value = saved.custom.end;
+    }
+  } else if (saved && getPresetRange(saved.preset, new Date())) {
+    selectedTimePreset = saved.preset;
+    timeRange = getPresetRange(saved.preset, new Date());
+  }
   document.getElementById('time-range').value = selectedTimePreset;
-  document.getElementById('custom-time-range').hidden = true;
+  document.getElementById('custom-time-range').hidden = selectedTimePreset !== 'custom';
   document.getElementById('time-range-status').textContent = '';
   document.getElementById('review-dock').hidden = true;
   renderWorktrees(graph.worktrees);
@@ -139,6 +159,22 @@ function renderFilteredGraph() {
     .map((reference, lane) => ({ ...reference, lane }));
   const commitsByHash = new Map(currentGraph.commits.map((commit) => [commit.hash, commit]));
   const laneByHash = new Map();
+
+  // Claim each branch's first-parent chain first so merged-in branches keep their own lane.
+  // Branches that contain others (for example a release line that merged a hotfix) claim
+  // shared commits first; `main` always goes first.
+  const tipIndex = new Map(currentGraph.commits.map((commit, index) => [commit.hash, index]));
+  const claimOrder = [...references].sort((left, right) => (
+    (right.name === 'main' ? 1 : 0) - (left.name === 'main' ? 1 : 0)
+    || (tipIndex.get(right.hash) ?? -1) - (tipIndex.get(left.hash) ?? -1)
+  ));
+  for (const reference of claimOrder) {
+    let commit = commitsByHash.get(reference.hash);
+    while (commit && !laneByHash.has(commit.hash)) {
+      laneByHash.set(commit.hash, reference.lane);
+      commit = commitsByHash.get(commit.parents[0]);
+    }
+  }
 
   for (const reference of references) {
     const pending = [reference.hash];
@@ -237,6 +273,14 @@ function compactOrdinaryHistory(graph) {
       }
     }
   }
+  for (const [hash, children] of childrenByHash) {
+    if (children.length > 1) {
+      importantHashes.add(hash);
+      for (const childHash of children) {
+        importantHashes.add(childHash);
+      }
+    }
+  }
   for (const marker of graph.divergenceMarkers) {
     importantHashes.add(marker.commitHash);
   }
@@ -272,7 +316,8 @@ function compactOrdinaryHistory(graph) {
       }
 
       const uniqueHiddenCommits = hiddenCommits.filter((commit) => !compactedHashes.has(commit.hash));
-      if (uniqueHiddenCommits.length === 0) {
+      // A single ordinary commit is shown as itself; a +1 summary hides nothing useful.
+      if (uniqueHiddenCommits.length < 2) {
         continue;
       }
       for (const commit of uniqueHiddenCommits) {
@@ -446,6 +491,7 @@ function renderReferenceLanes(references) {
     lane.dataset.testid = 'reference-lane';
     lane.dataset.refName = reference.name;
     lane.dataset.remote = String(reference.remote);
+    lane.dataset.checkedOut = String(reference.checkedOut);
     lane.dataset.color = reference.color;
     lane.dataset.laneIndex = String(reference.lane);
     lane.dataset.targetHash = reference.hash;
@@ -468,6 +514,13 @@ function renderReferenceLanes(references) {
     label.textContent = reference.name;
     labelGroup.className = 'reference-label';
     labelGroup.append(label);
+    if (reference.checkedOut) {
+      const checkedOutLabel = document.createElement('small');
+      checkedOutLabel.className = 'checked-out-label';
+      checkedOutLabel.dataset.testid = 'checked-out-label';
+      checkedOutLabel.textContent = 'Checked out';
+      labelGroup.append(checkedOutLabel);
+    }
     if (reference.worktreePath) {
       const worktreeLocation = document.createElement('small');
       worktreeLocation.dataset.testid = 'reference-worktree';
@@ -477,6 +530,8 @@ function renderReferenceLanes(references) {
     lane.append(checkbox, marker, labelGroup);
     laneList.append(lane);
   }
+  filterBranchPicker();
+  updateBranchPickerSummary();
 }
 
 function renderWorktrees(worktrees) {
@@ -518,8 +573,53 @@ function renderGraphContents(graph) {
   const rowHeight = 58;
   const leftPadding = 48;
   const columnWidth = 88;
-  const width = Math.max(144, leftPadding * 2 + Math.max(graph.commits.length - 1, 0) * columnWidth);
-  const height = Math.max(116, 68 + graph.laneCount * rowHeight);
+  // Lanes that never overlap horizontally share a row. The root lane keeps the top
+  // row, and each lane's span includes the horizontal run of its fork and merge lines.
+  const indexByHash = new Map(graph.commits.map((commit, index) => [commit.hash, index]));
+  const laneSpans = new Map();
+  graph.commits.forEach((commit, index) => {
+    const span = laneSpans.get(commit.lane) || { first: index, last: index };
+    span.first = Math.min(span.first, index);
+    span.last = Math.max(span.last, index);
+    laneSpans.set(commit.lane, span);
+  });
+  for (const commit of graph.commits) {
+    const childIndex = indexByHash.get(commit.hash);
+    for (const [parentOrder, parentHash] of commit.parents.entries()) {
+      const parent = graph.commits[indexByHash.get(parentHash)];
+      if (!parent || parent.lane === commit.lane) {
+        continue;
+      }
+      const isMergeIn = commit.parents.length > 1 && parentOrder > 0;
+      const span = laneSpans.get(isMergeIn ? parent.lane : commit.lane);
+      span.first = Math.min(span.first, isMergeIn ? span.first : indexByHash.get(parentHash));
+      span.last = Math.max(span.last, isMergeIn ? childIndex : span.last);
+    }
+  }
+  const mainReference = graph.references.find((reference) => !reference.remote && reference.name === 'main')
+    || graph.references.find((reference) => !reference.remote && reference.name === 'master')
+    || graph.references.find((reference) => !reference.remote);
+  const rootLane = laneSpans.has(mainReference?.lane) ? mainReference.lane : graph.commits[0]?.lane;
+  const rowByLane = new Map();
+  const rowEnds = [Infinity];
+  const lanesByStart = [...laneSpans.keys()].sort((a, b) => (
+    laneSpans.get(a).first - laneSpans.get(b).first || a - b
+  ));
+  for (const lane of lanesByStart) {
+    const span = laneSpans.get(lane);
+    let row = 0;
+    if (lane !== rootLane) {
+      row = rowEnds.findIndex((end, index) => index > 0 && end < span.first);
+      if (row === -1) {
+        row = rowEnds.length;
+      }
+      rowEnds[row] = span.last;
+    }
+    rowByLane.set(lane, row);
+  }
+  const rowCount = Math.max(rowEnds.length, 1);
+  const width = Math.max(144, leftPadding + rightPadding + Math.max(graph.commits.length - 1, 0) * columnWidth);
+  const height = 60 + axisHeight + rowCount * rowHeight;
   graphElement.setAttribute('width', String(width));
   graphElement.setAttribute('height', String(height));
   graphElement.setAttribute('viewBox', `0 0 ${width} ${height}`);
@@ -548,7 +648,7 @@ function renderGraphContents(graph) {
     commit.hash,
     {
       x: leftPadding + index * columnWidth,
-      y: 34 + commit.lane * rowHeight
+      y: 34 + axisHeight + rowByLane.get(commit.lane) * rowHeight
     }
   ]));
 
@@ -559,11 +659,25 @@ function renderGraphContents(graph) {
       if (!parentPosition) {
         continue;
       }
-      const midpoint = (parentPosition.x + childPosition.x) / 2;
+      const isMergeIn = commit.parents.length > 1 && parentHash !== commit.parents[0];
+      const bend = Math.min(isMergeIn ? 176 : 48, childPosition.x - parentPosition.x);
+      let pathData;
+      if (parentPosition.y === childPosition.y) {
+        pathData = `M ${parentPosition.x} ${parentPosition.y} L ${childPosition.x} ${childPosition.y}`;
+      } else if (isMergeIn) {
+        const turn = childPosition.x - bend;
+        pathData = `M ${parentPosition.x} ${parentPosition.y} L ${turn} ${parentPosition.y} C ${turn + bend * 0.8} ${parentPosition.y}, ${turn + bend * 0.2} ${childPosition.y}, ${childPosition.x} ${childPosition.y}`;
+      } else {
+        const turn = parentPosition.x + bend;
+        pathData = `M ${parentPosition.x} ${parentPosition.y} C ${parentPosition.x + bend * 0.8} ${parentPosition.y}, ${parentPosition.x + bend * 0.2} ${childPosition.y}, ${turn} ${childPosition.y} L ${childPosition.x} ${childPosition.y}`;
+      }
+      const parentCommit = graph.commits[indexByHash.get(parentHash)];
+      // Fork and merge lines keep the colour of the branch they leave; a branch takes its own colour after its first commit.
+      const edgeLane = parentCommit && parentCommit.lane !== commit.lane ? parentCommit.lane : commit.lane;
       graphElement.append(createSvgElement('path', {
-        d: `M ${parentPosition.x} ${parentPosition.y} C ${midpoint} ${parentPosition.y}, ${midpoint} ${childPosition.y}, ${childPosition.x} ${childPosition.y}`,
+        d: pathData,
         fill: 'none',
-        stroke: graph.references[commit.lane]?.color || '#9ca3af',
+        stroke: graph.references[edgeLane]?.color || '#9ca3af',
         'stroke-width': 2,
         'marker-end': 'url(#commit-arrowhead)',
         'data-testid': 'commit-edge',
@@ -573,6 +687,8 @@ function renderGraphContents(graph) {
     }
   }
 
+  const summaryLayer = createSvgElement('g');
+  graphElement.append(summaryLayer);
   for (const commit of graph.commits) {
     const position = commitPositions.get(commit.hash);
     if (commit.compactCount) {
@@ -581,13 +697,16 @@ function renderGraphContents(graph) {
         'data-count': commit.compactCount,
         'data-hidden-commit-count': commit.compactedHashes.length,
         transform: `translate(${position.x} ${position.y})`,
-        role: 'img',
+        role: 'button',
+        tabindex: 0,
+        'aria-pressed': 'false',
+        'data-summary-hash': commit.hash,
         'aria-label': `${commit.compactCount} ordinary commits compacted`
       });
       const pill = createSvgElement('rect', {
-        x: -34,
+        x: -26,
         y: -11,
-        width: 68,
+        width: 52,
         height: 22,
         rx: 11,
         fill: graph.references[commit.lane]?.color || '#4b5563'
@@ -613,14 +732,15 @@ function renderGraphContents(graph) {
       role: 'button',
       tabindex: 0,
       'aria-pressed': 'false',
+      'data-ref-names': JSON.stringify(commit.references.filter((name) => !commit.tags.includes(name))),
       'aria-label': `Inspect ${commit.subject} (${commit.hash.slice(0, 7)})`
     });
     const title = createSvgElement('title');
     const hitTarget = createSvgElement('rect', {
       x: -42,
-      y: -25,
+      y: -20,
       width: 84,
-      height: 50,
+      height: 40,
       fill: 'transparent',
       'pointer-events': 'all',
       'aria-hidden': 'true'
@@ -644,7 +764,8 @@ function renderGraphContents(graph) {
     const label = createSvgElement('text', {
       x: 0,
       y: 23,
-      'text-anchor': 'middle'
+      'text-anchor': 'middle',
+      class: 'hash-label'
     });
     title.textContent = `${commit.subject} (${commit.hash.slice(0, 7)})${commit.tags.length > 0 ? ` — tags: ${commit.tags.join(', ')}` : ''}`;
     label.textContent = commit.hash.slice(0, 7);
@@ -668,12 +789,45 @@ function renderGraphContents(graph) {
           'data-testid': 'commit-tag',
           'data-tag-name': tagName
         });
-        tagLabel.textContent = tagName;
+        tagLabel.textContent = tagName.length > 14 ? `${tagName.slice(0, 13)}…` : tagName;
+        const tagTitle = createSvgElement('title');
+        tagTitle.textContent = tagName;
+        tagLabel.append(tagTitle);
         tagGroup.append(tagLabel);
       }
       group.append(tagGroup);
     }
     graphElement.append(group);
+  }
+
+  const checkedOutReference = graph.references.find((reference) => reference.checkedOut);
+  if (checkedOutReference) {
+    const position = commitPositions.get(checkedOutReference.hash);
+    if (position) {
+      const marker = createSvgElement('g', {
+        'data-testid': 'checked-out-branch-marker',
+        'data-branch-name': checkedOutReference.name,
+        'data-commit-hash': checkedOutReference.hash,
+        transform: `translate(${position.x} ${position.y})`,
+        role: 'img',
+        'aria-label': `Checked out branch ${checkedOutReference.name}`
+      });
+      marker.append(createSvgElement('circle', {
+        r: 14,
+        fill: 'none',
+        stroke: checkedOutReference.color,
+        'stroke-width': 2,
+        'aria-hidden': 'true'
+      }));
+      const label = createSvgElement('text', {
+        x: 16,
+        y: -12,
+        'data-testid': 'checked-out-branch-label'
+      });
+      label.textContent = `HEAD · ${checkedOutReference.name}`;
+      marker.append(label);
+      graphElement.append(marker);
+    }
   }
 
   if (graph.headDetached && graph.headHash) {
@@ -743,18 +897,21 @@ function renderGraphContents(graph) {
     graphElement.append(marker);
   }
 
+  const markersAtCommit = new Map();
   for (const marker of graph.divergenceMarkers) {
     const position = commitPositions.get(marker.commitHash);
     if (!position) {
       continue;
     }
+    const stackIndex = markersAtCommit.get(marker.commitHash) || 0;
+    markersAtCommit.set(marker.commitHash, stackIndex + 1);
     const markerGroup = createSvgElement('g', {
       'data-testid': 'divergence-marker',
       'data-inferred': String(marker.inferred),
       'data-branch-name': marker.branchName,
       'data-ancestor-hash': marker.ancestorHash,
       'data-commit-hash': marker.commitHash,
-      transform: `translate(${position.x} ${position.y - 27})`,
+      transform: `translate(${position.x} ${position.y - 27 - stackIndex * 12})`,
       role: 'img',
       'aria-label': `Branch diverges: ${marker.branchName}`
     });
@@ -868,7 +1025,7 @@ document.getElementById('git-path-form').addEventListener('submit', async (event
     gitPathInput.value = gitPath;
     setStatus(gitPath
       ? 'Git path saved.'
-      : 'Git path cleared. GitScope will use Git on PATH.');
+      : 'Git path cleared. GitScope will use Git on PATH.';
   } catch (error) {
     setStatus(error.message);
   }

@@ -663,6 +663,7 @@ test('reference filters retain shared history reachable from any enabled referen
     await expect(localFeature).toBeChecked();
     await expect(remoteFeature).toBeChecked();
     await expect(window.getByTestId('commit-node')).toHaveCount(3);
+    await window.keyboard.press('Escape');
     await commitNode(sharedCommit).click();
     const reviewDock = window.getByTestId('review-dock');
     await expect(reviewDock.getByTestId('selected-commit-hash')).toHaveText(sharedCommit);
@@ -842,7 +843,7 @@ test('ordinary commits between important commits compact into an endpoint-exclus
     for (const hiddenCommit of hiddenCommits) {
       await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${hiddenCommit}"]`)).toHaveCount(0);
     }
-    await expect(summary).toContainText('3 commits');
+    await expect(summary).toContainText('+3');
   } finally {
     if (app) {
       await app.close();
@@ -1394,6 +1395,166 @@ test('partial clones mark missing-object boundaries without fetching', async () 
   }
 });
 
+test('the complex branch scenario shows its merge history and fetchable bare remote', async () => {
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-sample-e2e-'));
+  const repositoryPath = path.resolve(__dirname, '..', 'samples', 'complex-branch-scenario');
+  const bareRemotePath = path.resolve(repositoryPath, '..', 'complex-branch-scenario-origin.git');
+  let app;
+  let initialRemoteTrackingTip;
+  let remoteOnlyTip;
+
+  try {
+    app = await electron.launch({
+      args: [path.resolve(__dirname, '..')],
+      env: { ...process.env, GITSCOPE_USER_DATA_DIR: path.join(testDirectory, 'user-data') }
+    });
+    const window = await app.firstWindow();
+    await window.getByLabel('Repository folder').fill(repositoryPath);
+    await window.getByRole('button', { name: 'Open repository' }).click();
+
+    await window.getByRole('button', { name: 'Fetch' }).click();
+    await expect(window.locator('#fetch-status')).toContainText('Fetch completed');
+    await expect(remoteMain).toHaveAttribute('data-target-hash', remoteOnlyTip);
+    expect(remoteOnlyTip).not.toBe(initialRemoteTrackingTip);
+    await expect(remoteOnlyNode).toBeVisible();
+  } finally {
+    if (app) {
+      await app.close();
+    }
+    if (initialRemoteTrackingTip && remoteOnlyTip) {
+      execFileSync('git', ['--git-dir', bareRemotePath, 'update-ref', 'refs/heads/main', remoteOnlyTip]);
+      execFileSync('git', ['update-ref', 'refs/remotes/origin/main', initialRemoteTrackingTip], {
+        cwd: repositoryPath
+      });
+    }
+    fs.rmSync(testDirectory, { recursive: true, force: true });
+  }
+});
+
+test('the checked-out branch is highlighted in the reference list and at its graph tip', async () => {
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-head-branch-e2e-'));
+  const repositoryPath = path.resolve(__dirname, '..', 'samples', 'complex-branch-scenario');
+  let app;
+
+  try {
+    const branchName = execFileSync('git', ['branch', '--show-current'], {
+      cwd: repositoryPath,
+      encoding: 'utf8'
+    }).trim();
+    const head = execFileSync('git', ['rev-parse', 'HEAD'], {
+      cwd: repositoryPath,
+      encoding: 'utf8'
+    }).trim();
+    app = await electron.launch({
+      args: [path.resolve(__dirname, '..')],
+      env: { ...process.env, GITSCOPE_USER_DATA_DIR: path.join(testDirectory, 'user-data') }
+    });
+    const window = await app.firstWindow();
+    await window.getByLabel('Repository folder').fill(repositoryPath);
+    await window.getByRole('button', { name: 'Open repository' }).click();
+
+test('the complex scenario shows both merge directions and recent history', async () => {
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-scenario-history-e2e-'));
+  const repositoryPath = path.resolve(__dirname, '..', 'samples', 'complex-branch-scenario');
+  let app;
+
+  try {
+    const latestSampleCommitDate = new Date(execFileSync('git', ['show', '-s', '--format=%cI', 'HEAD'], {
+      cwd: repositoryPath,
+      encoding: 'utf8'
+    }).trim());
+    app = await electron.launch({
+      args: [path.resolve(__dirname, '..')],
+      env: { ...process.env, GITSCOPE_USER_DATA_DIR: path.join(testDirectory, 'user-data') }
+    });
+    const window = await app.firstWindow();
+    await window.clock.install({ time: latestSampleCommitDate });
+    await window.getByLabel('Repository folder').fill(repositoryPath);
+    await window.getByRole('button', { name: 'Open repository' }).click();
+
+    await expect(window.locator('#branch-name')).toHaveText('feature/checkout');
+    const mainIntoFeature = window.locator(
+      '[data-testid="commit-node"][aria-label^="Inspect Merge main into feature/checkout ("]'
+    );
+    const mainIntoFeatureAfterIntegration = window.locator(
+      '[data-testid="commit-node"][aria-label^="Inspect Merge main into feature/checkout after integration"]'
+    );
+    const featureIntoMain = window.locator(
+      '[data-testid="commit-node"][aria-label^="Inspect Merge feature/checkout into main"]'
+    );
+    await expect(mainIntoFeature).toBeVisible();
+    await expect(mainIntoFeatureAfterIntegration).toBeVisible();
+    await expect(featureIntoMain).toBeVisible();
+    const allHistoryCount = await window.getByTestId('commit-node').count();
+    await expect(window.locator('[data-testid="commit-node"][aria-label*="Initial project skeleton"]')).toBeVisible();
+
+    await window.locator('#time-range').selectOption('all');
+    await expect(window.locator('[data-testid="commit-node"][aria-label*="Initial project skeleton"]')).toBeVisible();
+  } finally {
+    if (app) {
+      await app.close();
+    }
+    fs.rmSync(testDirectory, { recursive: true, force: true });
+  }
+});
+
+test('the repository view expands and contracts with the application window', async () => {
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-layout-e2e-'));
+  const repositoryPath = path.join(testDirectory, 'layout-repository');
+  fs.mkdirSync(repositoryPath);
+  let app;
+
+  try {
+    execFileSync('git', ['-c', 'init.defaultBranch=main', 'init'], {
+      cwd: repositoryPath,
+      stdio: 'ignore'
+    });
+    execFileSync('git', ['config', 'user.name', 'GitScope E2E'], { cwd: repositoryPath });
+    execFileSync('git', ['config', 'user.email', 'gitscope-e2e@example.invalid'], { cwd: repositoryPath });
+    fs.writeFileSync(path.join(repositoryPath, 'README.md'), 'Responsive layout test\n');
+    execFileSync('git', ['add', 'README.md'], { cwd: repositoryPath, stdio: 'ignore' });
+    execFileSync('git', ['commit', '-m', 'Create layout fixture'], {
+      cwd: repositoryPath,
+      stdio: 'ignore'
+    });
+
+    app = await electron.launch({
+      args: [path.resolve(__dirname, '..')],
+      env: { ...process.env, GITSCOPE_USER_DATA_DIR: path.join(testDirectory, 'user-data') }
+    });
+    const window = await app.firstWindow();
+    const resizeWindow = async (width, height) => {
+      await app.evaluate(({ BrowserWindow }, size) => {
+        BrowserWindow.getAllWindows()[0].setSize(size.width, size.height);
+      }, { width, height });
+      await expect.poll(() => window.evaluate(() => window.innerWidth)).toBeGreaterThan(width - 40);
+    };
+    await resizeWindow(1366, 768);
+    await window.getByLabel('Repository folder').fill(repositoryPath);
+    await window.getByRole('button', { name: 'Open repository' }).click();
+    await expect(window.getByRole('heading', { name: 'layout-repository' })).toBeVisible();
+
+    const repositoryView = window.locator('#repository-view');
+    const standardLayout = await repositoryView.boundingBox();
+    expect(standardLayout.width).toBeGreaterThan(1200);
+
+    await resizeWindow(1600, 900);
+    const wideLayout = await repositoryView.boundingBox();
+    expect(wideLayout.width).toBeGreaterThan(standardLayout.width);
+
+    await resizeWindow(1000, 720);
+    const narrowLayout = await repositoryView.boundingBox();
+    expect(narrowLayout.width).toBeLessThan(standardLayout.width);
+    expect(await window.evaluate(() => document.documentElement.scrollWidth))
+      .toBeLessThanOrEqual(await window.evaluate(() => window.innerWidth));
+  } finally {
+    if (app) {
+      await app.close();
+    }
+    fs.rmSync(testDirectory, { recursive: true, force: true });
+  }
+});
+
 test('dense histories show a useful graph and keep filters responsive at target scale', async () => {
   test.setTimeout(180_000);
   const commitCount = 50_000;
@@ -1514,3 +1675,25 @@ test('dense histories show a useful graph and keep filters responsive at target 
     fs.rmSync(testDirectory, { recursive: true, force: true });
   }
 });
+
+  try {
+    app = await launch();
+    let window = await app.firstWindow();
+    await window.getByLabel('Repository folder').fill(repositoryPath);
+    await window.getByRole('button', { name: 'Open repository' }).click();
+
+    await node.click();
+    await expect(dock).toBeHidden();
+    await expect(node).toHaveAttribute('aria-pressed', 'false');
+    await node.click();
+    await window.locator('#commit-graph').click({ position: { x: 5, y: 5 } });
+    await expect(dock).toBeHidden();
+
+  try {
+    app = await electron.launch({
+      args: [path.resolve(__dirname, '..')],
+      env: { ...process.env, GITSCOPE_USER_DATA_DIR: path.join(testDirectory, 'user-data') }
+    });
+    const window = await app.firstWindow();
+    await window.getByLabel('Repository folder').fill(repositoryPath);
+    await window.getByRole('button', { name: 'Open repository' }).click();

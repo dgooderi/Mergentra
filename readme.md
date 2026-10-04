@@ -13,6 +13,8 @@ npm start
 
 On launch, enter a repository folder or use **Browse…** to choose one. GitScope shows loading progress while it reads repository history and remembers repositories opened from the picker. If Git is not on `PATH`, enter the full path to `git.exe` and select **Save Git path**. Dark mode is the default; select **Light mode** to change the appearance.
 
+For a realistic test history with parallel features, release/hotfix merges, tags, and a local bare remote, open [the complex branch scenario](./samples/complex-branch-scenario/SCENARIO.md) in GitScope.
+
 Select **Check for updates** to manually check GitHub Releases. If a newer release is available, GitScope links to its release page so you can download and run the installer yourself. GitScope does not check in the background, download installers, or install updates automatically.
 
 After opening a repository, GitScope displays its reachable commits once in parent-before-child order and lists local branches alongside fetched remote-tracking references. Matching local and remote-tracking references share a color; remote-tracking lanes are dashed.
