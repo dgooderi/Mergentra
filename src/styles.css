@@ -634,6 +634,14 @@ button:focus-visible {
   display: none !important;
 }
 
+.graph-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
 .branch-picker,
 .worktrees-panel {
   position: relative;
@@ -650,6 +658,26 @@ button:focus-visible {
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
+}
+
+.branch-picker-panel {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 4px);
+  left: 0;
+  display: grid;
+  gap: 8px;
+  width: min(420px, 90vw);
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--field-background);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 30%);
+}
+
+.branch-picker-actions {
+  display: flex;
+  gap: 8px;
 }
 
 .worktrees-panel[open] {
@@ -684,6 +712,31 @@ button:focus-visible {
 }
 .fetch-controls .branch-picker > summary {
   min-width: 180px;
+}
+
+.fetch-controls .time-controls p:empty {
+  display: none;
+}
+
+#commit-graph .selection-ring {
+  display: none;
+  stroke: #f59e0b;
+  stroke-width: 3;
+  filter: drop-shadow(0 0 4px #f59e0b);
+}
+
+#commit-graph [data-testid="commit-node"][aria-pressed="true"] .selection-ring {
+  display: inline;
+}
+
+#commit-graph .note-marker {
+  display: none;
+  fill: #f59e0b;
+  font-size: 13px;
+}
+
+#commit-graph [data-testid="commit-node"][data-has-note="true"] .note-marker {
+  display: inline;
 }
 
 .review-dock {
@@ -743,6 +796,28 @@ button:focus-visible {
   position: relative;
 }
 
+.display-toggles {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.display-toggles label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+#commit-graph[data-show-hashes="false"] .hash-label,
+#commit-graph[data-show-tags="false"] .plain-tag,
+#commit-graph[data-show-releases="false"] .release-tag {
+  display: none;
+}
+
 #commit-graph .release-tag {
   fill: #34d399;
   font-weight: 700;
@@ -750,6 +825,10 @@ button:focus-visible {
 
 #commit-graph [data-testid="compacted-commit-count"] {
   cursor: pointer;
+}
+
+#commit-graph [data-testid="compacted-commit-count"][aria-pressed="true"] .selection-ring {
+  display: inline;
 }
 
 .compacted-popover {
@@ -772,6 +851,30 @@ button:focus-visible {
   font-weight: 600;
 }
 
+.compacted-popover ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.compacted-popover button {
+  display: flex;
+  width: 100%;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+}
+
 .compacted-popover button:hover {
   background: var(--field-background);
 }
@@ -791,9 +894,30 @@ button:focus-visible {
   stroke-width: 3px;
 }
 
+main:has(#repository-view:not([hidden])) {
+  display: flex;
+  height: 100vh;
+  min-height: 0;
+  flex-direction: column;
+  padding-bottom: 24px;
+}
+
+.repository-view:not([hidden]) {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
 .repository-view > .graph-layout {
   min-height: 200px;
   flex: 1 1 0;
+}
+
+.repository-view .graph-column {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
 }
 
 .repository-view .graph-column > .graph-scroll {
@@ -812,6 +936,13 @@ main:has(#repository-view:not([hidden])) {
 }
 
 .repository-view:not([hidden]) {
+}
+
+.repository-header > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 18px;
 }
 
 .repository-header > div > .eyebrow {
@@ -849,6 +980,55 @@ main:has(#repository-view:not([hidden])) {
   margin-bottom: 8px;
 }
 
+.update-control {
+  justify-items: start;
+  margin-top: 16px;
+  text-align: left;
+  max-width: none;
+}
+
+.display-menu > summary {
+  min-width: 100px;
+}
+
+.display-menu .display-toggles {
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 180px;
+}
+
+.app-toolbar {
+  right: 48px;
+  justify-content: flex-end;
+}
+
+main:not(:has(#repository-view:not([hidden]))) .app-toolbar {
+  right: auto;
+  left: 50%;
+  width: min(640px, calc(100% - 96px));
+  transform: translateX(-50%);
+}
+
 main:not(:has(#repository-view:not([hidden]))) {
   padding-top: 84px;
+}
+
+main:not(:has(#repository-view:not([hidden]))) .app-toolbar {
+  top: 16px;
+}
+
+main:not(:has(#repository-view:not([hidden]))) #change-repository {
+  display: none;
+}
+
+#change-repository {
+  white-space: nowrap;
+}
+
+.app-toolbar > button {
+  min-height: 42px;
+  padding: 0 16px;
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
 }

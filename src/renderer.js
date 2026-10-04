@@ -9,6 +9,16 @@ let currentGraph = null;
 let visibleReferences = new Set();
 let selectedTimePreset = 'all';
 let timeRange = null;
+function applyDisplayOptions() {
+  const graphElement = document.getElementById('commit-graph');
+  graphElement.dataset.showTags = String(displayOptions.tags);
+  graphElement.dataset.showHashes = String(displayOptions.hashes);
+  graphElement.dataset.showReleases = String(displayOptions.releases);
+  document.getElementById('show-tags').checked = displayOptions.tags;
+  document.getElementById('show-hashes').checked = displayOptions.hashes;
+  document.getElementById('show-releases').checked = displayOptions.releases;
+}
+
 function closeCompactedPopover() {
   document.getElementById('compacted-popover')?.remove();
 }
@@ -185,6 +195,25 @@ function loadViewState() {
   }
 }
 
+function saveViewState() {
+  if (!currentRepositoryPath || !currentGraph) {
+    return;
+  }
+  const hidden = currentGraph.references
+    .filter((reference) => !visibleReferences.has(reference.name))
+    .map((reference) => reference.name);
+  try {
+    localStorage.setItem(viewStateKeyPrefix + currentRepositoryPath, JSON.stringify({
+      hidden,
+      preset: selectedTimePreset,
+      display: displayOptions,
+      custom: selectedTimePreset === 'custom' ? customRangeValues : null
+    }));
+  } catch {
+    // View state is a convenience; failing to store it must not break the graph.
+  }
+}
+
 function showRepository(repository) {
   currentRepositoryPath = repository.path;
   loadNotes();
@@ -199,7 +228,13 @@ function showRepository(repository) {
 function renderGraph(graph) {
   currentGraph = graph;
   selectedCommit = null;
-  visibleReferences = new Set(graph.references.map((reference) => reference.name));
+  const saved = loadViewState();
+  displayOptions = { tags: true, hashes: true, releases: true, ...(saved?.display || {}) };
+  applyDisplayOptions();
+  const hidden = new Set(saved?.hidden || []);
+  visibleReferences = new Set(graph.references
+    .filter((reference) => !hidden.has(reference.name))
+    .map((reference) => reference.name));
   selectedTimePreset = 'all';
   timeRange = null;
   customRangeValues = null;
@@ -343,7 +378,9 @@ function renderFilteredGraph() {
   renderGraphContents(displayGraph);
   refreshNoteMarkers();
   if (selectedCommit) {
-    const updatedSelection = displayGraph.commits.find((commit) => commit.hash === selectedCommit.hash);
+    const updatedSelection = displayGraph.commits.find((commit) => commit.hash === selectedCommit.hash)
+      || displayGraph.commits.flatMap((commit) => commit.compactedCommits || [])
+        .find((commit) => commit.hash === selectedCommit.hash);
     selectCommit(updatedSelection || null);
   }
 }
@@ -684,6 +721,47 @@ function setVisibleBranches(predicate) {
   renderFilteredGraph();
 }
 
+document.getElementById('commit-graph').addEventListener('click', (event) => {
+  if (!event.target.closest('[data-testid="commit-node"], [data-testid="compacted-commit-count"]')) {
+    selectCommit(null);
+    closeCompactedPopover();
+  }
+});
+document.querySelector('.graph-scroll').addEventListener('scroll', closeCompactedPopover);
+document.addEventListener('click', (event) => {
+  if (!event.target.closest('#compacted-popover, [data-testid="compacted-commit-count"], #commit-graph')) {
+    closeCompactedPopover();
+  }
+});
+for (const [id, key] of [['show-tags', 'tags'], ['show-hashes', 'hashes'], ['show-releases', 'releases']]) {
+  document.getElementById(id).addEventListener('change', (event) => {
+    displayOptions[key] = event.target.checked;
+    applyDisplayOptions();
+    saveViewState();
+  });
+}
+document.getElementById('branch-picker-search').addEventListener('input', filterBranchPicker);
+document.getElementById('branch-picker-all').addEventListener('click', () => setVisibleBranches(() => true));
+document.getElementById('branch-picker-local').addEventListener('click', () => setVisibleBranches((reference) => !reference.remote));
+document.getElementById('branch-picker-none').addEventListener('click', () => setVisibleBranches(() => false));
+document.addEventListener('click', (event) => {
+  const picker = document.getElementById('branch-picker');
+  if (picker.open && !picker.contains(event.target)) {
+    picker.open = false;
+  }
+});
+document.addEventListener('keydown', (event) => {
+  const picker = document.getElementById('branch-picker');
+  if (event.key === 'Escape' && picker.open) {
+    picker.open = false;
+    picker.querySelector('summary').focus();
+  } else if (event.key === 'Escape' && document.getElementById('compacted-popover')) {
+    closeCompactedPopover();
+  } else if (event.key === 'Escape' && selectedCommit && event.target.tagName !== 'TEXTAREA') {
+    selectCommit(null);
+  }
+});
+
 function renderWorktrees(worktrees) {
   const worktreeList = document.getElementById('worktree-list');
   worktreeList.replaceChildren();
@@ -783,9 +861,14 @@ function renderGraphContents(graph) {
   const graphElement = document.getElementById('commit-graph');
   const emptyMessage = document.getElementById('graph-empty');
   graphElement.replaceChildren();
+  closeCompactedPopover();
+  compactedMembership = new Map();
+  applyDisplayOptions();
 
-  const rowHeight = 58;
-  const leftPadding = 48;
+  const rowHeight = 56;
+  const axisHeight = 46;
+  const leftPadding = 72;
+  const rightPadding = 160;
   const columnWidth = 88;
   // Lanes that never overlap horizontally share a row. The root lane keeps the top
   // row, and each lane's span includes the horizontal run of its fork and merge lines.
@@ -1498,5 +1581,4 @@ document.getElementById('update-release-link').addEventListener('click', async (
   }
 });
 
-document.getElementById('dark-theme').addEventListener('click', () => setTheme('dark'));
-document.getElementById('light-theme').addEventListener('click', () => setTheme('light'));
+document.getElementById('theme-toggle').addEventListener('click', (event) => setTheme(event.currentTarget.dataset.themeTarget));

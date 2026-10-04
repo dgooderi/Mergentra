@@ -283,15 +283,14 @@ test('dark mode is the default and light mode can be selected', async () => {
       env: { ...process.env, GITSCOPE_USER_DATA_DIR: userDataPath }
     });
     const window = await app.firstWindow();
-    const darkModeButton = window.getByRole('button', { name: 'Dark mode' });
-    const lightModeButton = window.getByRole('button', { name: 'Light mode' });
-    await expect(darkModeButton).toHaveAttribute('aria-pressed', 'true');
-    await expect(lightModeButton).toHaveAttribute('aria-pressed', 'false');
+    const root = window.locator('html');
+    await expect(root).not.toHaveAttribute('data-theme', 'light');
 
-    await lightModeButton.click();
+    await window.getByRole('button', { name: 'Light mode' }).click();
+    await expect(root).toHaveAttribute('data-theme', 'light');
 
-    await expect(lightModeButton).toHaveAttribute('aria-pressed', 'true');
-    await expect(darkModeButton).toHaveAttribute('aria-pressed', 'false');
+    await window.getByRole('button', { name: 'Dark mode' }).click();
+    await expect(root).toHaveAttribute('data-theme', 'dark');
   } finally {
     if (app) {
       await app.close();
@@ -1883,3 +1882,20 @@ test('collapsed commit groups list their commits, highlight with the selection, 
     await window.locator('#commit-graph').click({ position: { x: 5, y: 5 } });
     await expect(summary).toHaveAttribute('aria-pressed', 'false');
     await expect(window.getByTestId('compacted-popover')).toHaveCount(0);
+
+    await window.getByText('Display', { exact: true }).click();
+    const hashLabel = window.locator('.hash-label').first();
+    await expect(hashLabel).toBeVisible();
+    await window.getByLabel('Commit hashes').uncheck();
+    await expect(hashLabel).toBeHidden();
+    await expect(window.locator('[data-kind="release"]')).toBeVisible();
+    await expect(window.locator('[data-kind="tag"]')).toBeVisible();
+    await window.getByLabel('Releases').uncheck();
+    await expect(window.locator('[data-kind="release"]')).toBeHidden();
+    await window.getByLabel('Tags', { exact: true }).uncheck();
+    await expect(window.locator('[data-kind="tag"]')).toBeHidden();
+  } finally {
+    await app?.close();
+    fs.rmSync(testDirectory, { recursive: true, force: true });
+  }
+});

@@ -17,7 +17,7 @@ For a realistic test history with parallel features, release/hotfix merges, tags
 
 Select **Check for updates** to manually check GitHub Releases. If a newer release is available, GitScope links to its release page so you can download and run the installer yourself. GitScope does not check in the background, download installers, or install updates automatically.
 
-After opening a repository, GitScope displays its reachable commits once in parent-before-child order and lists local branches alongside fetched remote-tracking references. Matching local and remote-tracking references share a color; remote-tracking lanes are dashed.
+After opening a repository, GitScope displays its reachable commits once in parent-before-child order and lists local branches alongside fetched remote-tracking references. The checked-out local branch is highlighted in the References list and marked at its graph tip. Matching local and remote-tracking references share a color; remote-tracking lanes are dashed.
 
 The Worktrees list identifies the current and linked working directories; local branch references show where each branch is checked out. Detached `HEAD` is marked at its commit without adding a branch, and an unborn branch shows its name with an empty graph. Shallow history boundaries and reachable missing-object boundaries in partial clones are marked. Graph inspection disables Git lazy fetching, so it does not contact a promisor remote.
 

@@ -72,10 +72,53 @@
             <p id="repository-path-value" class="repository-path"></p>
             <p class="branch-label">Current branch <strong id="branch-name"></strong></p>
           </div>
-          <button id="change-repository" class="secondary" type="button">Open another repository</button>
         </header>
         <div class="fetch-controls">
           <button id="fetch-button" class="secondary" type="button">Fetch</button>
+            <details id="branch-picker" class="branch-picker">
+            <summary id="branch-picker-summary">Branches</summary>
+            <div class="branch-picker-panel">
+              <input id="branch-picker-search" type="search" placeholder="Search branches" aria-label="Search branches" autocomplete="off">
+              <div class="branch-picker-actions">
+                <button id="branch-picker-all" class="secondary" type="button">All</button>
+                <button id="branch-picker-local" class="secondary" type="button">Local only</button>
+                <button id="branch-picker-none" class="secondary" type="button">None</button>
+              </div>
+              <ul id="reference-lanes"></ul>
+            </div>
+          </details>
+          <div class="time-controls">
+          <label for="time-range">Time range</label>
+          <select id="time-range">
+            <option value="1d">1 day</option>
+            <option value="5d">5 days</option>
+            <option value="1w">1 week</option>
+            <option value="2w">2 weeks</option>
+            <option value="1m">1 month</option>
+            <option value="3m">3 months</option>
+            <option value="6m">6 months</option>
+            <option value="9m">9 months</option>
+            <option value="1y">1 year</option>
+            <option value="all" selected>All history</option>
+            <option value="custom">Custom</option>
+          </select>
+          <form id="custom-time-range" class="custom-time-range" hidden>
+            <label for="time-range-start">Start date</label>
+            <input id="time-range-start" type="date" required>
+            <label for="time-range-end">End date</label>
+            <input id="time-range-end" type="date" required>
+            <button class="secondary" type="submit">Apply date range</button>
+          </form>
+          <p id="time-range-status" role="alert" aria-live="polite"></p>
+        </div>
+          <details class="branch-picker display-menu">
+            <summary>Display</summary>
+            <div class="branch-picker-panel display-toggles" role="group" aria-label="Graph labels">
+              <label><input id="show-tags" type="checkbox" checked> Tags</label>
+              <label><input id="show-hashes" type="checkbox" checked> Commit hashes</label>
+              <label><input id="show-releases" type="checkbox" checked> Releases</label>
+            </div>
+          </details>
           <p id="fetch-status" role="status" aria-live="polite"></p>
           <section id="fetch-diagnostics-panel" class="fetch-diagnostics-panel" aria-label="Fetch diagnostics" hidden>
             <pre id="fetch-diagnostics"></pre>

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, clipboard, dialog, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, Menu, clipboard, dialog, ipcMain, shell } = require('electron');
 const { execFile, spawn } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -602,6 +602,7 @@ async function fetchRemoteReferences() {
 }
 
 function createWindow() {
+  Menu.setApplicationMenu(null);
   const window = new BrowserWindow({
     width: 1080,
     height: 720,
