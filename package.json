@@ -1,0 +1,43 @@
+{
+  "name": "gitscope",
+  "version": "0.1.0",
+  "description": "A Windows-first desktop app for exploring local Git history.",
+  "author": "GitScope contributors",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test:e2e": "playwright test",
+    "build:win": "electron-builder --win nsis --publish never"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3",
+    "playwright": "^1.63.0"
+  },
+  "build": {
+    "appId": "com.gitscope.desktop",
+    "productName": "GitScope",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "artifactName": "${productName}-${version}-Setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}

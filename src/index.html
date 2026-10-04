@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://api.github.com"
+    >
+    <title>GitScope</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script src="./renderer.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <div class="app-toolbar">
+        <div class="theme-control" role="group" aria-label="Color theme">
+          <button id="dark-theme" type="button" aria-pressed="true">Dark mode</button>
+          <button id="light-theme" type="button" aria-pressed="false">Light mode</button>
+        </div>
+        <div class="update-control">
+          <button id="check-for-updates" class="secondary" type="button">Check for updates</button>
+          <p id="update-status" role="status" aria-live="polite"></p>
+          <a id="update-release-link" hidden target="_blank" rel="noopener noreferrer"></a>
+        </div>
+      </div>
+      <section id="repository-picker" aria-labelledby="picker-heading">
+        <p class="eyebrow">GITSCOPE</p>
+        <h1 id="picker-heading">Open a repository</h1>
+        <p class="intro">Choose a local Git repository to explore its history.</p>
+        <form id="repository-form">
+          <label for="repository-path">Repository folder</label>
+          <div class="path-controls">
+            <input
+              id="repository-path"
+              name="repository-path"
+              type="text"
+              autocomplete="off"
+              placeholder="C:\path\to\repository"
+              required
+            >
+            <button id="browse-button" class="secondary" type="button">Browse…</button>
+          </div>
+          <button class="primary" type="submit">Open repository</button>
+        </form>
+        <p id="repository-progress" role="status" aria-live="polite"></p>
+        <form id="git-path-form" class="git-path-form">
+          <label for="git-executable-path">Git executable path</label>
+          <div class="path-controls">
+            <input
+              id="git-executable-path"
+              name="git-executable-path"
+              type="text"
+              autocomplete="off"
+              placeholder="Leave blank to use Git on PATH"
+            >
+            <button class="secondary" type="submit">Save Git path</button>
+          </div>
+        </form>
+        <section class="recent-section" aria-labelledby="recent-heading">
+          <h2 id="recent-heading">Recent repositories</h2>
+          <ul id="recent-repositories"></ul>
+        </section>
+        <p id="status" role="alert" aria-live="polite"></p>
+      </section>
+
+      <section id="repository-view" class="repository-view" aria-live="polite" hidden>
+        <header class="repository-header">
+          <div>
+            <p class="eyebrow">OPEN REPOSITORY</p>
+            <h1 id="repository-name"></h1>
+            <p id="repository-path-value" class="repository-path"></p>
+            <p class="branch-label">Current branch <strong id="branch-name"></strong></p>
+          </div>
+          <button id="change-repository" class="secondary" type="button">Open another repository</button>
+        </header>
+        <div class="fetch-controls">
+          <button id="fetch-button" class="secondary" type="button">Fetch</button>
+          <p id="fetch-status" role="status" aria-live="polite"></p>
+          <section id="fetch-diagnostics-panel" class="fetch-diagnostics-panel" aria-label="Fetch diagnostics" hidden>
+            <pre id="fetch-diagnostics"></pre>
+            <button id="copy-fetch-diagnostics" class="secondary" type="button">Copy diagnostics</button>
+            <p id="diagnostics-copy-status" role="status" aria-live="polite"></p>
+          </section>
+        </div>
+        <div class="graph-layout">
+          <aside aria-labelledby="references-heading">
+            <section aria-labelledby="worktrees-heading">
+              <h2 id="worktrees-heading">Worktrees</h2>
+              <ul id="worktree-list"></ul>
+            </section>
+            <section aria-labelledby="references-heading">
+              <h2 id="references-heading">References</h2>
+              <ul id="reference-lanes"></ul>
+            </section>
+          </aside>
+          <div class="graph-column">
+            <h2>Commit graph</h2>
+            <div class="time-controls">
+              <label for="time-range">Time range</label>
+              <select id="time-range">
+                <option value="1d">1 day</option>
+                <option value="5d">5 days</option>
+                <option value="1w">1 week</option>
+                <option value="2w">2 weeks</option>
+                <option value="1m">1 month</option>
+                <option value="3m">3 months</option>
+                <option value="6m">6 months</option>
+                <option value="9m">9 months</option>
+                <option value="1y">1 year</option>
+                <option value="all" selected>All history</option>
+                <option value="custom">Custom</option>
+              </select>
+              <form id="custom-time-range" class="custom-time-range" hidden>
+                <label for="time-range-start">Start date</label>
+                <input id="time-range-start" type="date" required>
+                <label for="time-range-end">End date</label>
+                <input id="time-range-end" type="date" required>
+                <button class="secondary" type="submit">Apply date range</button>
+              </form>
+              <p id="time-range-status" role="alert" aria-live="polite"></p>
+            </div>
+            <div class="graph-scroll">
+              <svg
+                id="commit-graph"
+                data-testid="commit-graph"
+                role="img"
+                aria-label="Commit graph"
+              ></svg>
+            </div>
+            <p id="graph-empty" hidden></p>
+          </div>
+        </div>
+        <section id="review-dock" class="review-dock" data-testid="review-dock" aria-labelledby="review-heading" hidden>
+          <div class="review-dock-heading">
+            <div>
+              <p class="eyebrow">REVIEW</p>
+              <h2 id="review-heading">Selected commit</h2>
+            </div>
+          </div>
+          <dl class="commit-details">
+            <dt>Message</dt>
+            <dd id="selected-commit-message" data-testid="selected-commit-message"></dd>
+            <dt>Author</dt>
+            <dd id="selected-commit-author" data-testid="selected-commit-author"></dd>
+            <dt>Author date</dt>
+            <dd id="selected-commit-author-date" data-testid="selected-commit-author-date"></dd>
+            <dt>Hash</dt>
+            <dd><code id="selected-commit-hash" data-testid="selected-commit-hash"></code></dd>
+            <dt>Parents</dt>
+            <dd id="selected-commit-parents" data-testid="selected-commit-parents"></dd>
+            <dt>References</dt>
+            <dd><ul id="selected-commit-references" data-testid="selected-commit-references"></ul></dd>
+          </dl>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>
