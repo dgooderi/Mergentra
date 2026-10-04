@@ -9,6 +9,16 @@ let currentGraph = null;
 let visibleReferences = new Set();
 let selectedTimePreset = 'all';
 let timeRange = null;
+let currentRepositoryPath = null;
+let customRangeValues = null;
+const viewStateKeyPrefix = 'gitscope:view-state:';
+const notesKeyPrefix = 'gitscope:notes:';
+const repositoryNoteKeyPrefix = 'gitscope:repository-note:';
+let notes = { commits: {}, branches: {} };
+let displayOptions = { tags: true, hashes: true, releases: true };
+let compactedMembership = new Map();
+const releaseTagPattern = /^v?\d+(\.\d+)+([-+.].*)?$/;
+
 function applyDisplayOptions() {
   const graphElement = document.getElementById('commit-graph');
   graphElement.dataset.showTags = String(displayOptions.tags);
@@ -138,8 +148,17 @@ async function openRepository(repositoryPath, triggerButton) {
 
 function setTheme(theme) {
   document.documentElement.dataset.theme = theme;
-  document.getElementById('dark-theme').setAttribute('aria-pressed', String(theme === 'dark'));
-  document.getElementById('light-theme').setAttribute('aria-pressed', String(theme === 'light'));
+  const toggle = document.getElementById('theme-toggle');
+  toggle.dataset.themeTarget = theme === 'dark' ? 'light' : 'dark';
+  toggle.textContent = theme === 'dark' ? 'Light mode' : 'Dark mode';
+}
+
+function readRepositoryNote(repositoryPath) {
+  try {
+    return localStorage.getItem(repositoryNoteKeyPrefix + repositoryPath) || '';
+  } catch {
+    return '';
+  }
 }
 
 function renderRecentRepositories(repositories) {
@@ -158,12 +177,17 @@ function renderRecentRepositories(repositories) {
     const item = document.createElement('li');
     const button = document.createElement('button');
     const name = document.createElement('span');
-    const repositoryPath = document.createElement('small');
+    const repositoryNote = readRepositoryNote(repository.path);
     button.className = 'recent-repository';
     button.type = 'button';
     name.textContent = repository.name;
-    repositoryPath.textContent = repository.path;
-    button.append(name, repositoryPath);
+    button.title = repository.path;
+    button.append(name);
+    if (repositoryNote) {
+      const note = document.createElement('small');
+      note.textContent = repositoryNote;
+      button.append(note);
+    }
     button.addEventListener('click', () => {
       openRepository(repository.path, button);
     });
@@ -220,6 +244,7 @@ function showRepository(repository) {
   document.getElementById('repository-name').textContent = repository.name;
   document.getElementById('repository-path-value').textContent = repository.path;
   document.getElementById('branch-name').textContent = repository.branch;
+  document.getElementById('repository-note').value = readRepositoryNote(repository.path);
   renderGraph(repository.graph);
   picker.hidden = true;
   repositoryView.hidden = false;
@@ -1410,7 +1435,38 @@ document.getElementById('git-path-form').addEventListener('submit', async (event
       ? 'Git path saved.'
       : 'Git path cleared. GitScope will use Git on PATH.';
   } catch (error) {
-    setStatus(error.message);
+    document.getElementById('git-path-status').textContent = error.message;
+  }
+});
+
+const settingsPanel = document.getElementById('settings-panel');
+const settingsButton = document.getElementById('open-settings');
+settingsButton.addEventListener('click', () => {
+  settingsPanel.hidden = !settingsPanel.hidden;
+  settingsButton.setAttribute('aria-expanded', String(!settingsPanel.hidden));
+  if (!settingsPanel.hidden) {
+    gitPathInput.focus();
+  }
+});
+
+document.getElementById('repository-note').addEventListener('input', (event) => {
+  try {
+    const text = event.currentTarget.value;
+    if (text.trim() === '') {
+      localStorage.removeItem(repositoryNoteKeyPrefix + currentRepositoryPath);
+    } else {
+      localStorage.setItem(repositoryNoteKeyPrefix + currentRepositoryPath, text);
+    }
+  } catch {
+    // Best-effort local storage, like commit and branch notes.
+  }
+});
+
+document.getElementById('open-explorer').addEventListener('click', async () => {
+  try {
+    await window.gitScope.openInExplorer();
+  } catch (error) {
+    document.getElementById('fetch-status').textContent = error.message;
   }
 });
 

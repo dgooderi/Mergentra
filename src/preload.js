@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('gitScope', {
   openRepository: (repositoryPath) => ipcRenderer.invoke('repository:open', repositoryPath),
   fetchRemoteReferences: () => ipcRenderer.invoke('repository:fetch'),
   copyDiagnostics: (diagnostics) => ipcRenderer.invoke('diagnostics:copy', diagnostics),
+  openInExplorer: () => ipcRenderer.invoke('repository:open-in-explorer'),
   getRecentRepositories: () => ipcRenderer.invoke('repository:recent'),
   getGitPath: () => ipcRenderer.invoke('settings:get-git-path'),
   saveGitPath: (gitPath) => ipcRenderer.invoke('settings:save-git-path', gitPath)

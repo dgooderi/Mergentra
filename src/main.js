@@ -669,6 +669,15 @@ app.whenReady().then(() => {
     }
     clipboard.writeText(diagnostics);
   });
+  ipcMain.handle('repository:open-in-explorer', async () => {
+    if (!activeRepositoryPath) {
+      throw new Error('Open a repository first.');
+    }
+    const failure = await shell.openPath(activeRepositoryPath);
+    if (failure) {
+      throw new Error(failure);
+    }
+  });
   ipcMain.handle('repository:recent', () => settings.recentRepositories);
   ipcMain.handle('settings:get-git-path', () => settings.gitPath);
   ipcMain.handle('settings:save-git-path', async (_event, gitPath) => {

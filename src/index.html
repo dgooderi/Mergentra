@@ -14,10 +14,28 @@
   <body>
     <main>
       <div class="app-toolbar">
-        <div class="theme-control" role="group" aria-label="Color theme">
-          <button id="dark-theme" type="button" aria-pressed="true">Dark mode</button>
-          <button id="light-theme" type="button" aria-pressed="false">Light mode</button>
-        </div>
+        <button id="open-explorer" class="secondary" type="button">Open in Explorer</button>
+        <button id="change-repository" class="secondary" type="button">Open another repository</button>
+        <button id="theme-toggle" class="secondary" type="button" data-theme-target="light">Light mode</button>
+        <button id="open-settings" class="secondary" type="button" aria-expanded="false" aria-controls="settings-panel">Settings</button>
+      </div>
+
+      <section id="settings-panel" class="settings-panel" aria-labelledby="settings-heading" hidden>
+        <h2 id="settings-heading">Settings</h2>
+        <form id="git-path-form" class="git-path-form">
+          <label for="git-executable-path">Git executable path</label>
+          <div class="path-controls">
+            <input
+              id="git-executable-path"
+              name="git-executable-path"
+              type="text"
+              autocomplete="off"
+              placeholder="Leave blank to use Git on PATH"
+            >
+            <button class="secondary" type="submit">Save Git path</button>
+          </div>
+          <p id="git-path-status" role="status" aria-live="polite"></p>
+        </form>
         <div class="update-control">
           <button id="check-for-updates" class="secondary" type="button">Check for updates</button>
           <p id="update-status" role="status" aria-live="polite"></p>
@@ -28,6 +46,10 @@
         <p class="eyebrow">GITSCOPE</p>
         <h1 id="picker-heading">Open a repository</h1>
         <p class="intro">Choose a local Git repository to explore its history.</p>
+        <section class="recent-section" aria-labelledby="recent-heading">
+          <h2 id="recent-heading">Recent repositories</h2>
+          <ul id="recent-repositories"></ul>
+        </section>
         <form id="repository-form">
           <label for="repository-path">Repository folder</label>
           <div class="path-controls">
@@ -44,23 +66,6 @@
           <button class="primary" type="submit">Open repository</button>
         </form>
         <p id="repository-progress" role="status" aria-live="polite"></p>
-        <form id="git-path-form" class="git-path-form">
-          <label for="git-executable-path">Git executable path</label>
-          <div class="path-controls">
-            <input
-              id="git-executable-path"
-              name="git-executable-path"
-              type="text"
-              autocomplete="off"
-              placeholder="Leave blank to use Git on PATH"
-            >
-            <button class="secondary" type="submit">Save Git path</button>
-          </div>
-        </form>
-        <section class="recent-section" aria-labelledby="recent-heading">
-          <h2 id="recent-heading">Recent repositories</h2>
-          <ul id="recent-repositories"></ul>
-        </section>
         <p id="status" role="alert" aria-live="polite"></p>
       </section>
 
@@ -71,6 +76,7 @@
             <h1 id="repository-name"></h1>
             <p id="repository-path-value" class="repository-path"></p>
             <p class="branch-label">Current branch <strong id="branch-name"></strong></p>
+            <input id="repository-note" class="repository-note" type="text" placeholder="Add a note about this repository" aria-label="Repository note" autocomplete="off">
           </div>
         </header>
         <div class="fetch-controls">

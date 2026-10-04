@@ -1032,3 +1032,49 @@ main:not(:has(#repository-view:not([hidden]))) #change-repository {
   font-weight: 600;
   white-space: nowrap;
 }
+
+#recent-repositories {
+  display: flex;
+  max-height: 96px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+#recent-repositories > li {
+  max-width: 100%;
+}
+
+.recent-repository {
+  display: flex;
+  width: auto;
+  min-height: 0;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.recent-repository small {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-section {
+  margin: 0 0 20px;
+}
+
+main:not(:has(#repository-view:not([hidden]))) #open-explorer {
+  display: none;
+}
+
+#open-explorer {
+  white-space: nowrap;
+}
+
+.repository-note {
+  width: min(100%, 420px);
+  margin-top: 6px;
+  padding: 6px 10px;
+}

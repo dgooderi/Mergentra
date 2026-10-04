@@ -261,6 +261,12 @@ test('a recently opened repository can be reopened after restarting GitScope', a
 
     app = await electron.launch(launchOptions);
     window = await app.firstWindow();
+    const recent = window.locator('.recent-repository');
+    await expect(recent).toContainText('sample-repository');
+    await expect(recent).toContainText('Project X');
+    await expect(recent).not.toContainText(repositoryPath);
+    await expect(recent).toHaveAttribute('title', repositoryPath);
+    await expect(window.getByRole('button', { name: 'Open in Explorer' })).toBeHidden();
     await expect(window.getByRole('button', { name: /sample-repository/ })).toBeVisible();
     await window.getByRole('button', { name: /sample-repository/ }).click();
     await expect(window.getByRole('heading', { name: 'sample-repository' })).toBeVisible();
