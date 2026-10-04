@@ -84,41 +84,13 @@
           </section>
         </div>
         <div class="graph-layout">
-          <aside aria-labelledby="references-heading">
-            <section aria-labelledby="worktrees-heading">
-              <h2 id="worktrees-heading">Worktrees</h2>
-              <ul id="worktree-list"></ul>
-            </section>
-            <section aria-labelledby="references-heading">
-              <h2 id="references-heading">References</h2>
-              <ul id="reference-lanes"></ul>
-            </section>
-          </aside>
           <div class="graph-column">
-            <h2>Commit graph</h2>
-            <div class="time-controls">
-              <label for="time-range">Time range</label>
-              <select id="time-range">
-                <option value="1d">1 day</option>
-                <option value="5d">5 days</option>
-                <option value="1w">1 week</option>
-                <option value="2w">2 weeks</option>
-                <option value="1m">1 month</option>
-                <option value="3m">3 months</option>
-                <option value="6m">6 months</option>
-                <option value="9m">9 months</option>
-                <option value="1y">1 year</option>
-                <option value="all" selected>All history</option>
-                <option value="custom">Custom</option>
-              </select>
-              <form id="custom-time-range" class="custom-time-range" hidden>
-                <label for="time-range-start">Start date</label>
-                <input id="time-range-start" type="date" required>
-                <label for="time-range-end">End date</label>
-                <input id="time-range-end" type="date" required>
-                <button class="secondary" type="submit">Apply date range</button>
-              </form>
-              <p id="time-range-status" role="alert" aria-live="polite"></p>
+            <div class="graph-filters">
+              <details id="worktrees-panel" class="worktrees-panel" hidden>
+                <summary id="worktrees-heading">Worktrees</summary>
+                <p class="hint">This repository is checked out in several folders at once. Each folder (worktree) has its own branch.</p>
+                <ul id="worktree-list"></ul>
+              </details>
             </div>
             <h2>Commit graph</h2>
             <div class="graph-scroll">

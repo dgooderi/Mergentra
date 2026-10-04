@@ -35,6 +35,7 @@ test('a developer can open a local Git repository', async () => {
     });
     const window = await app.firstWindow();
     await expect(window.getByRole('heading', { name: 'Open a repository' })).toBeVisible();
+    await window.getByRole('button', { name: 'Settings' }).click();
     await expect(window.getByRole('button', { name: 'Check for updates' })).toBeVisible();
     await window.getByLabel('Repository folder').fill(invalidRepositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
@@ -85,6 +86,7 @@ test('a manual update check links to a newer GitHub release without downloading 
 
     await window.waitForTimeout(100);
     expect(releaseChecks).toBe(0);
+    await window.getByRole('button', { name: 'Settings' }).click();
     await window.getByRole('button', { name: 'Check for updates' }).click();
     await expect(window.locator('#update-status')).toContainText('GitScope 0.2.0 is available.');
     const releaseLink = window.getByRole('link', { name: 'View GitScope 0.2.0 on GitHub Releases' });
@@ -126,6 +128,7 @@ test('a manual update check reports when the installed version is current', asyn
         })
       });
     });
+    await window.getByRole('button', { name: 'Settings' }).click();
     await window.getByRole('button', { name: 'Check for updates' }).click();
     await expect(window.locator('#update-status')).toContainText('GitScope is up to date (0.1.0).');
     await expect(window.locator('#update-release-link')).toBeHidden();
@@ -150,6 +153,7 @@ test('a failed update check explains the failure and can be retried', async () =
     await window.route('https://api.github.com/repos/dgooderi/GitScope/releases/latest', async (route) => {
       await route.fulfill({ status: 503, body: 'Unavailable' });
     });
+    await window.getByRole('button', { name: 'Settings' }).click();
     await window.getByRole('button', { name: 'Check for updates' }).click();
     await expect(window.locator('#update-status')).toContainText(
       'Could not check for updates: GitHub release check failed with HTTP 503.'
@@ -202,6 +206,7 @@ test('a developer can configure Git when it is not on PATH', async () => {
     await window.getByRole('button', { name: 'Open repository' }).click();
     await expect(window.getByRole('alert')).toContainText('Git was not found on PATH');
 
+    await window.getByRole('button', { name: 'Settings' }).click();
     await window.getByLabel('Git executable path').fill(gitPath);
     await window.getByRole('button', { name: 'Save Git path' }).click();
     await expect(window.getByText('Git path saved.')).toBeVisible();
@@ -209,6 +214,7 @@ test('a developer can configure Git when it is not on PATH', async () => {
 
     app = await electron.launch(launchOptions);
     window = await app.firstWindow();
+    await window.getByRole('button', { name: 'Settings' }).click();
     await expect(window.getByLabel('Git executable path')).toHaveValue(gitPath);
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
@@ -653,6 +659,7 @@ test('reference filters retain shared history reachable from any enabled referen
 
     const commitNode = (hash) => window.locator(`[data-testid="commit-node"][data-commit-hash="${hash}"]`);
     const graph = window.getByTestId('commit-graph');
+    await window.locator('#branch-picker > summary').click();
     const localMain = window.getByRole('checkbox', { name: 'main', exact: true });
     const remoteMain = window.getByRole('checkbox', { name: 'origin/main', exact: true });
     const localFeature = window.getByRole('checkbox', { name: 'feature', exact: true });
@@ -665,6 +672,7 @@ test('reference filters retain shared history reachable from any enabled referen
     await expect(window.getByTestId('commit-node')).toHaveCount(3);
     await window.keyboard.press('Escape');
     await commitNode(sharedCommit).click();
+    await window.locator('#branch-picker > summary').click();
     const reviewDock = window.getByTestId('review-dock');
     await expect(reviewDock.getByTestId('selected-commit-hash')).toHaveText(sharedCommit);
 
@@ -1091,6 +1099,7 @@ test('remote-tracking references refresh only after explicit Fetch', async () =>
     const remoteLane = window.locator('[data-testid="reference-lane"][data-ref-name="origin/main"]');
     await expect(remoteLane).toHaveAttribute('data-target-hash', originalRemoteTip);
     await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${updatedRemoteTip}"]`)).toHaveCount(0);
+    await window.locator('#branch-picker > summary').click();
     await window.getByRole('checkbox', { name: 'main', exact: true }).uncheck();
     await expect(remoteLane).toHaveAttribute('data-target-hash', originalRemoteTip);
     await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${updatedRemoteTip}"]`)).toHaveCount(0);
@@ -1453,6 +1462,25 @@ test('the checked-out branch is highlighted in the reference list and at its gra
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
 
+    await window.locator('#branch-picker > summary').click();
+    const checkedOutLane = window.locator(
+      `[data-testid="reference-lane"][data-ref-name="${branchName}"][data-checked-out="true"]`
+    );
+    await expect(checkedOutLane).toBeVisible();
+    await expect(checkedOutLane).toHaveCSS('border-top-style', 'solid');
+    await expect(checkedOutLane).toHaveCSS('border-top-width', '2px');
+    await expect(checkedOutLane.getByTestId('checked-out-label')).toHaveText('Checked out');
+    await expect(window.locator(
+      `[data-testid="checked-out-branch-marker"][data-branch-name="${branchName}"][data-commit-hash="${head}"]`
+    )).toBeVisible();
+  } finally {
+    if (app) {
+      await app.close();
+    }
+    fs.rmSync(testDirectory, { recursive: true, force: true });
+  }
+});
+
 test('the complex scenario shows both merge directions and recent history', async () => {
   const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-scenario-history-e2e-'));
   const repositoryPath = path.resolve(__dirname, '..', 'samples', 'complex-branch-scenario');
@@ -1642,6 +1670,7 @@ test('dense histories show a useful graph and keep filters responsive at target 
     const graphReadyMs = Number(process.hrtime.bigint() - graphStartedAt) / 1_000_000;
     expect(graphReadyMs, `graph ready in ${graphReadyMs.toFixed(1)} ms`).toBeLessThan(5_000);
 
+    await window.locator('#branch-picker > summary').click();
     const branchFilter = window.locator('[data-testid="reference-filter"][aria-label="branch-050"]');
     const branchFilterStartedAt = process.hrtime.bigint();
     await branchFilter.uncheck();
@@ -1675,6 +1704,47 @@ test('dense histories show a useful graph and keep filters responsive at target 
     fs.rmSync(testDirectory, { recursive: true, force: true });
   }
 });
+
+test('branch selection and time range are remembered per repository', async () => {
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-view-state-e2e-'));
+  const userDataPath = path.join(testDirectory, 'user-data');
+  const runGit = (cwd, args) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  const createRepository = (name) => {
+    const repositoryPath = path.join(testDirectory, name);
+    fs.mkdirSync(repositoryPath);
+    runGit(repositoryPath, ['-c', 'init.defaultBranch=main', 'init']);
+    runGit(repositoryPath, ['config', 'user.name', 'GitScope E2E']);
+    runGit(repositoryPath, ['config', 'user.email', 'gitscope-e2e@example.invalid']);
+    runGit(repositoryPath, ['commit', '--allow-empty', '-m', 'Initial']);
+    runGit(repositoryPath, ['branch', 'feature']);
+    return repositoryPath;
+  };
+  const firstRepository = createRepository('first');
+  const secondRepository = createRepository('second');
+  const launch = () => electron.launch({
+    args: [path.resolve(__dirname, '..')],
+    env: { ...process.env, GITSCOPE_USER_DATA_DIR: userDataPath }
+  });
+  let app;
+
+  try {
+    app = await launch();
+    let window = await app.firstWindow();
+    await window.getByLabel('Repository folder').fill(firstRepository);
+    await window.getByRole('button', { name: 'Open repository' }).click();
+    await expect(window.locator('#branch-picker-summary')).toHaveText('Branches: 2 of 2 shown');
+    await window.locator('#branch-picker > summary').click();
+    await window.getByRole('checkbox', { name: 'feature', exact: true }).uncheck();
+    await expect(window.locator('#branch-picker-summary')).toHaveText('Branches: 1 of 2 shown');
+    await window.locator('#time-range').selectOption('1w');
+    await app.close();
+
+    app = await launch();
+    window = await app.firstWindow();
+    await window.getByLabel('Repository folder').fill(firstRepository);
+    await window.getByRole('button', { name: 'Open repository' }).click();
+    await expect(window.locator('#branch-picker-summary')).toHaveText('Branches: 1 of 2 shown');
+    await expect(window.locator('#time-range')).toHaveValue('1w');
 
   try {
     app = await launch();

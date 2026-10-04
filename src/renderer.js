@@ -88,6 +88,14 @@ async function loadPickerSettings() {
 
 loadPickerSettings();
 
+function loadViewState() {
+  try {
+    return JSON.parse(localStorage.getItem(viewStateKeyPrefix + currentRepositoryPath)) || null;
+  } catch {
+    return null;
+  }
+}
+
 function showRepository(repository) {
   document.getElementById('repository-name').textContent = repository.name;
   document.getElementById('repository-path-value').textContent = repository.path;
@@ -440,6 +448,8 @@ function applyCustomTimeRange() {
   endDate.setDate(endDate.getDate() + 1);
   timeRange = { start: startDate.getTime(), end: endDate.getTime() };
   selectedTimePreset = 'custom';
+  customRangeValues = { start: startValue, end: endValue };
+  saveViewState();
   status.textContent = '';
   renderFilteredGraph();
 }
@@ -457,6 +467,7 @@ document.getElementById('time-range').addEventListener('change', (event) => {
 
   customRange.hidden = true;
   timeRange = getPresetRange(selectedTimePreset, new Date());
+  saveViewState();
   renderFilteredGraph();
 });
 
@@ -505,6 +516,8 @@ function renderReferenceLanes(references) {
       } else {
         visibleReferences.delete(reference.name);
       }
+      saveViewState();
+      updateBranchPickerSummary();
       renderFilteredGraph();
     });
     marker.append(line);
@@ -534,9 +547,35 @@ function renderReferenceLanes(references) {
   updateBranchPickerSummary();
 }
 
+function updateBranchPickerSummary() {
+  const total = currentGraph ? currentGraph.references.length : 0;
+  document.getElementById('branch-picker-summary').textContent =
+    `Branches: ${visibleReferences.size} of ${total} shown`;
+}
+
+function filterBranchPicker() {
+  const query = document.getElementById('branch-picker-search').value.trim().toLowerCase();
+  for (const lane of document.getElementById('reference-lanes').children) {
+    lane.hidden = query !== '' && !lane.dataset.refName.toLowerCase().includes(query);
+  }
+}
+
+function setVisibleBranches(predicate) {
+  visibleReferences = new Set(currentGraph.references
+    .filter(predicate)
+    .map((reference) => reference.name));
+  saveViewState();
+  renderReferenceLanes(currentGraph.references);
+  renderFilteredGraph();
+}
+
 function renderWorktrees(worktrees) {
   const worktreeList = document.getElementById('worktree-list');
   worktreeList.replaceChildren();
+  const worktreePanel = document.getElementById('worktrees-panel');
+  worktreePanel.hidden = worktrees.length < 2;
+  worktreePanel.open = worktrees.length > 1;
+  document.getElementById('worktrees-heading').textContent = `Worktrees (${worktrees.length})`;
 
   for (const worktree of worktrees) {
     const item = document.createElement('li');
@@ -1019,11 +1058,11 @@ form.addEventListener('submit', (event) => {
 
 document.getElementById('git-path-form').addEventListener('submit', async (event) => {
   event.preventDefault();
-  setStatus('');
+  document.getElementById('git-path-status').textContent = '';
   try {
     const gitPath = await window.gitScope.saveGitPath(gitPathInput.value);
     gitPathInput.value = gitPath;
-    setStatus(gitPath
+    document.getElementById('git-path-status').textContent = gitPath
       ? 'Git path saved.'
       : 'Git path cleared. GitScope will use Git on PATH.';
   } catch (error) {
