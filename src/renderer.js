@@ -48,6 +48,56 @@ function openCompactedPopover(summary, anchor) {
   document.body.append(popover);
 }
 
+function loadNotes() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(notesKeyPrefix + currentRepositoryPath));
+    notes = { commits: stored?.commits || {}, branches: stored?.branches || {} };
+  } catch {
+    notes = { commits: {}, branches: {} };
+  }
+}
+
+function setNote(kind, key, text) {
+  if (text.trim() === '') {
+    delete notes[kind][key];
+  } else {
+    notes[kind][key] = text;
+  }
+  try {
+    localStorage.setItem(notesKeyPrefix + currentRepositoryPath, JSON.stringify(notes));
+  } catch {
+    // Notes are best-effort local storage; a failed write must not break the view.
+  }
+  refreshNoteMarkers();
+}
+
+function refreshNoteMarkers() {
+  for (const node of document.querySelectorAll('[data-testid="commit-node"]')) {
+    const refNames = JSON.parse(node.dataset.refNames || '[]');
+    const hasNote = Object.hasOwn(notes.commits, node.dataset.commitHash)
+      || refNames.some((name) => Object.hasOwn(notes.branches, name));
+    node.dataset.hasNote = String(hasNote);
+  }
+  for (const lane of document.querySelectorAll('#reference-lanes li')) {
+    const hasNote = Object.hasOwn(notes.branches, lane.dataset.refName);
+    lane.dataset.hasNote = String(hasNote);
+    lane.querySelector('[data-testid="branch-note-toggle"]').textContent = hasNote ? 'Note ✎' : 'Note';
+  }
+  renderSelectedBranchNotes();
+}
+
+function renderSelectedBranchNotes() {
+  const list = document.getElementById('selected-commit-branch-notes');
+  list.replaceChildren();
+  const names = (selectedCommit?.references || []).filter((name) => Object.hasOwn(notes.branches, name));
+  for (const name of names) {
+    const item = document.createElement('li');
+    item.textContent = `${name}: ${notes.branches[name]}`;
+    list.append(item);
+  }
+  document.getElementById('selected-commit-branch-notes-heading').hidden = names.length === 0;
+  list.parentElement.hidden = names.length === 0;
+}
 
 function setStatus(message) {
   status.textContent = message;
@@ -136,6 +186,8 @@ function loadViewState() {
 }
 
 function showRepository(repository) {
+  currentRepositoryPath = repository.path;
+  loadNotes();
   document.getElementById('repository-name').textContent = repository.name;
   document.getElementById('repository-path-value').textContent = repository.path;
   document.getElementById('branch-name').textContent = repository.branch;
@@ -289,6 +341,7 @@ function renderFilteredGraph() {
 
   const displayGraph = compactOrdinaryHistory(graph);
   renderGraphContents(displayGraph);
+  refreshNoteMarkers();
   if (selectedCommit) {
     const updatedSelection = displayGraph.commits.find((commit) => commit.hash === selectedCommit.hash);
     selectCommit(updatedSelection || null);
@@ -580,7 +633,29 @@ function renderReferenceLanes(references) {
       worktreeLocation.textContent = reference.worktreePath;
       labelGroup.append(worktreeLocation);
     }
-    lane.append(checkbox, marker, labelGroup);
+    const noteToggle = document.createElement('button');
+    const noteEditor = document.createElement('textarea');
+    noteToggle.type = 'button';
+    noteToggle.className = 'note-toggle secondary';
+    noteToggle.dataset.testid = 'branch-note-toggle';
+    noteToggle.setAttribute('aria-label', `Note for ${reference.name}`);
+    noteToggle.textContent = Object.hasOwn(notes.branches, reference.name) ? 'Note ✎' : 'Note';
+    noteEditor.hidden = true;
+    noteEditor.rows = 2;
+    noteEditor.className = 'note-editor';
+    noteEditor.dataset.testid = 'branch-note-input';
+    noteEditor.placeholder = 'Private note about this branch';
+    noteEditor.setAttribute('aria-label', `Note text for ${reference.name}`);
+    noteEditor.value = notes.branches[reference.name] || '';
+    noteToggle.addEventListener('click', () => {
+      noteEditor.hidden = !noteEditor.hidden;
+      if (!noteEditor.hidden) {
+        noteEditor.focus();
+      }
+    });
+    noteEditor.addEventListener('input', () => setNote('branches', reference.name, noteEditor.value));
+    lane.dataset.hasNote = String(Object.hasOwn(notes.branches, reference.name));
+    lane.append(checkbox, marker, labelGroup, noteToggle, noteEditor);
     laneList.append(lane);
   }
   filterBranchPicker();
@@ -938,8 +1013,40 @@ function renderGraphContents(graph) {
     });
     title.textContent = `${commit.subject} (${commit.hash.slice(0, 7)})${commit.tags.length > 0 ? ` — tags: ${commit.tags.join(', ')}` : ''}`;
     label.textContent = commit.hash.slice(0, 7);
-    group.append(title, hitTarget, nodeShape, label);
-    group.addEventListener('click', () => selectCommit(commit));
+    const selectionRing = createSvgElement('circle', {
+      r: 17,
+      class: 'selection-ring',
+      'data-testid': 'selection-ring',
+      fill: 'none',
+      'aria-hidden': 'true'
+    });
+    const noteMarker = createSvgElement('text', {
+      x: -16,
+      y: -9,
+      class: 'note-marker',
+      'data-testid': 'note-marker',
+      'text-anchor': 'middle',
+      'aria-hidden': 'true'
+    });
+    noteMarker.textContent = '✎';
+    group.append(title, hitTarget, selectionRing, nodeShape, label, noteMarker);    const branchNames = commit.references.filter((name) => !commit.tags.includes(name));
+    if (branchNames.length > 0) {
+      const shortNames = branchNames.filter((name) => !(
+        name.includes('/') && branchNames.includes(name.slice(name.indexOf('/') + 1))
+      ));
+      const hasPairedRemote = shortNames.length < branchNames.length;
+      const branchLabel = createSvgElement('text', {
+        x: 0,
+        y: 37,
+        'text-anchor': 'middle',
+        class: 'branch-label',
+        'data-testid': 'commit-branch-label',
+        fill: color
+      });
+      branchLabel.textContent = shortNames.join(', ') + (hasPairedRemote ? ' ⇄' : '');
+      group.append(branchLabel);
+    }
+    group.addEventListener('click', () => selectCommit(selectedCommit?.hash === commit.hash ? null : commit));
     group.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
@@ -1011,6 +1118,15 @@ function renderGraphContents(graph) {
         role: 'img',
         'aria-label': 'Detached HEAD'
       });
+      const headCommit = graph.commits.find((commit) => commit.hash === graph.headHash);
+      marker.append(createSvgElement('circle', {
+        r: 14,
+        fill: 'none',
+        stroke: graph.references[headCommit?.lane]?.color || '#9ca3af',
+        'stroke-width': 2,
+        'data-testid': 'head-marker-ring',
+        'aria-hidden': 'true'
+      }));
       const label = createSvgElement('text', {
         x: 0,
         y: 39,
@@ -1152,8 +1268,14 @@ function selectCommit(commit) {
   }
   if (!selectedCommit) {
     dock.hidden = true;
+    renderSelectedBranchNotes();
     return;
   }
+
+  const noteInput = document.getElementById('selected-commit-note');
+  noteInput.value = notes.commits[selectedCommit.hash] || '';
+  noteInput.oninput = () => setNote('commits', selectedCommit.hash, noteInput.value);
+  renderSelectedBranchNotes();
 
   document.getElementById('selected-commit-message').textContent = selectedCommit.subject;
   document.getElementById('selected-commit-author').textContent = selectedCommit.author;

@@ -690,12 +690,33 @@ button:focus-visible {
   border-color: #f59e0b;
 }
 
+#selected-commit-note,
+.note-editor {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--field-border);
+  border-radius: 7px;
+  background: var(--field-background);
+  color: var(--text);
+  font: inherit;
+  resize: vertical;
+}
+
 #reference-lanes li {
   flex-wrap: wrap;
 }
 
 #reference-lanes .reference-label {
   flex: 1 1 0;
+}
+
+.note-toggle {
+  padding: 3px 8px;
+  font-size: 12px;
+}
+
+.note-editor {
+  flex: 1 1 100%;
 }
 
 #selected-commit-branch-notes li {

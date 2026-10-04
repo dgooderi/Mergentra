@@ -256,6 +256,7 @@ test('a recently opened repository can be reopened after restarting GitScope', a
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
     await expect(window.getByRole('heading', { name: 'sample-repository' })).toBeVisible();
+    await window.getByLabel('Repository note').fill('Project X');
     await app.close();
 
     app = await electron.launch(launchOptions);
@@ -1769,11 +1770,50 @@ test('branch selection and time range are remembered per repository', async () =
     await expect(window.locator('#branch-picker-summary')).toHaveText('Branches: 1 of 2 shown');
     await expect(window.locator('#time-range')).toHaveValue('1w');
 
+    await window.getByRole('button', { name: 'Open another repository' }).click();
+    await window.getByLabel('Repository folder').fill(secondRepository);
+    await window.getByRole('button', { name: 'Open repository' }).click();
+    await expect(window.locator('#branch-picker-summary')).toHaveText('Branches: 2 of 2 shown');
+    await expect(window.locator('#time-range')).toHaveValue('all');
+  } finally {
+    await app?.close();
+    fs.rmSync(testDirectory, { recursive: true, force: true });
+  }
+});
+test('commit and branch notes persist per repository and selection can be cleared', async () => {
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-notes-e2e-'));
+  const userDataPath = path.join(testDirectory, 'user-data');
+  const repositoryPath = path.join(testDirectory, 'notes-repository');
+  fs.mkdirSync(repositoryPath);
+  const runGit = (args) => execFileSync('git', args, { cwd: repositoryPath, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  runGit(['-c', 'init.defaultBranch=main', 'init']);
+  runGit(['config', 'user.name', 'GitScope E2E']);
+  runGit(['config', 'user.email', 'gitscope-e2e@example.invalid']);
+  runGit(['commit', '--allow-empty', '-m', 'Initial']);
+  runGit(['commit', '--allow-empty', '-m', 'Second']);
+  runGit(['branch', 'feature']);
+  const tip = runGit(['rev-parse', 'HEAD']);
+  const launch = () => electron.launch({
+    args: [path.resolve(__dirname, '..')],
+    env: { ...process.env, GITSCOPE_USER_DATA_DIR: userDataPath }
+  });
+  let app;
+
   try {
     app = await launch();
     let window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
+
+    const node = window.locator(`[data-testid="commit-node"][data-commit-hash="${tip}"]`);
+    const dock = window.getByTestId('review-dock');
+    await expect(dock).toBeHidden();
+    await node.click();
+    await expect(dock).toBeVisible();
+    await expect(node).toHaveAttribute('aria-pressed', 'true');
+    await expect(node.getByTestId('selection-ring')).toBeVisible();
+    await window.getByTestId('selected-commit-note').fill('Part of project X');
+    await expect(node).toHaveAttribute('data-has-note', 'true');
 
     await node.click();
     await expect(dock).toBeHidden();
@@ -1781,6 +1821,41 @@ test('branch selection and time range are remembered per repository', async () =
     await node.click();
     await window.locator('#commit-graph').click({ position: { x: 5, y: 5 } });
     await expect(dock).toBeHidden();
+
+    await window.locator('#branch-picker > summary').click();
+    await window.getByRole('button', { name: 'Note for feature', exact: true }).click();
+    await window.getByLabel('Note text for feature').fill('Prototype for project X');
+    await app.close();
+
+    app = await launch();
+    window = await app.firstWindow();
+    await window.getByLabel('Repository folder').fill(repositoryPath);
+    await window.getByRole('button', { name: 'Open repository' }).click();
+    await window.locator(`[data-testid="commit-node"][data-commit-hash="${tip}"]`).click();
+    await expect(window.getByTestId('selected-commit-note')).toHaveValue('Part of project X');
+    await expect(window.getByTestId('selected-commit-branch-notes')).toContainText('feature: Prototype for project X');
+  } finally {
+    await app?.close();
+    fs.rmSync(testDirectory, { recursive: true, force: true });
+  }
+});
+test('collapsed commit groups list their commits, highlight with the selection, and labels can be toggled', async () => {
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-collapsed-e2e-'));
+  const repositoryPath = path.join(testDirectory, 'collapsed-repository');
+  fs.mkdirSync(repositoryPath);
+  const runGit = (args) => execFileSync('git', args, { cwd: repositoryPath, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  runGit(['-c', 'init.defaultBranch=main', 'init']);
+  runGit(['config', 'user.name', 'GitScope E2E']);
+  runGit(['config', 'user.email', 'gitscope-e2e@example.invalid']);
+  runGit(['commit', '--allow-empty', '-m', 'Start']);
+  runGit(['tag', 'v1.0.0']);
+  runGit(['tag', 'wip-marker']);
+  for (const name of ['Alpha', 'Beta', 'Gamma']) {
+    runGit(['commit', '--allow-empty', '-m', name]);
+  }
+  const betaHash = runGit(['rev-parse', 'HEAD~1']);
+  runGit(['commit', '--allow-empty', '-m', 'End']);
+  let app;
 
   try {
     app = await electron.launch({
