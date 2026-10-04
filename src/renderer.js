@@ -604,6 +604,66 @@ function createSvgElement(name, attributes = {}) {
   return element;
 }
 
+// Each visible commit gets a tick with its own date and time. Commits are laid out in
+// history order, not strictly by time, so every label carries enough detail to be read
+// on its own. The time is dropped for long spans and the year when it is the current one.
+function renderTimeAxis(graphElement, commits, commitPositions, width, axisHeight) {
+  const dated = commits.filter((commit) => commit.committerTimestamp > 0);
+  if (dated.length === 0) {
+    return;
+  }
+  const timestamps = dated.map((commit) => commit.committerTimestamp * 1000);
+  const spanMs = Math.max(...timestamps) - Math.min(...timestamps);
+  const showTime = spanMs < 60 * 24 * 60 * 60 * 1000;
+  const currentYear = new Date().getFullYear();
+  const withYear = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  const withoutYear = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' });
+  const timeFormat = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' });
+
+  const axis = createSvgElement('g', { 'data-testid': 'time-axis', 'aria-hidden': 'true' });
+  axis.append(createSvgElement('line', {
+    class: 'time-axis-line',
+    x1: 0,
+    y1: axisHeight - 6,
+    x2: width,
+    y2: axisHeight - 6
+  }));
+  for (const commit of dated) {
+    const position = commitPositions.get(commit.hash);
+    if (!position) {
+      continue;
+    }
+    const date = new Date(commit.committerTimestamp * 1000);
+    axis.append(createSvgElement('line', {
+      class: 'time-axis-tick',
+      x1: position.x,
+      y1: axisHeight - 10,
+      x2: position.x,
+      y2: axisHeight - 2
+    }));
+    const label = createSvgElement('text', {
+      class: 'time-axis-label',
+      'data-testid': 'time-axis-label',
+      'data-timestamp': commit.committerTimestamp,
+      x: position.x,
+      y: showTime ? axisHeight - 27 : axisHeight - 15,
+      'text-anchor': 'middle'
+    });
+    label.textContent = (date.getFullYear() === currentYear ? withoutYear : withYear).format(date);
+    axis.append(label);
+    if (showTime) {
+      const timeLabel = createSvgElement('text', {
+        class: 'time-axis-time',
+        x: position.x,
+        y: axisHeight - 14,
+        'text-anchor': 'middle'
+      });
+      timeLabel.textContent = timeFormat.format(date);
+      axis.append(timeLabel);
+    }
+  }
+  graphElement.append(axis);
+}
 function renderGraphContents(graph) {
   const graphElement = document.getElementById('commit-graph');
   const emptyMessage = document.getElementById('graph-empty');
@@ -690,6 +750,8 @@ function renderGraphContents(graph) {
       y: 34 + axisHeight + rowByLane.get(commit.lane) * rowHeight
     }
   ]));
+
+  renderTimeAxis(graphElement, graph.commits, commitPositions, width, axisHeight);
 
   for (const commit of graph.commits) {
     const childPosition = commitPositions.get(commit.hash);

@@ -1421,6 +1421,21 @@ test('the complex branch scenario shows its merge history and fetchable bare rem
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
 
+    await expect(window.locator('#repository-name')).toHaveText('complex-branch-scenario');
+    await expect(window.locator('[data-testid="reference-lane"]')).toHaveCount(18);
+    await expect(window.locator('[data-testid="commit-node"][data-is-merge="true"]')).toHaveCount(6);
+    expect(await window.getByTestId('time-axis-label').count()).toBeGreaterThan(3);
+    await expect(window.locator('[data-testid="commit-tag"]')).toHaveCount(3);
+    expect(await window.getByTestId('divergence-marker').count()).toBeGreaterThanOrEqual(2);
+    remoteOnlyTip = execFileSync('git', ['ls-remote', 'origin', 'refs/heads/main'], {
+      cwd: repositoryPath,
+      encoding: 'utf8'
+    }).trim().split(/\s+/)[0];
+    const remoteMain = window.locator('[data-testid="reference-lane"][data-ref-name="origin/main"]');
+    initialRemoteTrackingTip = await remoteMain.getAttribute('data-target-hash');
+    const remoteOnlyNode = window.locator(`[data-testid="commit-node"][data-commit-hash="${remoteOnlyTip}"]`);
+    await expect(remoteOnlyNode).not.toBeVisible();
+
     await window.getByRole('button', { name: 'Fetch' }).click();
     await expect(window.locator('#fetch-status')).toContainText('Fetch completed');
     await expect(remoteMain).toHaveAttribute('data-target-hash', remoteOnlyTip);
