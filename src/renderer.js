@@ -1421,12 +1421,14 @@ document.getElementById('change-repository').addEventListener('click', () => {
   pathInput.focus();
 });
 
+let fetchStatusTimer;
 document.getElementById('fetch-button').addEventListener('click', async (event) => {
   const button = event.currentTarget;
   const fetchStatus = document.getElementById('fetch-status');
   const diagnosticsPanel = document.getElementById('fetch-diagnostics-panel');
   const diagnostics = document.getElementById('fetch-diagnostics');
   button.disabled = true;
+  clearTimeout(fetchStatusTimer);
   fetchStatus.textContent = 'Fetching remote references…';
   diagnosticsPanel.hidden = true;
   diagnostics.textContent = '';
@@ -1443,6 +1445,11 @@ document.getElementById('fetch-button').addEventListener('click', async (event) 
 
     refreshRepositoryGraph(result.repository);
     fetchStatus.textContent = 'Fetch completed. Remote-tracking references are up to date.';
+    const successMessage = fetchStatus.textContent;
+    clearTimeout(fetchStatusTimer);
+    fetchStatusTimer = setTimeout(() => {
+      if (fetchStatus.textContent === successMessage) fetchStatus.textContent = '';
+    }, 5000);
   } catch (error) {
     fetchStatus.textContent = `Fetch could not be completed: ${error.message}`;
   } finally {
