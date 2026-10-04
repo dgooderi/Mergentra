@@ -9,6 +9,45 @@ let currentGraph = null;
 let visibleReferences = new Set();
 let selectedTimePreset = 'all';
 let timeRange = null;
+function closeCompactedPopover() {
+  document.getElementById('compacted-popover')?.remove();
+}
+
+function openCompactedPopover(summary, anchor) {
+  closeCompactedPopover();
+  const popover = document.createElement('div');
+  popover.id = 'compacted-popover';
+  popover.className = 'compacted-popover';
+  popover.dataset.testid = 'compacted-popover';
+  popover.dataset.summaryHash = summary.hash;
+  const anchorBox = anchor.getBoundingClientRect();
+  popover.style.left = `${Math.min(Math.max(anchorBox.left + anchorBox.width / 2 - 150, 4), window.innerWidth - 310)}px`;
+  popover.style.top = `${Math.min(anchorBox.bottom + 6, Math.max(window.innerHeight - 270, 4))}px`;
+  const heading = document.createElement('p');
+  heading.textContent = `${summary.compactedCommits.length} ordinary commits`;
+  const list = document.createElement('ul');
+  for (const commit of summary.compactedCommits) {
+    const item = document.createElement('li');
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.testid = 'compacted-commit-item';
+    button.dataset.commitHash = commit.hash;
+    button.setAttribute('aria-pressed', String(selectedCommit?.hash === commit.hash));
+    const hash = document.createElement('code');
+    hash.textContent = commit.hash.slice(0, 7);
+    const subject = document.createElement('span');
+    subject.textContent = commit.subject;
+    button.append(hash, subject);
+    button.addEventListener('click', () => {
+      selectCommit(selectedCommit?.hash === commit.hash ? null : commit);
+    });
+    item.append(button);
+    list.append(item);
+  }
+  popover.append(heading, list);
+  document.body.append(popover);
+}
+
 
 function setStatus(message) {
   status.textContent = message;
@@ -344,6 +383,7 @@ function compactOrdinaryHistory(graph) {
         tags: [],
         references: [],
         compactCount: uniqueHiddenCommits.length,
+        compactedCommits: [...uniqueHiddenCommits].reverse(),
         compactedHashes: uniqueHiddenCommits.map((commit) => commit.hash)
       };
       const summaries = summariesByChild.get(cursor.hash) || [];
@@ -804,6 +844,27 @@ function renderGraphContents(graph) {
         'data-summary-hash': commit.hash,
         'aria-label': `${commit.compactCount} ordinary commits compacted`
       });
+      for (const hidden of commit.compactedCommits) {
+        compactedMembership.set(hidden.hash, commit.hash);
+      }
+      const summaryTitle = createSvgElement('title');
+      const listed = commit.compactedCommits.slice(0, 15)
+        .map((hidden) => `${hidden.hash.slice(0, 7)} ${hidden.subject}`);
+      if (commit.compactedCommits.length > 15) {
+        listed.push(`…and ${commit.compactedCommits.length - 15} more`);
+      }
+      summaryTitle.textContent = listed.join('\n');
+      const summarySelection = createSvgElement('rect', {
+        x: -31,
+        y: -16,
+        width: 62,
+        height: 32,
+        rx: 16,
+        class: 'selection-ring',
+        'data-testid': 'compacted-selection-ring',
+        fill: 'none',
+        'aria-hidden': 'true'
+      });
       const pill = createSvgElement('rect', {
         x: -26,
         y: -11,
@@ -818,9 +879,16 @@ function renderGraphContents(graph) {
         'text-anchor': 'middle',
         fill: '#111827'
       });
-      countLabel.textContent = `${commit.compactCount} commits`;
-      summary.append(pill, countLabel);
-      graphElement.append(summary);
+      countLabel.textContent = `+${commit.compactCount}`;
+      summary.append(summaryTitle, summarySelection, pill, countLabel);
+      const openList = () => openCompactedPopover(commit, summary);
+      summary.addEventListener('click', openList);
+      summary.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          openList();
+        }
+      });      summaryLayer.append(summary);
       continue;
     }
 
@@ -888,7 +956,9 @@ function renderGraphContents(graph) {
           x: 15,
           y: -4 + tagIndex * 13,
           'data-testid': 'commit-tag',
-          'data-tag-name': tagName
+          'data-tag-name': tagName,
+          'data-kind': releaseTagPattern.test(tagName) ? 'release' : 'tag',
+          class: releaseTagPattern.test(tagName) ? 'release-tag' : 'plain-tag'
         });
         tagLabel.textContent = tagName.length > 14 ? `${tagName.slice(0, 13)}…` : tagName;
         const tagTitle = createSvgElement('title');
@@ -1072,6 +1142,13 @@ function selectCommit(commit) {
   const commitNodes = document.querySelectorAll('[data-testid="commit-node"]');
   for (const node of commitNodes) {
     node.setAttribute('aria-pressed', String(node.getAttribute('data-commit-hash') === hash));
+  }
+  const memberSummary = hash ? compactedMembership.get(hash) : null;
+  for (const summaryNode of document.querySelectorAll('[data-testid="compacted-commit-count"]')) {
+    summaryNode.setAttribute('aria-pressed', String(Boolean(memberSummary) && summaryNode.dataset.summaryHash === memberSummary));
+  }
+  for (const item of document.querySelectorAll('[data-testid="compacted-commit-item"]')) {
+    item.setAttribute('aria-pressed', String(item.dataset.commitHash === hash));
   }
   if (!selectedCommit) {
     dock.hidden = true;

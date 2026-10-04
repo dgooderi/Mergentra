@@ -1531,6 +1531,14 @@ test('the complex scenario shows both merge directions and recent history', asyn
     const allHistoryCount = await window.getByTestId('commit-node').count();
     await expect(window.locator('[data-testid="commit-node"][aria-label*="Initial project skeleton"]')).toBeVisible();
 
+    await window.locator('#time-range').selectOption('1d');
+    await expect(mainIntoFeature).toBeVisible();
+    await expect(mainIntoFeatureAfterIntegration).toBeVisible();
+    await expect(featureIntoMain).toBeVisible();
+    expect(await window.getByTestId('commit-node').count()).toBeGreaterThan(0);
+    expect(await window.getByTestId('commit-node').count()).toBeLessThan(allHistoryCount);
+    await expect(window.getByTestId('compacted-commit-count').filter({ hasText: '+1' })).toHaveCount(0);
+
     await window.locator('#time-range').selectOption('all');
     await expect(window.locator('[data-testid="commit-node"][aria-label*="Initial project skeleton"]')).toBeVisible();
   } finally {
@@ -1782,3 +1790,21 @@ test('branch selection and time range are remembered per repository', async () =
     const window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
+
+    const summary = window.getByTestId('compacted-commit-count');
+    await expect(summary).toHaveAttribute('data-count', '3');
+    await expect(summary).toHaveAttribute('aria-pressed', 'false');
+    await expect(summary.locator('title')).toContainText('Beta');
+
+    await summary.click();
+    const items = window.getByTestId('compacted-commit-item');
+    await expect(items).toHaveCount(3);
+    await items.filter({ hasText: 'Beta' }).click();
+    await expect(window.getByTestId('selected-commit-hash')).toHaveText(betaHash);
+    await expect(summary).toHaveAttribute('aria-pressed', 'true');
+    await expect(items.filter({ hasText: 'Beta' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(window.getByTestId('compacted-selection-ring')).toBeVisible();
+
+    await window.locator('#commit-graph').click({ position: { x: 5, y: 5 } });
+    await expect(summary).toHaveAttribute('aria-pressed', 'false');
+    await expect(window.getByTestId('compacted-popover')).toHaveCount(0);
