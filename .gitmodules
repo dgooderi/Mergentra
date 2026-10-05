@@ -1,0 +1,3 @@
+[submodule "samples/complex-branch-scenario"]
+	path = samples/complex-branch-scenario
+	url = https://github.com/dgooderi/complex-branch-scenario.git
