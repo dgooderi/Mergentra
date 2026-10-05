@@ -887,9 +887,7 @@ function renderReferenceLanes(references) {
     noteToggle.className = 'note-toggle secondary';
     noteToggle.dataset.testid = 'branch-note-toggle';
     noteToggle.setAttribute('aria-label', `Note for ${reference.name}`);
-    noteToggle.textContent = Object.hasOwn(notes.branches, reference.name)
-      ? 'Note ✎'
-      : 'Note';
+    noteToggle.textContent = Object.hasOwn(notes.branches, reference.name) ? 'Note ✎' : 'Note';
     noteEditor.hidden = true;
     noteEditor.rows = 2;
     noteEditor.className = 'note-editor';
@@ -1520,8 +1518,7 @@ function renderGraphContents(graph) {
         fill: color
       });
       branchLabel.textContent =
-        truncateBranchName(name) +
-        (hasPairedRemote && nameIndex === 0 ? ' ⇄' : '');
+        truncateBranchName(name) + (hasPairedRemote && nameIndex === 0 ? ' ⇄' : '');
       const labelTitle = createSvgElement('title');
       labelTitle.textContent = name;
       branchLabel.append(labelTitle);
@@ -1550,8 +1547,7 @@ function renderGraphContents(graph) {
           'data-kind': releaseTagPattern.test(tagName) ? 'release' : 'tag',
           class: releaseTagPattern.test(tagName) ? 'release-tag' : 'plain-tag'
         });
-        tagLabel.textContent =
-          tagName.length > 14 ? `${tagName.slice(0, 13)}…` : tagName;
+        tagLabel.textContent = tagName.length > 14 ? `${tagName.slice(0, 13)}…` : tagName;
         const tagTitle = createSvgElement('title');
         tagTitle.textContent = tagName;
         tagLabel.append(tagTitle);
