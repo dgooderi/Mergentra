@@ -68,6 +68,18 @@ function openCompactedPopover(summary, anchor) {
   document.body.append(popover);
 }
 
+function branchLabelNames(commit) {
+  const branchNames = commit.references.filter((name) => !commit.tags.includes(name));
+  const shortNames = branchNames.filter(
+    (name) => !(name.includes('/') && branchNames.includes(name.slice(name.indexOf('/') + 1)))
+  );
+  return { branchNames, shortNames, hasPairedRemote: shortNames.length < branchNames.length };
+}
+
+function truncateBranchName(name) {
+  return name.length > 22 ? `…${name.slice(-21)}` : name;
+}
+
 function loadNotes() {
   try {
     const stored = JSON.parse(localStorage.getItem(notesKeyPrefix + currentRepositoryPath));
@@ -992,11 +1004,38 @@ function renderGraphContents(graph) {
     rowByLane.set(lane, row);
   }
   const rowCount = Math.max(rowEnds.length, 1);
+  // Each branch name sits on the first level where it does not overlap another label in its row;
+  // rows grow to make room for the extra levels.
+  const labelLevels = new Map();
+  const levelEnds = Array.from({ length: rowCount }, () => []);
+  const rowLevelCounts = Array.from({ length: rowCount }, () => 1);
+  graph.commits.forEach((commit, index) => {
+    const row = rowByLane.get(commit.lane);
+    const names = branchLabelNames(commit).shortNames;
+    const centre = leftPadding + index * columnWidth;
+    names.forEach((name, nameIndex) => {
+      const half = (truncateBranchName(name).length * 7.4) / 2 + 4;
+      const ends = levelEnds[row];
+      let level = ends.findIndex((end) => end < centre - half);
+      if (level === -1) {
+        level = ends.length;
+      }
+      ends[level] = centre + half;
+      labelLevels.set(`${commit.hash}:${nameIndex}`, level);
+      rowLevelCounts[row] = Math.max(rowLevelCounts[row], level + 1);
+    });
+  });
+  const rowTops = [];
+  let totalRowsHeight = 0;
+  for (const levelCount of rowLevelCounts) {
+    rowTops.push(totalRowsHeight);
+    totalRowsHeight += rowHeight + (levelCount - 1) * 13;
+  }
   const width = Math.max(
     144,
     leftPadding + rightPadding + Math.max(graph.commits.length - 1, 0) * columnWidth
   );
-  const height = 60 + axisHeight + rowCount * rowHeight;
+  const height = 60 + axisHeight + totalRowsHeight;
   graphElement.setAttribute('width', String(width));
   graphElement.setAttribute('height', String(height));
   graphElement.setAttribute('viewBox', `0 0 ${width} ${height}`);
@@ -1028,7 +1067,7 @@ function renderGraphContents(graph) {
       commit.hash,
       {
         x: leftPadding + index * columnWidth,
-        y: 34 + axisHeight + rowByLane.get(commit.lane) * rowHeight
+        y: 34 + axisHeight + rowTops[rowByLane.get(commit.lane)]
       }
     ])
   );
@@ -1248,30 +1287,21 @@ function renderGraphContents(graph) {
     });
     noteMarker.textContent = '✎';
     group.append(title, hitTarget, selectionRing, nodeShape, label, noteMarker);
-    const branchNames = commit.references.filter((name) => !commit.tags.includes(name));
-    if (branchNames.length > 0) {
-      const shortNames = branchNames.filter(
-        (name) => !(name.includes('/') && branchNames.includes(name.slice(name.indexOf('/') + 1)))
-      );
-      const hasPairedRemote = shortNames.length < branchNames.length;
+    const { shortNames, hasPairedRemote } = branchLabelNames(commit);
+    for (const [nameIndex, name] of shortNames.entries()) {
       const branchLabel = createSvgElement('text', {
         x: 0,
-        y: 37,
+        y: 37 + labelLevels.get(`${commit.hash}:${nameIndex}`) * 13,
         'text-anchor': 'middle',
         class: 'branch-label',
         'data-testid': 'commit-branch-label',
         fill: color
       });
-      // One branch per line so labels never run into neighbouring commits.
-      for (const [nameIndex, name] of shortNames.entries()) {
-        const line = createSvgElement('tspan', { x: 0, dy: nameIndex === 0 ? 0 : 13 });
-        const display = name.length > 22 ? `…${name.slice(-21)}` : name;
-        line.textContent = display + (hasPairedRemote && nameIndex === 0 ? ' ⇄' : '');
-        const lineTitle = createSvgElement('title');
-        lineTitle.textContent = name;
-        line.append(lineTitle);
-        branchLabel.append(line);
-      }
+      branchLabel.textContent =
+        truncateBranchName(name) + (hasPairedRemote && nameIndex === 0 ? ' ⇄' : '');
+      const labelTitle = createSvgElement('title');
+      labelTitle.textContent = name;
+      branchLabel.append(labelTitle);
       group.append(branchLabel);
     }
     group.addEventListener('click', () =>
