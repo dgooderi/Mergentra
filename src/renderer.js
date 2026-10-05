@@ -447,7 +447,11 @@ function renderFilteredGraph() {
     }
   }
 
+  // Commits reached only through a merge's second parent sit on a side lane below their branch,
+  // so a merged-in branch visibly leaves and rejoins instead of hiding on the main line.
+  const sideLanes = new Map();
   for (const reference of references) {
+    const sideLane = references.length + 1 + reference.lane;
     const pending = [reference.hash];
     while (pending.length > 0) {
       const hash = pending.pop();
@@ -455,7 +459,10 @@ function renderFilteredGraph() {
       if (!commit || laneByHash.has(hash)) {
         continue;
       }
-      laneByHash.set(hash, reference.lane);
+      if (hash !== reference.hash) {
+        sideLanes.set(sideLane, reference.lane);
+      }
+      laneByHash.set(hash, hash === reference.hash ? reference.lane : sideLane);
       pending.push(...commit.parents);
     }
   }
@@ -486,6 +493,7 @@ function renderFilteredGraph() {
   const graph = {
     ...currentGraph,
     references,
+    sideLanes,
     commits: commitsInRange.map((commit) => ({
       ...commit,
       lane: laneByHash.get(commit.hash),
@@ -1157,6 +1165,7 @@ function renderGraphContents(graph) {
   applyDisplayOptions();
 
   const rowHeight = 56;
+  const ownerReference = (lane) => graph.references[graph.sideLanes?.get(lane) ?? lane];
   const axisHeight = 46;
   const leftPadding = 72;
   const rightPadding = 160;
@@ -1328,8 +1337,8 @@ function renderGraphContents(graph) {
       // Fork and merge lines keep the colour of the branch they leave; a branch takes its own colour after its first commit.
       const edgeLane =
         parentCommit && parentCommit.lane !== commit.lane ? parentCommit.lane : commit.lane;
-      let stroke = graph.references[edgeLane]?.color || '#9ca3af';
-      const branchColor = graph.references[commit.lane]?.color;
+      let stroke = ownerReference(edgeLane)?.color || '#9ca3af';
+      const branchColor = ownerReference(commit.lane)?.color;
       const leavesAtStart = !curvesAtEnd && !isMergeIn && edgeLane !== commit.lane;
       const fadeStart = parentPosition.x + bend;
       const fadeEnd = Math.min(fadeStart + window.innerWidth * 0.05, childPosition.x);
@@ -1366,8 +1375,9 @@ function renderGraphContents(graph) {
           'data-child-hash': commit.hash
         })
       );
-      const hoverReference =
-        graph.references[isMergeIn && parentCommit ? parentCommit.lane : commit.lane];
+      const hoverReference = ownerReference(
+        isMergeIn && parentCommit ? parentCommit.lane : commit.lane
+      );
       if (hoverReference) {
         const hit = createSvgElement('path', {
           d: pathData,
@@ -1454,7 +1464,7 @@ function renderGraphContents(graph) {
         width: 52,
         height: 22,
         rx: 11,
-        fill: graph.references[commit.lane]?.color || '#4b5563'
+        fill: ownerReference(commit.lane)?.color || '#4b5563'
       });
       const countLabel = createSvgElement('text', {
         x: 0,
@@ -1519,7 +1529,7 @@ function renderGraphContents(graph) {
       'pointer-events': 'all',
       'aria-hidden': 'true'
     });
-    const color = graph.references[commit.lane]?.color || '#9ca3af';
+    const color = ownerReference(commit.lane)?.color || '#9ca3af';
     const nodeShape =
       commit.parents.length > 1
         ? createSvgElement('polygon', {
@@ -1659,7 +1669,7 @@ function renderGraphContents(graph) {
         createSvgElement('circle', {
           r: 14,
           fill: 'none',
-          stroke: graph.references[headCommit?.lane]?.color || '#9ca3af',
+          stroke: ownerReference(headCommit?.lane)?.color || '#9ca3af',
           'stroke-width': 2,
           'data-testid': 'head-marker-ring',
           'aria-hidden': 'true'
