@@ -1,0 +1,14 @@
+17c4f46a6f461c10a9c92f6e10b97d80bda1c34d	refs/heads/develop
+b799faf8a7b3b9a7845e85e093082200d7befcac	refs/heads/feature/authentication
+e69fb664d55d5c7e4b7fe5225f046501eac7c91e	refs/heads/feature/checkout
+e6c890308c4c56640e8d3c216233e987e5e91c5f	refs/heads/feature/notifications
+0f8cb08c8489782ec40385afa4a491a498a6b101	refs/heads/feature/observability
+4efec0860349d15177dfccb6891527a2904a1541	refs/heads/feature/search
+23995c11f095fbcf7fea0e699f65203eac9b23cd	refs/heads/hotfix/1.0.1
+55a8a1cac622235ad5e2e88c96c95cc14a13d5cc	refs/heads/main
+ead3e34fb55ae667b65be157d5b055c7aeda0288	refs/heads/release/1.x
+7763e51410305bd0f4e71d58a5ae2220fc0612e3	refs/tags/stable-1.0
+40b3db4e70ea367bd2efd81128f84c672f729d11	refs/tags/v1.0.0
+7763e51410305bd0f4e71d58a5ae2220fc0612e3	refs/tags/v1.0.0^{}
+ee6eb3c611bddb10382c14867aa5a65e58ff9050	refs/tags/v1.0.1
+ead3e34fb55ae667b65be157d5b055c7aeda0288	refs/tags/v1.0.1^{}
