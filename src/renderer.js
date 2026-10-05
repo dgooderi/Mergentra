@@ -1009,21 +1009,33 @@ function renderGraphContents(graph) {
   const labelLevels = new Map();
   const levelEnds = Array.from({ length: rowCount }, () => []);
   const rowLevelCounts = Array.from({ length: rowCount }, () => 1);
+  const cutMarkersByHash = new Map();
+  for (const marker of graph.cutMarkers) {
+    cutMarkersByHash.set(marker.commitHash, [
+      ...(cutMarkersByHash.get(marker.commitHash) || []),
+      marker
+    ]);
+  }
   graph.commits.forEach((commit, index) => {
     const row = rowByLane.get(commit.lane);
-    const names = branchLabelNames(commit).shortNames;
     const centre = leftPadding + index * columnWidth;
-    names.forEach((name, nameIndex) => {
-      const half = (truncateBranchName(name).length * 7.4) / 2 + 4;
+    function placeLabel(key, textLength) {
+      const half = (textLength * 7.4) / 2 + 4;
       const ends = levelEnds[row];
       let level = ends.findIndex((end) => end < centre - half);
       if (level === -1) {
         level = ends.length;
       }
       ends[level] = centre + half;
-      labelLevels.set(`${commit.hash}:${nameIndex}`, level);
+      labelLevels.set(key, level);
       rowLevelCounts[row] = Math.max(rowLevelCounts[row], level + 1);
-    });
+    }
+    (cutMarkersByHash.get(commit.hash) || []).forEach((marker, markerIndex) =>
+      placeLabel(`${commit.hash}:cut:${markerIndex}`, 'Earlier history continues'.length)
+    );
+    branchLabelNames(commit).shortNames.forEach((name, nameIndex) =>
+      placeLabel(`${commit.hash}:${nameIndex}`, truncateBranchName(name).length)
+    );
   });
   const rowTops = [];
   let totalRowsHeight = 0;
@@ -1483,11 +1495,13 @@ function renderGraphContents(graph) {
     if (!position) {
       continue;
     }
+    const markerIndex = cutMarkersByHash.get(marker.commitHash).indexOf(marker);
+    const cutLevel = labelLevels.get(`${marker.commitHash}:cut:${markerIndex}`) || 0;
     const cutMarker = createSvgElement('g', {
       'data-testid': 'history-cut-marker',
       'data-direction': marker.direction,
       'data-commit-hash': marker.commitHash,
-      transform: `translate(${position.x} ${position.y + 34})`,
+      transform: `translate(${position.x} ${position.y + 34 + cutLevel * 13})`,
       role: 'img',
       'aria-label': `${marker.direction === 'older' ? 'Earlier' : 'Later'} history continues`
     });
