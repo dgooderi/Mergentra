@@ -378,10 +378,51 @@ function refreshRepositoryGraph(repository) {
   renderFilteredGraph();
 }
 
+let availableReferenceNames = null;
+
+// A branch is available in the time range when a commit on its first-parent chain falls inside it.
+function computeAvailableReferences() {
+  if (!currentGraph || !timeRange) {
+    return null;
+  }
+  const commitsByHash = new Map(currentGraph.commits.map((commit) => [commit.hash, commit]));
+  const memo = new Map();
+  const inRange = (commit) =>
+    commit.committerTimestamp * 1000 >= timeRange.start &&
+    commit.committerTimestamp * 1000 < timeRange.end;
+  const available = (tipHash) => {
+    const chain = [];
+    let result = false;
+    let commit = commitsByHash.get(tipHash);
+    while (commit) {
+      if (memo.has(commit.hash)) {
+        result = memo.get(commit.hash);
+        break;
+      }
+      chain.push(commit.hash);
+      if (inRange(commit)) {
+        result = true;
+        break;
+      }
+      commit = commitsByHash.get(commit.parents[0]);
+    }
+    for (const hash of chain) {
+      memo.set(hash, result);
+    }
+    return result;
+  };
+  return new Set(
+    currentGraph.references.filter((reference) => available(reference.hash)).map((r) => r.name)
+  );
+}
+
 function renderFilteredGraph() {
   if (!currentGraph) {
     return;
   }
+  availableReferenceNames = computeAvailableReferences();
+  updateBranchPickerSummary();
+  filterBranchPicker();
 
   const references = currentGraph.references
     .filter((reference) => visibleReferences.has(reference.name))
@@ -913,15 +954,24 @@ function renderReferenceLanes(references) {
 }
 
 function updateBranchPickerSummary() {
-  const total = currentGraph ? currentGraph.references.length : 0;
+  const total = currentGraph
+    ? availableReferenceNames
+      ? availableReferenceNames.size
+      : currentGraph.references.length
+    : 0;
+  const shown = availableReferenceNames
+    ? [...visibleReferences].filter((name) => availableReferenceNames.has(name)).length
+    : visibleReferences.size;
   document.getElementById('branch-picker-summary').textContent =
-    `Branches: ${visibleReferences.size} of ${total} shown`;
+    `Branches: ${shown} of ${total} shown`;
 }
 
 function filterBranchPicker() {
   const query = document.getElementById('branch-picker-search').value.trim().toLowerCase();
   for (const lane of document.getElementById('reference-lanes').children) {
-    lane.hidden = query !== '' && !lane.dataset.refName.toLowerCase().includes(query);
+    lane.hidden =
+      (query !== '' && !lane.dataset.refName.toLowerCase().includes(query)) ||
+      (availableReferenceNames !== null && !availableReferenceNames.has(lane.dataset.refName));
   }
 }
 
@@ -1305,7 +1355,7 @@ function renderGraphContents(graph) {
           d: pathData,
           fill: 'none',
           stroke,
-          'stroke-width': 2,
+          'stroke-width': graph.references[edgeLane]?.name === 'main' ? 5 : 2,
           'marker-end': 'url(#commit-arrowhead)',
           'data-testid': 'commit-edge',
           'data-parent-hash': parentHash,
