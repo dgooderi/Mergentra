@@ -449,20 +449,26 @@ function renderFilteredGraph() {
 
   // Commits reached only through a merge's second parent sit on a side lane below their branch,
   // so a merged-in branch visibly leaves and rejoins instead of hiding on the main line.
+  // The walk goes through commits already claimed by a first-parent chain so it still finds
+  // the second parents of merges on that chain.
   const sideLanes = new Map();
+  const walked = new Set();
   for (const reference of references) {
     const sideLane = references.length + 1 + reference.lane;
     const pending = [reference.hash];
     while (pending.length > 0) {
       const hash = pending.pop();
       const commit = commitsByHash.get(hash);
-      if (!commit || laneByHash.has(hash)) {
+      if (!commit || walked.has(hash)) {
         continue;
       }
-      if (hash !== reference.hash) {
-        sideLanes.set(sideLane, reference.lane);
+      walked.add(hash);
+      if (!laneByHash.has(hash)) {
+        if (hash !== reference.hash) {
+          sideLanes.set(sideLane, reference.lane);
+        }
+        laneByHash.set(hash, hash === reference.hash ? reference.lane : sideLane);
       }
-      laneByHash.set(hash, hash === reference.hash ? reference.lane : sideLane);
       pending.push(...commit.parents);
     }
   }
