@@ -10,7 +10,8 @@
     "build:win": "electron-builder --win nsis --publish never",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test:unit": "vitest run"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -20,7 +21,8 @@
     "eslint": "^10.12.0",
     "globals": "^17.13.0",
     "playwright": "^1.63.0",
-    "prettier": "^3.9.9"
+    "prettier": "^3.9.9",
+    "vitest": "^5.0.3"
   },
   "build": {
     "appId": "com.gitscope.desktop",
