@@ -15,7 +15,20 @@ import {
   renderTimeAxis
 } from './renderer/graph-view.js';
 import { state } from './renderer/state.js';
-import { createViewStorage } from './renderer/view-storage.js';
+import { viewStorage } from './renderer/app-storage.js';
+import {
+  loadNotes,
+  refreshNoteMarkers,
+  renderSelectedBranchNotes,
+  setNote
+} from './renderer/notes-ui.js';
+import {
+  closeCompactedPopover,
+  closeGraphContextMenu,
+  openCompactedPopover,
+  openGraphContextMenu
+} from './renderer/popovers.js';
+import { renderRecentRepositories } from './renderer/recent-repositories.js';
 import { getPresetRange, localDateString } from './renderer/time-range.js';
 const picker = document.getElementById('repository-picker');
 const form = document.getElementById('repository-form');
@@ -23,7 +36,6 @@ const pathInput = document.getElementById('repository-path');
 const gitPathInput = document.getElementById('git-executable-path');
 const statusMessage = document.getElementById('status');
 const repositoryView = document.getElementById('repository-view');
-const viewStorage = createViewStorage(localStorage);
 const ZOOM_STEPS = [0.25, 0.4, 0.5, 0.67, 0.8, 1, 1.25, 1.5, 2, 3];
 
 function applyDisplayOptions() {
@@ -36,34 +48,6 @@ function applyDisplayOptions() {
   document.getElementById('show-releases').checked = state.displayOptions.releases;
 }
 
-function closeGraphContextMenu() {
-  document.getElementById('graph-context-menu')?.remove();
-}
-
-function openGraphContextMenu(event, items) {
-  event.preventDefault();
-  closeGraphContextMenu();
-  const menu = document.createElement('div');
-  menu.id = 'graph-context-menu';
-  menu.className = 'graph-context-menu';
-  menu.setAttribute('role', 'menu');
-  for (const { label, action } of items) {
-    const item = document.createElement('button');
-    item.type = 'button';
-    item.setAttribute('role', 'menuitem');
-    item.textContent = label;
-    item.addEventListener('click', () => {
-      closeGraphContextMenu();
-      action();
-    });
-    menu.append(item);
-  }
-  document.body.append(menu);
-  menu.style.left = `${Math.min(event.clientX, window.innerWidth - menu.offsetWidth - 4)}px`;
-  menu.style.top = `${Math.min(event.clientY, window.innerHeight - menu.offsetHeight - 4)}px`;
-  menu.querySelector('button')?.focus();
-}
-
 function focusOnCommit(commit, position) {
   selectCommit(commit);
   const scroller = document.getElementById('commit-graph').parentElement;
@@ -72,92 +56,6 @@ function focusOnCommit(commit, position) {
     top: Math.max(position.y - scroller.clientHeight / 2, 0),
     behavior: 'smooth'
   });
-}
-
-function closeCompactedPopover() {
-  document.getElementById('compacted-popover')?.remove();
-}
-
-function openCompactedPopover(summary, anchor) {
-  closeCompactedPopover();
-  const popover = document.createElement('div');
-  popover.id = 'compacted-popover';
-  popover.className = 'compacted-popover';
-  popover.dataset.testid = 'compacted-popover';
-  popover.dataset.summaryHash = summary.hash;
-  const anchorBox = anchor.getBoundingClientRect();
-  popover.style.left = `${Math.min(Math.max(anchorBox.left + anchorBox.width / 2 - 150, 4), window.innerWidth - 310)}px`;
-  popover.style.top = `${Math.min(anchorBox.bottom + 6, Math.max(window.innerHeight - 270, 4))}px`;
-  const heading = document.createElement('p');
-  heading.textContent = `${summary.compactedCommits.length} ordinary commits`;
-  const list = document.createElement('ul');
-  for (const commit of summary.compactedCommits) {
-    const item = document.createElement('li');
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.dataset.testid = 'compacted-commit-item';
-    button.dataset.commitHash = commit.hash;
-    button.setAttribute('aria-pressed', String(state.selectedCommit?.hash === commit.hash));
-    const hash = document.createElement('code');
-    hash.textContent = commit.hash.slice(0, 7);
-    const subject = document.createElement('span');
-    subject.textContent = commit.subject;
-    button.append(hash, subject);
-    button.addEventListener('click', () => {
-      selectCommit(state.selectedCommit?.hash === commit.hash ? null : commit);
-    });
-    item.append(button);
-    list.append(item);
-  }
-  popover.append(heading, list);
-  document.body.append(popover);
-}
-
-function loadNotes() {
-  state.notes = viewStorage.loadNotes(state.currentRepositoryPath);
-}
-
-function setNote(kind, key, text) {
-  if (text.trim() === '') {
-    delete state.notes[kind][key];
-  } else {
-    state.notes[kind][key] = text;
-  }
-  viewStorage.saveNotes(state.currentRepositoryPath, state.notes);
-  refreshNoteMarkers();
-}
-
-function refreshNoteMarkers() {
-  for (const node of document.querySelectorAll('[data-testid="commit-node"]')) {
-    const refNames = JSON.parse(node.dataset.refNames || '[]');
-    const hasNote =
-      Object.hasOwn(state.notes.commits, node.dataset.commitHash) ||
-      refNames.some((name) => Object.hasOwn(state.notes.branches, name));
-    node.dataset.hasNote = String(hasNote);
-  }
-  for (const lane of document.querySelectorAll('#reference-lanes li')) {
-    const hasNote = Object.hasOwn(state.notes.branches, lane.dataset.refName);
-    lane.dataset.hasNote = String(hasNote);
-    lane.querySelector('[data-testid="branch-note-toggle"]').textContent = hasNote
-      ? 'Note ✎'
-      : 'Note';
-  }
-  renderSelectedBranchNotes();
-}
-
-function renderSelectedBranchNotes() {
-  const list = document.getElementById('selected-commit-branch-notes');
-  list.replaceChildren();
-  const names = (state.selectedCommit?.references || []).filter((name) =>
-    Object.hasOwn(state.notes.branches, name)
-  );
-  for (const name of names) {
-    const item = document.createElement('li');
-    item.textContent = `${name}: ${state.notes.branches[name]}`;
-    list.append(item);
-  }
-  document.getElementById('selected-commit-branch-notes-heading').hidden = names.length === 0;
-  list.parentElement.hidden = names.length === 0;
 }
 
 function setStatus(message) {
@@ -194,41 +92,6 @@ function setTheme(theme) {
   toggle.textContent = theme === 'dark' ? 'Light mode' : 'Dark mode';
 }
 
-function renderRecentRepositories(repositories) {
-  const list = document.getElementById('recent-repositories');
-  list.replaceChildren();
-
-  if (repositories.length === 0) {
-    const emptyState = document.createElement('li');
-    emptyState.className = 'empty-recent';
-    emptyState.textContent = 'Repositories you open will appear here.';
-    list.append(emptyState);
-    return;
-  }
-
-  for (const repository of repositories) {
-    const item = document.createElement('li');
-    const button = document.createElement('button');
-    const name = document.createElement('span');
-    const repositoryNote = viewStorage.readRepositoryNote(repository.path);
-    button.className = 'recent-repository';
-    button.type = 'button';
-    name.textContent = repository.name;
-    button.title = repository.path;
-    button.append(name);
-    if (repositoryNote) {
-      const note = document.createElement('small');
-      note.textContent = repositoryNote;
-      button.append(note);
-    }
-    button.addEventListener('click', () => {
-      openRepository(repository.path, button);
-    });
-    item.append(button);
-    list.append(item);
-  }
-}
-
 async function loadPickerSettings() {
   try {
     const [gitPath, recentRepositories] = await Promise.all([
@@ -236,7 +99,7 @@ async function loadPickerSettings() {
       window.gitScope.getRecentRepositories()
     ]);
     gitPathInput.value = gitPath;
-    renderRecentRepositories(recentRepositories);
+    renderRecentRepositories(recentRepositories, openRepository);
   } catch (error) {
     setStatus(error.message);
   }
@@ -834,7 +697,7 @@ const graphActions = {
   selectCommit: (commit) => selectCommit(commit),
   focusOnCommit,
   openGraphContextMenu,
-  openCompactedPopover,
+  openCompactedPopover: (summary, anchor) => openCompactedPopover(summary, anchor, selectCommit),
   registerCompactedMember: (hash, summaryHash) => state.compactedMembership.set(hash, summaryHash)
 };
 
