@@ -981,8 +981,20 @@ document.getElementById('time-range').addEventListener('change', (event) => {
   customRange.hidden = true;
   rangeAdjusted = false;
   timeRange = getPresetRange(selectedTimePreset, new Date());
+  if (timeRange && selectedCommit?.committerTimestamp) {
+    // Keep the selected commit in the middle of the new range.
+    const half = (timeRange.end - timeRange.start) / 2;
+    const middle = selectedCommit.committerTimestamp * 1000;
+    timeRange = { start: middle - half, end: middle + half };
+    rangeAdjusted = true;
+  }
   saveViewState();
   renderFilteredGraph();
+  if (rangeAdjusted) {
+    document
+      .querySelector(`[data-commit-hash="${selectedCommit.hash}"]`)
+      ?.scrollIntoView({ inline: 'center', block: 'nearest' });
+  }
 });
 
 document.getElementById('custom-time-range').addEventListener('submit', (event) => {

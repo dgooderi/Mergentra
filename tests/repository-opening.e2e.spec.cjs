@@ -2037,6 +2037,11 @@ test('branch selection and time range are remembered per repository', async () =
     await expect(window.getByTestId('commit-node')).toHaveCount(0);
     await window.getByRole('button', { name: 'Later' }).click();
     await expect(window.getByTestId('commit-node')).toHaveCount(1);
+    await window.locator('#time-range').selectOption('1d');
+    await expect(window.getByTestId('commit-node')).toHaveCount(1);
+    await window.locator('#time-range').selectOption('1m');
+    await expect(window.getByTestId('commit-node')).toHaveCount(1);
+    await window.locator('#time-range').selectOption('1w');
     await window.getByRole('button', { name: 'Earlier' }).click();
     await app.close();
 
