@@ -1,4 +1,5 @@
 import { compareReleaseVersions, parseReleaseVersion } from './renderer/release-version.js';
+import { createViewStorage } from './renderer/view-storage.js';
 import { getPresetRange, localDateString } from './renderer/time-range.js';
 const picker = document.getElementById('repository-picker');
 const form = document.getElementById('repository-form');
@@ -15,9 +16,7 @@ let currentRepositoryPath = null;
 let customRangeValues = null;
 let rangeAdjusted = false;
 let ownerFilter = '';
-const viewStateKeyPrefix = 'gitscope:view-state:';
-const notesKeyPrefix = 'gitscope:notes:';
-const repositoryNoteKeyPrefix = 'gitscope:repository-note:';
+const viewStorage = createViewStorage(localStorage);
 let notes = { commits: {}, branches: {} };
 const ZOOM_STEPS = [0.25, 0.4, 0.5, 0.67, 0.8, 1, 1.25, 1.5, 2, 3];
 let zoomLevel = 1;
@@ -125,12 +124,7 @@ function truncateBranchName(name) {
 }
 
 function loadNotes() {
-  try {
-    const stored = JSON.parse(localStorage.getItem(notesKeyPrefix + currentRepositoryPath));
-    notes = { commits: stored?.commits || {}, branches: stored?.branches || {} };
-  } catch {
-    notes = { commits: {}, branches: {} };
-  }
+  notes = viewStorage.loadNotes(currentRepositoryPath);
 }
 
 function setNote(kind, key, text) {
@@ -139,11 +133,7 @@ function setNote(kind, key, text) {
   } else {
     notes[kind][key] = text;
   }
-  try {
-    localStorage.setItem(notesKeyPrefix + currentRepositoryPath, JSON.stringify(notes));
-  } catch {
-    // Notes are best-effort local storage; a failed write must not break the view.
-  }
+  viewStorage.saveNotes(currentRepositoryPath, notes);
   refreshNoteMarkers();
 }
 
@@ -214,14 +204,6 @@ function setTheme(theme) {
   toggle.textContent = theme === 'dark' ? 'Light mode' : 'Dark mode';
 }
 
-function readRepositoryNote(repositoryPath) {
-  try {
-    return localStorage.getItem(repositoryNoteKeyPrefix + repositoryPath) || '';
-  } catch {
-    return '';
-  }
-}
-
 function renderRecentRepositories(repositories) {
   const list = document.getElementById('recent-repositories');
   list.replaceChildren();
@@ -238,7 +220,7 @@ function renderRecentRepositories(repositories) {
     const item = document.createElement('li');
     const button = document.createElement('button');
     const name = document.createElement('span');
-    const repositoryNote = readRepositoryNote(repository.path);
+    const repositoryNote = viewStorage.readRepositoryNote(repository.path);
     button.className = 'recent-repository';
     button.type = 'button';
     name.textContent = repository.name;
@@ -273,11 +255,7 @@ async function loadPickerSettings() {
 loadPickerSettings();
 
 function loadViewState() {
-  try {
-    return JSON.parse(localStorage.getItem(viewStateKeyPrefix + currentRepositoryPath)) || null;
-  } catch {
-    return null;
-  }
+  return viewStorage.loadViewState(currentRepositoryPath);
 }
 
 function setZoom(level, anchor) {
@@ -324,20 +302,13 @@ function saveViewState() {
   const hidden = currentGraph.references
     .filter((reference) => !visibleReferences.has(reference.name))
     .map((reference) => reference.name);
-  try {
-    localStorage.setItem(
-      viewStateKeyPrefix + currentRepositoryPath,
-      JSON.stringify({
-        hidden,
-        preset: selectedTimePreset,
-        display: displayOptions,
-        custom: selectedTimePreset === 'custom' ? customRangeValues : null,
-        range: rangeAdjusted && timeRange ? timeRange : null
-      })
-    );
-  } catch {
-    // View state is a convenience; failing to store it must not break the graph.
-  }
+  viewStorage.saveViewState(currentRepositoryPath, {
+    hidden,
+    preset: selectedTimePreset,
+    display: displayOptions,
+    custom: selectedTimePreset === 'custom' ? customRangeValues : null,
+    range: rangeAdjusted && timeRange ? timeRange : null
+  });
 }
 
 function showRepository(repository) {
@@ -346,7 +317,9 @@ function showRepository(repository) {
   document.getElementById('repository-name').textContent = repository.name;
   document.getElementById('repository-path-value').textContent = repository.path;
   document.getElementById('branch-name').textContent = repository.branch;
-  document.getElementById('repository-note').value = readRepositoryNote(repository.path);
+  document.getElementById('repository-note').value = viewStorage.readRepositoryNote(
+    repository.path
+  );
   renderGraph(repository.graph);
   picker.hidden = true;
   repositoryView.hidden = false;
@@ -2048,16 +2021,7 @@ settingsButton.addEventListener('click', () => {
 });
 
 document.getElementById('repository-note').addEventListener('input', (event) => {
-  try {
-    const text = event.currentTarget.value;
-    if (text.trim() === '') {
-      localStorage.removeItem(repositoryNoteKeyPrefix + currentRepositoryPath);
-    } else {
-      localStorage.setItem(repositoryNoteKeyPrefix + currentRepositoryPath, text);
-    }
-  } catch {
-    // Best-effort local storage, like commit and branch notes.
-  }
+  viewStorage.writeRepositoryNote(currentRepositoryPath, event.currentTarget.value);
 });
 
 document.getElementById('open-explorer').addEventListener('click', async () => {
