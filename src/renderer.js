@@ -115,7 +115,7 @@ function branchLabelNames(commit) {
 }
 
 function truncateBranchName(name) {
-  return name.length > 22 ? `…${name.slice(-21)}` : name;
+  return name.length > 22 ? `â€¦${name.slice(-21)}` : name;
 }
 
 function loadNotes() {
@@ -153,7 +153,7 @@ function refreshNoteMarkers() {
     const hasNote = Object.hasOwn(notes.branches, lane.dataset.refName);
     lane.dataset.hasNote = String(hasNote);
     lane.querySelector('[data-testid="branch-note-toggle"]').textContent = hasNote
-      ? 'Note ✎'
+      ? 'Note âœŽ'
       : 'Note';
   }
   renderSelectedBranchNotes();
@@ -186,7 +186,7 @@ async function openRepository(repositoryPath, triggerButton) {
     button.disabled = true;
   }
   setStatus('');
-  progress.textContent = 'Loading repository history…';
+  progress.textContent = 'Loading repository historyâ€¦';
 
   try {
     showRepository(await window.gitScope.openRepository(repositoryPath));
@@ -887,7 +887,7 @@ function renderReferenceLanes(references) {
     noteToggle.className = 'note-toggle secondary';
     noteToggle.dataset.testid = 'branch-note-toggle';
     noteToggle.setAttribute('aria-label', `Note for ${reference.name}`);
-    noteToggle.textContent = Object.hasOwn(notes.branches, reference.name) ? 'Note ✎' : 'Note';
+    noteToggle.textContent = Object.hasOwn(notes.branches, reference.name) ? 'Note âœŽ' : 'Note';
     noteEditor.hidden = true;
     noteEditor.rows = 2;
     noteEditor.className = 'note-editor';
@@ -1015,8 +1015,8 @@ function renderWorktrees(worktrees) {
     location.textContent = worktree.path;
     const checkoutState = worktree.current ? 'Current worktree' : 'Linked worktree';
     branch.textContent = worktree.branch
-      ? `${checkoutState} · Branch: ${worktree.branch}`
-      : `${checkoutState} · ${worktree.detached ? 'Detached HEAD' : 'No branch checked out'}`;
+      ? `${checkoutState} Â· Branch: ${worktree.branch}`
+      : `${checkoutState} Â· ${worktree.detached ? 'Detached HEAD' : 'No branch checked out'}`;
     item.append(location, branch);
     worktreeList.append(item);
   }
@@ -1340,6 +1340,15 @@ function renderGraphContents(graph) {
     }
   }
 
+  const commitByHash = new Map(graph.commits.map((commit) => [commit.hash, commit]));
+  const mergeTargetsBySource = new Map();
+  for (const commit of graph.commits) {
+    for (const parentHash of commit.parents.slice(1)) {
+      if (!mergeTargetsBySource.has(parentHash)) mergeTargetsBySource.set(parentHash, []);
+      mergeTargetsBySource.get(parentHash).push(commit);
+    }
+  }
+
   const summaryLayer = createSvgElement('g');
   graphElement.append(summaryLayer);
   for (const commit of graph.commits) {
@@ -1364,7 +1373,7 @@ function renderGraphContents(graph) {
         .slice(0, 15)
         .map((hidden) => `${hidden.hash.slice(0, 7)} ${hidden.subject}`);
       if (commit.compactedCommits.length > 15) {
-        listed.push(`…and ${commit.compactedCommits.length - 15} more`);
+        listed.push(`â€¦and ${commit.compactedCommits.length - 15} more`);
       }
       summaryTitle.textContent = listed.join('\n');
       const summarySelection = createSvgElement('rect', {
@@ -1420,6 +1429,25 @@ function renderGraphContents(graph) {
       ),
       'aria-label': `Inspect ${commit.subject} (${commit.hash.slice(0, 7)})`
     });
+    group.addEventListener('contextmenu', (event) => {
+      const items = [];
+      for (const target of mergeTargetsBySource.get(commit.hash) || []) {
+        items.push({
+          label: `Focus on destination (${target.hash.slice(0, 7)})`,
+          action: () => focusOnCommit(target, commitPositions.get(target.hash))
+        });
+      }
+      for (const parentHash of commit.parents.slice(1)) {
+        const source = commitPositions.get(parentHash) && commitByHash.get(parentHash);
+        if (source) {
+          items.push({
+            label: `Focus on merged branch (${parentHash.slice(0, 7)})`,
+            action: () => focusOnCommit(source, commitPositions.get(parentHash))
+          });
+        }
+      }
+      if (items.length) openGraphContextMenu(event, items);
+    });
     const title = createSvgElement('title');
     const hitTarget = createSvgElement('rect', {
       x: -42,
@@ -1453,7 +1481,7 @@ function renderGraphContents(graph) {
       'text-anchor': 'middle',
       class: 'hash-label'
     });
-    title.textContent = `${commit.subject} (${commit.hash.slice(0, 7)})${commit.tags.length > 0 ? ` — tags: ${commit.tags.join(', ')}` : ''}`;
+    title.textContent = `${commit.subject} (${commit.hash.slice(0, 7)})${commit.tags.length > 0 ? ` â€” tags: ${commit.tags.join(', ')}` : ''}`;
     label.textContent = commit.hash.slice(0, 7);
     const selectionRing = createSvgElement('circle', {
       r: 17,
@@ -1470,7 +1498,7 @@ function renderGraphContents(graph) {
       'text-anchor': 'middle',
       'aria-hidden': 'true'
     });
-    noteMarker.textContent = '✎';
+    noteMarker.textContent = 'âœŽ';
     group.append(title, hitTarget, selectionRing, nodeShape, label, noteMarker);
     const { shortNames, hasPairedRemote } = branchLabelNames(commit);
     for (const [nameIndex, name] of shortNames.entries()) {
@@ -1483,7 +1511,7 @@ function renderGraphContents(graph) {
         fill: color
       });
       branchLabel.textContent =
-        truncateBranchName(name) + (hasPairedRemote && nameIndex === 0 ? ' ⇄' : '');
+        truncateBranchName(name) + (hasPairedRemote && nameIndex === 0 ? ' â‡„' : '');
       const labelTitle = createSvgElement('title');
       labelTitle.textContent = name;
       branchLabel.append(labelTitle);
@@ -1512,7 +1540,7 @@ function renderGraphContents(graph) {
           'data-kind': releaseTagPattern.test(tagName) ? 'release' : 'tag',
           class: releaseTagPattern.test(tagName) ? 'release-tag' : 'plain-tag'
         });
-        tagLabel.textContent = tagName.length > 14 ? `${tagName.slice(0, 13)}…` : tagName;
+        tagLabel.textContent = tagName.length > 14 ? `${tagName.slice(0, 13)}â€¦` : tagName;
         const tagTitle = createSvgElement('title');
         tagTitle.textContent = tagName;
         tagLabel.append(tagTitle);
@@ -1549,7 +1577,7 @@ function renderGraphContents(graph) {
         y: -12,
         'data-testid': 'checked-out-branch-label'
       });
-      label.textContent = `HEAD · ${checkedOutReference.name}`;
+      label.textContent = `HEAD Â· ${checkedOutReference.name}`;
       marker.append(label);
       graphElement.append(marker);
     }
@@ -1830,7 +1858,7 @@ document.getElementById('fetch-button').addEventListener('click', async (event) 
   const diagnostics = document.getElementById('fetch-diagnostics');
   button.disabled = true;
   clearTimeout(fetchStatusTimer);
-  fetchStatus.textContent = 'Fetching remote references…';
+  fetchStatus.textContent = 'Fetching remote referencesâ€¦';
   diagnosticsPanel.hidden = true;
   diagnostics.textContent = '';
   document.getElementById('diagnostics-copy-status').textContent = '';
@@ -1932,7 +1960,7 @@ document.getElementById('check-for-updates').addEventListener('click', async (ev
   const updateStatus = document.getElementById('update-status');
   const releaseLink = document.getElementById('update-release-link');
   button.disabled = true;
-  updateStatus.textContent = 'Checking GitHub Releases…';
+  updateStatus.textContent = 'Checking GitHub Releasesâ€¦';
   releaseLink.hidden = true;
   releaseLink.removeAttribute('href');
 
