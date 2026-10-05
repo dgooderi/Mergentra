@@ -421,14 +421,17 @@ async function loadCommitGraph(gitPath, repositoryPath, branchName, currentWorkt
     }
   }
 
+  const referenceNamesByHash = new Map();
+  for (const reference of orderedReferences) {
+    const names = referenceNamesByHash.get(reference.hash) || [];
+    names.push(reference.name);
+    referenceNamesByHash.set(reference.hash, names);
+  }
   for (const commit of commits) {
     commit.tags = (tagsByHash.get(commit.hash) || []).sort((left, right) =>
       left.localeCompare(right)
     );
-    commit.references = orderedReferences
-      .filter((reference) => reference.hash === commit.hash)
-      .map((reference) => reference.name)
-      .concat(commit.tags);
+    commit.references = (referenceNamesByHash.get(commit.hash) || []).concat(commit.tags);
     if (commit.lane === null) {
       commit.lane = orderedReferences.length;
     }
