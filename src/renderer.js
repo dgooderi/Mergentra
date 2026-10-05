@@ -115,7 +115,7 @@ function branchLabelNames(commit) {
 }
 
 function truncateBranchName(name) {
-  return name.length > 22 ? `ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦${name.slice(-21)}` : name;
+  return name.length > 22 ? `…${name.slice(-21)}` : name;
 }
 
 function loadNotes() {
@@ -153,7 +153,7 @@ function refreshNoteMarkers() {
     const hasNote = Object.hasOwn(notes.branches, lane.dataset.refName);
     lane.dataset.hasNote = String(hasNote);
     lane.querySelector('[data-testid="branch-note-toggle"]').textContent = hasNote
-      ? 'Note ÃƒÂ¢Ã…â€œÃ…Â½'
+      ? 'Note ✎'
       : 'Note';
   }
   renderSelectedBranchNotes();
@@ -186,7 +186,7 @@ async function openRepository(repositoryPath, triggerButton) {
     button.disabled = true;
   }
   setStatus('');
-  progress.textContent = 'Loading repository historyÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦';
+  progress.textContent = 'Loading repository history…';
 
   try {
     showRepository(await window.gitScope.openRepository(repositoryPath));
@@ -888,7 +888,7 @@ function renderReferenceLanes(references) {
     noteToggle.dataset.testid = 'branch-note-toggle';
     noteToggle.setAttribute('aria-label', `Note for ${reference.name}`);
     noteToggle.textContent = Object.hasOwn(notes.branches, reference.name)
-      ? 'Note ÃƒÂ¢Ã…â€œÃ…Â½'
+      ? 'Note ✎'
       : 'Note';
     noteEditor.hidden = true;
     noteEditor.rows = 2;
@@ -1017,8 +1017,8 @@ function renderWorktrees(worktrees) {
     location.textContent = worktree.path;
     const checkoutState = worktree.current ? 'Current worktree' : 'Linked worktree';
     branch.textContent = worktree.branch
-      ? `${checkoutState} Ãƒâ€šÃ‚Â· Branch: ${worktree.branch}`
-      : `${checkoutState} Ãƒâ€šÃ‚Â· ${worktree.detached ? 'Detached HEAD' : 'No branch checked out'}`;
+      ? `${checkoutState} · Branch: ${worktree.branch}`
+      : `${checkoutState} · ${worktree.detached ? 'Detached HEAD' : 'No branch checked out'}`;
     item.append(location, branch);
     worktreeList.append(item);
   }
@@ -1382,7 +1382,7 @@ function renderGraphContents(graph) {
         .slice(0, 15)
         .map((hidden) => `${hidden.hash.slice(0, 7)} ${hidden.subject}`);
       if (commit.compactedCommits.length > 15) {
-        listed.push(`ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦and ${commit.compactedCommits.length - 15} more`);
+        listed.push(`…and ${commit.compactedCommits.length - 15} more`);
       }
       summaryTitle.textContent = listed.join('\n');
       const summarySelection = createSvgElement('rect', {
@@ -1490,7 +1490,7 @@ function renderGraphContents(graph) {
       'text-anchor': 'middle',
       class: 'hash-label'
     });
-    title.textContent = `${commit.subject} (${commit.hash.slice(0, 7)})${commit.tags.length > 0 ? ` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â tags: ${commit.tags.join(', ')}` : ''}`;
+    title.textContent = `${commit.subject} (${commit.hash.slice(0, 7)})${commit.tags.length > 0 ? ` — tags: ${commit.tags.join(', ')}` : ''}`;
     label.textContent = commit.hash.slice(0, 7);
     const selectionRing = createSvgElement('circle', {
       r: 17,
@@ -1507,7 +1507,7 @@ function renderGraphContents(graph) {
       'text-anchor': 'middle',
       'aria-hidden': 'true'
     });
-    noteMarker.textContent = 'ÃƒÂ¢Ã…â€œÃ…Â½';
+    noteMarker.textContent = '✎';
     group.append(title, hitTarget, selectionRing, nodeShape, label, noteMarker);
     const { shortNames, hasPairedRemote } = branchLabelNames(commit);
     for (const [nameIndex, name] of shortNames.entries()) {
@@ -1521,7 +1521,7 @@ function renderGraphContents(graph) {
       });
       branchLabel.textContent =
         truncateBranchName(name) +
-        (hasPairedRemote && nameIndex === 0 ? ' ÃƒÂ¢Ã¢â‚¬Â¡Ã¢â‚¬Å¾' : '');
+        (hasPairedRemote && nameIndex === 0 ? ' ⇄' : '');
       const labelTitle = createSvgElement('title');
       labelTitle.textContent = name;
       branchLabel.append(labelTitle);
@@ -1551,7 +1551,7 @@ function renderGraphContents(graph) {
           class: releaseTagPattern.test(tagName) ? 'release-tag' : 'plain-tag'
         });
         tagLabel.textContent =
-          tagName.length > 14 ? `${tagName.slice(0, 13)}ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦` : tagName;
+          tagName.length > 14 ? `${tagName.slice(0, 13)}…` : tagName;
         const tagTitle = createSvgElement('title');
         tagTitle.textContent = tagName;
         tagLabel.append(tagTitle);
@@ -1588,7 +1588,7 @@ function renderGraphContents(graph) {
         y: -12,
         'data-testid': 'checked-out-branch-label'
       });
-      label.textContent = `HEAD Ãƒâ€šÃ‚Â· ${checkedOutReference.name}`;
+      label.textContent = `HEAD · ${checkedOutReference.name}`;
       marker.append(label);
       graphElement.append(marker);
     }
@@ -1869,7 +1869,7 @@ document.getElementById('fetch-button').addEventListener('click', async (event) 
   const diagnostics = document.getElementById('fetch-diagnostics');
   button.disabled = true;
   clearTimeout(fetchStatusTimer);
-  fetchStatus.textContent = 'Fetching remote referencesÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦';
+  fetchStatus.textContent = 'Fetching remote references…';
   diagnosticsPanel.hidden = true;
   diagnostics.textContent = '';
   document.getElementById('diagnostics-copy-status').textContent = '';
@@ -1971,7 +1971,7 @@ document.getElementById('check-for-updates').addEventListener('click', async (ev
   const updateStatus = document.getElementById('update-status');
   const releaseLink = document.getElementById('update-release-link');
   button.disabled = true;
-  updateStatus.textContent = 'Checking GitHub ReleasesÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦';
+  updateStatus.textContent = 'Checking GitHub Releases…';
   releaseLink.hidden = true;
   releaseLink.removeAttribute('href');
 
