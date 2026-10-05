@@ -21,7 +21,7 @@ test('a developer can open a local Git repository', async () => {
     });
 
   runGit(['-c', 'init.defaultBranch=main', 'init']);
-  runGit(['config', 'user.name', 'GitScope E2E']);
+  runGit(['config', 'user.name', 'Gitscope E2e']);
   runGit(['config', 'user.email', 'gitscope-e2e@example.invalid']);
   fs.writeFileSync(path.join(repositoryPath, 'README.txt'), 'Test repository');
   runGit(['add', 'README.txt']);
@@ -191,7 +191,7 @@ test('a developer can configure Git when it is not on PATH', async () => {
       stdio: 'ignore'
     });
   runGit(['-c', 'init.defaultBranch=main', 'init']);
-  runGit(['config', 'user.name', 'GitScope E2E']);
+  runGit(['config', 'user.name', 'Gitscope E2e']);
   runGit(['config', 'user.email', 'gitscope-e2e@example.invalid']);
   fs.writeFileSync(path.join(repositoryPath, 'README.txt'), 'Test repository');
   runGit(['add', 'README.txt']);
@@ -252,7 +252,7 @@ test('a recently opened repository can be reopened after restarting GitScope', a
       stdio: 'ignore'
     });
   runGit(['-c', 'init.defaultBranch=main', 'init']);
-  runGit(['config', 'user.name', 'GitScope E2E']);
+  runGit(['config', 'user.name', 'Gitscope E2e']);
   runGit(['config', 'user.email', 'gitscope-e2e@example.invalid']);
   fs.writeFileSync(path.join(repositoryPath, 'README.txt'), 'Test repository');
   runGit(['add', 'README.txt']);
@@ -337,7 +337,7 @@ test('linear reference histories show their shared commit once and preserve pare
   try {
     runGit(testDirectory, ['init', '--bare', remotePath]);
     runGit(repositoryPath, ['-c', 'init.defaultBranch=main', 'init']);
-    runGit(repositoryPath, ['config', 'user.name', 'GitScope E2E']);
+    runGit(repositoryPath, ['config', 'user.name', 'Gitscope E2e']);
     runGit(repositoryPath, ['config', 'user.email', 'gitscope-e2e@example.invalid']);
     fs.writeFileSync(path.join(repositoryPath, 'README.txt'), 'Base commit');
     runGit(repositoryPath, ['add', 'README.txt']);
@@ -439,7 +439,7 @@ test('merge commits and grouped tags are annotated in the commit graph', async (
 
   try {
     runGit(['-c', 'init.defaultBranch=main', 'init']);
-    runGit(['config', 'user.name', 'GitScope E2E']);
+    runGit(['config', 'user.name', 'Gitscope E2e']);
     runGit(['config', 'user.email', 'gitscope-e2e@example.invalid']);
     fs.writeFileSync(path.join(repositoryPath, 'README.txt'), 'Base commit');
     runGit(['add', 'README.txt']);
@@ -538,7 +538,7 @@ test('divergent branches show inferred markers at their first unique commits', a
 
   try {
     runGit(['-c', 'init.defaultBranch=main', 'init']);
-    runGit(['config', 'user.name', 'GitScope E2E']);
+    runGit(['config', 'user.name', 'Gitscope E2e']);
     runGit(['config', 'user.email', 'gitscope-e2e@example.invalid']);
     fs.writeFileSync(path.join(repositoryPath, 'README.txt'), 'Shared ancestor');
     runGit(['add', 'README.txt']);
@@ -704,7 +704,7 @@ test('reference filters retain shared history reachable from any enabled referen
   try {
     runGit(testDirectory, ['init', '--bare', remotePath]);
     runGit(repositoryPath, ['-c', 'init.defaultBranch=main', 'init']);
-    runGit(repositoryPath, ['config', 'user.name', 'GitScope E2E']);
+    runGit(repositoryPath, ['config', 'user.name', 'Gitscope E2e']);
     runGit(repositoryPath, ['config', 'user.email', 'gitscope-e2e@example.invalid']);
     fs.writeFileSync(path.join(repositoryPath, 'shared.txt'), 'Shared ancestor');
     runGit(repositoryPath, ['add', 'shared.txt']);
@@ -827,7 +827,7 @@ test('time presets and custom local dates filter by committer timestamp', async 
       cwd: repositoryPath,
       stdio: 'ignore'
     });
-    execFileSync('git', ['config', 'user.name', 'GitScope E2E'], { cwd: repositoryPath });
+    execFileSync('git', ['config', 'user.name', 'Gitscope E2e'], { cwd: repositoryPath });
     execFileSync('git', ['config', 'user.email', 'gitscope-e2e@example.invalid'], {
       cwd: repositoryPath
     });
@@ -930,7 +930,7 @@ test('ordinary commits between important commits compact into an endpoint-exclus
 
   try {
     runGit(['-c', 'init.defaultBranch=main', 'init']);
-    runGit(['config', 'user.name', 'GitScope E2E']);
+    runGit(['config', 'user.name', 'Gitscope E2e']);
     runGit(['config', 'user.email', 'gitscope-e2e@example.invalid']);
     const taggedEndpoint = commitFile('anchor.txt', 'Tagged endpoint');
     runGit(['tag', 'v1.0.0', taggedEndpoint]);
@@ -1004,7 +1004,7 @@ test('calendar-month presets start at the matching local calendar period', async
       cwd: repositoryPath,
       stdio: 'ignore'
     });
-    execFileSync('git', ['config', 'user.name', 'GitScope E2E'], { cwd: repositoryPath });
+    execFileSync('git', ['config', 'user.name', 'Gitscope E2e'], { cwd: repositoryPath });
     execFileSync('git', ['config', 'user.email', 'gitscope-e2e@example.invalid'], {
       cwd: repositoryPath
     });
@@ -1073,7 +1073,7 @@ test('custom date ranges include their start and end dates without including the
       cwd: repositoryPath,
       stdio: 'ignore'
     });
-    execFileSync('git', ['config', 'user.name', 'GitScope E2E'], { cwd: repositoryPath });
+    execFileSync('git', ['config', 'user.name', 'Gitscope E2e'], { cwd: repositoryPath });
     execFileSync('git', ['config', 'user.email', 'gitscope-e2e@example.invalid'], {
       cwd: repositoryPath
     });
@@ -1146,7 +1146,7 @@ test('history-edge compacted counts include only ordinary commits inside the sel
       cwd: repositoryPath,
       stdio: 'ignore'
     });
-    execFileSync('git', ['config', 'user.name', 'GitScope E2E'], { cwd: repositoryPath });
+    execFileSync('git', ['config', 'user.name', 'Gitscope E2e'], { cwd: repositoryPath });
     execFileSync('git', ['config', 'user.email', 'gitscope-e2e@example.invalid'], {
       cwd: repositoryPath
     });
@@ -1231,7 +1231,7 @@ test('remote-tracking references refresh only after explicit Fetch', async () =>
   try {
     runGit(testDirectory, ['init', '--bare', '--initial-branch=main', remotePath]);
     runGit(producerPath, ['init', '--initial-branch=main']);
-    runGit(producerPath, ['config', 'user.name', 'GitScope E2E']);
+    runGit(producerPath, ['config', 'user.name', 'Gitscope E2e']);
     runGit(producerPath, ['config', 'user.email', 'gitscope-e2e@example.invalid']);
     fs.writeFileSync(path.join(producerPath, 'README.txt'), 'Initial remote commit');
     runGit(producerPath, ['add', 'README.txt']);
@@ -1304,7 +1304,7 @@ test('failed explicit fetch keeps the graph and exposes copyable diagnostics', a
   try {
     runGit(testDirectory, ['init', '--bare', '--initial-branch=main', remotePath]);
     runGit(producerPath, ['init', '--initial-branch=main']);
-    runGit(producerPath, ['config', 'user.name', 'GitScope E2E']);
+    runGit(producerPath, ['config', 'user.name', 'Gitscope E2e']);
     runGit(producerPath, ['config', 'user.email', 'gitscope-e2e@example.invalid']);
     fs.writeFileSync(path.join(producerPath, 'README.txt'), 'Initial commit');
     runGit(producerPath, ['add', 'README.txt']);
@@ -1359,7 +1359,7 @@ test('detached HEAD is marked at its commit without inventing a branch', async (
 
   try {
     runGit(['-c', 'init.defaultBranch=main', 'init']);
-    runGit(['config', 'user.name', 'GitScope E2E']);
+    runGit(['config', 'user.name', 'Gitscope E2e']);
     runGit(['config', 'user.email', 'gitscope-e2e@example.invalid']);
     fs.writeFileSync(path.join(repositoryPath, 'README.txt'), 'Detached commit');
     runGit(['add', 'README.txt']);
@@ -1441,7 +1441,7 @@ test('branches identify the worktree where they are checked out', async () => {
 
   try {
     runGit(['-c', 'init.defaultBranch=main', 'init']);
-    runGit(['config', 'user.name', 'GitScope E2E']);
+    runGit(['config', 'user.name', 'Gitscope E2e']);
     runGit(['config', 'user.email', 'gitscope-e2e@example.invalid']);
     fs.writeFileSync(path.join(repositoryPath, 'README.txt'), 'Main worktree');
     runGit(['add', 'README.txt']);
@@ -1506,7 +1506,7 @@ test('shallow clones mark the visible history boundary', async () => {
 
   try {
     runGit(['-c', 'init.defaultBranch=main', 'init'], sourcePath);
-    runGit(['config', 'user.name', 'GitScope E2E'], sourcePath);
+    runGit(['config', 'user.name', 'Gitscope E2e'], sourcePath);
     runGit(['config', 'user.email', 'gitscope-e2e@example.invalid'], sourcePath);
     for (const [index, message] of ['First commit', 'Second commit', 'Latest commit'].entries()) {
       fs.writeFileSync(path.join(sourcePath, 'history.txt'), `${index + 1}\n`);
@@ -1559,7 +1559,7 @@ test('partial clones mark missing-object boundaries without fetching', async () 
 
   try {
     runGit(['-c', 'init.defaultBranch=main', 'init'], sourcePath);
-    runGit(['config', 'user.name', 'GitScope E2E'], sourcePath);
+    runGit(['config', 'user.name', 'Gitscope E2e'], sourcePath);
     runGit(['config', 'user.email', 'gitscope-e2e@example.invalid'], sourcePath);
     fs.writeFileSync(path.join(sourcePath, 'content.txt'), 'Partial clone content');
     runGit(['add', 'content.txt'], sourcePath);
@@ -1791,7 +1791,7 @@ test('the repository view expands and contracts with the application window', as
       cwd: repositoryPath,
       stdio: 'ignore'
     });
-    execFileSync('git', ['config', 'user.name', 'GitScope E2E'], { cwd: repositoryPath });
+    execFileSync('git', ['config', 'user.name', 'Gitscope E2e'], { cwd: repositoryPath });
     execFileSync('git', ['config', 'user.email', 'gitscope-e2e@example.invalid'], {
       cwd: repositoryPath
     });
@@ -1861,7 +1861,7 @@ test('dense histories show a useful graph and keep filters responsive at target 
     }).trim();
 
   async function createHistory() {
-    const author = 'GitScope E2E <gitscope-e2e@example.invalid>';
+    const author = 'Gitscope E2e <gitscope-e2e@example.invalid>';
     const now = Math.floor(Date.now() / 1000);
     const firstTimestamp = now - commitCount * 3600;
     const stream = spawn('git', ['fast-import', '--quiet'], {
@@ -1998,7 +1998,7 @@ test('branch selection and time range are remembered per repository', async () =
     const repositoryPath = path.join(testDirectory, name);
     fs.mkdirSync(repositoryPath);
     runGit(repositoryPath, ['-c', 'init.defaultBranch=main', 'init']);
-    runGit(repositoryPath, ['config', 'user.name', 'GitScope E2E']);
+    runGit(repositoryPath, ['config', 'user.name', 'Gitscope E2e']);
     runGit(repositoryPath, ['config', 'user.email', 'gitscope-e2e@example.invalid']);
     runGit(repositoryPath, ['commit', '--allow-empty', '-m', 'Initial']);
     runGit(repositoryPath, ['branch', 'feature']);
@@ -2025,9 +2025,9 @@ test('branch selection and time range are remembered per repository', async () =
     await window.locator('#time-range').selectOption('1w');
     await expect(window.locator('#branch-owner-filter option')).toHaveText([
       'All owners',
-      'GitScope E2E'
+      'Gitscope E2e'
     ]);
-    await window.locator('#branch-owner-filter').selectOption({ label: 'GitScope E2E' });
+    await window.locator('#branch-owner-filter').selectOption({ label: 'Gitscope E2e' });
     await expect(window.locator('#branch-picker-summary')).toHaveText('Branches: 2 of 2 shown');
     await window.getByTestId('commit-node').first().click();
     await window.getByRole('button', { name: 'Centre on selected' }).click();
@@ -2075,7 +2075,7 @@ test('commit and branch notes persist per repository and selection can be cleare
       stdio: ['ignore', 'pipe', 'pipe']
     }).trim();
   runGit(['-c', 'init.defaultBranch=main', 'init']);
-  runGit(['config', 'user.name', 'GitScope E2E']);
+  runGit(['config', 'user.name', 'Gitscope E2e']);
   runGit(['config', 'user.email', 'gitscope-e2e@example.invalid']);
   runGit(['commit', '--allow-empty', '-m', 'Initial']);
   runGit(['commit', '--allow-empty', '-m', 'Second']);
@@ -2141,7 +2141,7 @@ test('collapsed commit groups list their commits, highlight with the selection, 
       stdio: ['ignore', 'pipe', 'pipe']
     }).trim();
   runGit(['-c', 'init.defaultBranch=main', 'init']);
-  runGit(['config', 'user.name', 'GitScope E2E']);
+  runGit(['config', 'user.name', 'Gitscope E2e']);
   runGit(['config', 'user.email', 'gitscope-e2e@example.invalid']);
   runGit(['commit', '--allow-empty', '-m', 'Start']);
   runGit(['tag', 'v1.0.0']);

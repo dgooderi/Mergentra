@@ -1115,9 +1115,11 @@ function renderOwnerFilter() {
   const displayNames = new Map();
   for (const reference of currentGraph.references) {
     const owner = referenceOwner(reference);
-    const author = currentGraph.commits.find((commit) => commit.hash === reference.hash)?.author;
     if (owner !== '' && !displayNames.has(owner)) {
-      displayNames.set(owner, author.replace(/\s*<[^>]*>$/, '').trim());
+      displayNames.set(
+        owner,
+        owner.replace(/(^|\s)\S/g, (match) => match.toUpperCase())
+      );
     }
   }
   const owners = [...displayNames.keys()].sort((left, right) => left.localeCompare(right));
