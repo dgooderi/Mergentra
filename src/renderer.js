@@ -271,6 +271,8 @@ function showRepository(repository) {
 }
 
 const LARGE_HISTORY_COMMITS = 100000;
+// Merge lines longer than this leave their branch with a visible curve instead of running along its row.
+const MERGE_CURVE_AT_START_SPAN = 400;
 
 function renderGraph(graph) {
   currentGraph = graph;
@@ -1209,11 +1211,14 @@ function renderGraphContents(graph) {
         continue;
       }
       const isMergeIn = commit.parents.length > 1 && parentHash !== commit.parents[0];
-      const bend = Math.min(isMergeIn ? 176 : 48, childPosition.x - parentPosition.x);
+      const bend = Math.min(
+        isMergeIn && childPosition.x - parentPosition.x <= MERGE_CURVE_AT_START_SPAN ? 176 : 48,
+        childPosition.x - parentPosition.x
+      );
       let pathData;
       if (parentPosition.y === childPosition.y) {
         pathData = `M ${parentPosition.x} ${parentPosition.y} L ${childPosition.x} ${childPosition.y}`;
-      } else if (isMergeIn) {
+      } else if (isMergeIn && childPosition.x - parentPosition.x <= MERGE_CURVE_AT_START_SPAN) {
         const turn = childPosition.x - bend;
         pathData = `M ${parentPosition.x} ${parentPosition.y} L ${turn} ${parentPosition.y} C ${turn + bend * 0.8} ${parentPosition.y}, ${turn + bend * 0.2} ${childPosition.y}, ${childPosition.x} ${childPosition.y}`;
       } else {
