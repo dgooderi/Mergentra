@@ -1262,7 +1262,16 @@ function renderGraphContents(graph) {
         'data-testid': 'commit-branch-label',
         fill: color
       });
-      branchLabel.textContent = shortNames.join(', ') + (hasPairedRemote ? ' ⇄' : '');
+      // One branch per line so labels never run into neighbouring commits.
+      for (const [nameIndex, name] of shortNames.entries()) {
+        const line = createSvgElement('tspan', { x: 0, dy: nameIndex === 0 ? 0 : 13 });
+        const display = name.length > 22 ? `…${name.slice(-21)}` : name;
+        line.textContent = display + (hasPairedRemote && nameIndex === 0 ? ' ⇄' : '');
+        const lineTitle = createSvgElement('title');
+        lineTitle.textContent = name;
+        line.append(lineTitle);
+        branchLabel.append(line);
+      }
       group.append(branchLabel);
     }
     group.addEventListener('click', () =>
