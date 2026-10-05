@@ -94,14 +94,17 @@ function setNote(kind, key, text) {
 function refreshNoteMarkers() {
   for (const node of document.querySelectorAll('[data-testid="commit-node"]')) {
     const refNames = JSON.parse(node.dataset.refNames || '[]');
-    const hasNote = Object.hasOwn(notes.commits, node.dataset.commitHash)
-      || refNames.some((name) => Object.hasOwn(notes.branches, name));
+    const hasNote =
+      Object.hasOwn(notes.commits, node.dataset.commitHash) ||
+      refNames.some((name) => Object.hasOwn(notes.branches, name));
     node.dataset.hasNote = String(hasNote);
   }
   for (const lane of document.querySelectorAll('#reference-lanes li')) {
     const hasNote = Object.hasOwn(notes.branches, lane.dataset.refName);
     lane.dataset.hasNote = String(hasNote);
-    lane.querySelector('[data-testid="branch-note-toggle"]').textContent = hasNote ? 'Note ✎' : 'Note';
+    lane.querySelector('[data-testid="branch-note-toggle"]').textContent = hasNote
+      ? 'Note ✎'
+      : 'Note';
   }
   renderSelectedBranchNotes();
 }
@@ -109,7 +112,9 @@ function refreshNoteMarkers() {
 function renderSelectedBranchNotes() {
   const list = document.getElementById('selected-commit-branch-notes');
   list.replaceChildren();
-  const names = (selectedCommit?.references || []).filter((name) => Object.hasOwn(notes.branches, name));
+  const names = (selectedCommit?.references || []).filter((name) =>
+    Object.hasOwn(notes.branches, name)
+  );
   for (const name of names) {
     const item = document.createElement('li');
     item.textContent = `${name}: ${notes.branches[name]}`;
@@ -227,12 +232,15 @@ function saveViewState() {
     .filter((reference) => !visibleReferences.has(reference.name))
     .map((reference) => reference.name);
   try {
-    localStorage.setItem(viewStateKeyPrefix + currentRepositoryPath, JSON.stringify({
-      hidden,
-      preset: selectedTimePreset,
-      display: displayOptions,
-      custom: selectedTimePreset === 'custom' ? customRangeValues : null
-    }));
+    localStorage.setItem(
+      viewStateKeyPrefix + currentRepositoryPath,
+      JSON.stringify({
+        hidden,
+        preset: selectedTimePreset,
+        display: displayOptions,
+        custom: selectedTimePreset === 'custom' ? customRangeValues : null
+      })
+    );
   } catch {
     // View state is a convenience; failing to store it must not break the graph.
   }
@@ -257,9 +265,11 @@ function renderGraph(graph) {
   displayOptions = { tags: true, hashes: true, releases: true, ...(saved?.display || {}) };
   applyDisplayOptions();
   const hidden = new Set(saved?.hidden || []);
-  visibleReferences = new Set(graph.references
-    .filter((reference) => !hidden.has(reference.name))
-    .map((reference) => reference.name));
+  visibleReferences = new Set(
+    graph.references
+      .filter((reference) => !hidden.has(reference.name))
+      .map((reference) => reference.name)
+  );
   selectedTimePreset = 'all';
   timeRange = null;
   customRangeValues = null;
@@ -295,9 +305,11 @@ function refreshRepositoryGraph(repository) {
   document.getElementById('branch-name').textContent = repository.branch;
   const previouslyVisible = visibleReferences;
   currentGraph = repository.graph;
-  visibleReferences = new Set(currentGraph.references
-    .filter((reference) => previouslyVisible.has(reference.name))
-    .map((reference) => reference.name));
+  visibleReferences = new Set(
+    currentGraph.references
+      .filter((reference) => previouslyVisible.has(reference.name))
+      .map((reference) => reference.name)
+  );
   for (const reference of currentGraph.references) {
     if (!previouslyVisible.has(reference.name)) {
       visibleReferences.add(reference.name);
@@ -323,10 +335,11 @@ function renderFilteredGraph() {
   // Branches that contain others (for example a release line that merged a hotfix) claim
   // shared commits first; `main` always goes first.
   const tipIndex = new Map(currentGraph.commits.map((commit, index) => [commit.hash, index]));
-  const claimOrder = [...references].sort((left, right) => (
-    (right.name === 'main' ? 1 : 0) - (left.name === 'main' ? 1 : 0)
-    || (tipIndex.get(right.hash) ?? -1) - (tipIndex.get(left.hash) ?? -1)
-  ));
+  const claimOrder = [...references].sort(
+    (left, right) =>
+      (right.name === 'main' ? 1 : 0) - (left.name === 'main' ? 1 : 0) ||
+      (tipIndex.get(right.hash) ?? -1) - (tipIndex.get(left.hash) ?? -1)
+  );
   for (const reference of claimOrder) {
     let commit = commitsByHash.get(reference.hash);
     while (commit && !laneByHash.has(commit.hash)) {
@@ -363,39 +376,43 @@ function renderFilteredGraph() {
 
   const reachableHashes = new Set(laneByHash.keys());
   const timeRangeStatus = document.getElementById('time-range-status');
-  const commitsInRange = currentGraph.commits.filter((commit) => (
-    reachableHashes.has(commit.hash)
-    && (!timeRange || (commit.committerTimestamp * 1000 >= timeRange.start
-      && commit.committerTimestamp * 1000 < timeRange.end))
-  ));
+  const commitsInRange = currentGraph.commits.filter(
+    (commit) =>
+      reachableHashes.has(commit.hash) &&
+      (!timeRange ||
+        (commit.committerTimestamp * 1000 >= timeRange.start &&
+          commit.committerTimestamp * 1000 < timeRange.end))
+  );
   const inRangeHashes = new Set(commitsInRange.map((commit) => commit.hash));
   const visibleNames = new Set(references.map((reference) => reference.name));
   const graph = {
     ...currentGraph,
     references,
-    commits: commitsInRange
-      .map((commit) => ({
-        ...commit,
-        lane: laneByHash.get(commit.hash),
-        references: commit.references.filter((name) => visibleNames.has(name) || commit.tags.includes(name))
-      })),
-    cutMarkers: commitsInRange
-      .flatMap((commit) => {
-        if (!timeRange) {
-          return [];
-        }
-        const directions = new Set(commit.parents
+    commits: commitsInRange.map((commit) => ({
+      ...commit,
+      lane: laneByHash.get(commit.hash),
+      references: commit.references.filter(
+        (name) => visibleNames.has(name) || commit.tags.includes(name)
+      )
+    })),
+    cutMarkers: commitsInRange.flatMap((commit) => {
+      if (!timeRange) {
+        return [];
+      }
+      const directions = new Set(
+        commit.parents
           .filter((parentHash) => reachableHashes.has(parentHash) && !inRangeHashes.has(parentHash))
-          .map((parentHash) => (
+          .map((parentHash) =>
             commitsByHash.get(parentHash).committerTimestamp * 1000 < timeRange.start
               ? 'older'
               : 'newer'
-          )));
-        return [...directions].map((direction) => ({ commitHash: commit.hash, direction }));
-      }),
-    divergenceMarkers: currentGraph.divergenceMarkers.filter((marker) => (
-      visibleNames.has(marker.branchName) && inRangeHashes.has(marker.commitHash)
-    )),
+          )
+      );
+      return [...directions].map((direction) => ({ commitHash: commit.hash, direction }));
+    }),
+    divergenceMarkers: currentGraph.divergenceMarkers.filter(
+      (marker) => visibleNames.has(marker.branchName) && inRangeHashes.has(marker.commitHash)
+    ),
     laneCount: Math.max(references.length, 1)
   };
 
@@ -403,8 +420,10 @@ function renderFilteredGraph() {
   renderGraphContents(displayGraph);
   refreshNoteMarkers();
   if (selectedCommit) {
-    const updatedSelection = displayGraph.commits.find((commit) => commit.hash === selectedCommit.hash)
-      || displayGraph.commits.flatMap((commit) => commit.compactedCommits || [])
+    const updatedSelection =
+      displayGraph.commits.find((commit) => commit.hash === selectedCommit.hash) ||
+      displayGraph.commits
+        .flatMap((commit) => commit.compactedCommits || [])
         .find((commit) => commit.hash === selectedCommit.hash);
     selectCommit(updatedSelection || null);
   }
@@ -463,11 +482,11 @@ function compactOrdinaryHistory(graph) {
       const hiddenCommits = [];
 
       while (
-        cursor
-        && !importantHashes.has(cursor.hash)
-        && cursor.parents.filter((hash) => commitsByHash.has(hash)).length === 1
-        && (childrenByHash.get(cursor.hash) || []).length === 1
-        && !compactedHashes.has(cursor.hash)
+        cursor &&
+        !importantHashes.has(cursor.hash) &&
+        cursor.parents.filter((hash) => commitsByHash.has(hash)).length === 1 &&
+        (childrenByHash.get(cursor.hash) || []).length === 1 &&
+        !compactedHashes.has(cursor.hash)
       ) {
         hiddenCommits.push(cursor);
         cursor = commitsByHash.get(childrenByHash.get(cursor.hash)[0]);
@@ -477,7 +496,9 @@ function compactOrdinaryHistory(graph) {
         continue;
       }
 
-      const uniqueHiddenCommits = hiddenCommits.filter((commit) => !compactedHashes.has(commit.hash));
+      const uniqueHiddenCommits = hiddenCommits.filter(
+        (commit) => !compactedHashes.has(commit.hash)
+      );
       // A single ordinary commit is shown as itself; a +1 summary hides nothing useful.
       if (uniqueHiddenCommits.length < 2) {
         continue;
@@ -591,7 +612,12 @@ function applyCustomTimeRange() {
   const startDate = new Date(`${startValue}T00:00:00`);
   const endDate = new Date(`${endValue}T00:00:00`);
 
-  if (!startValue || !endValue || !Number.isFinite(startDate.getTime()) || !Number.isFinite(endDate.getTime())) {
+  if (
+    !startValue ||
+    !endValue ||
+    !Number.isFinite(startDate.getTime()) ||
+    !Number.isFinite(endDate.getTime())
+  ) {
     status.textContent = 'Choose a valid start and end date.';
     return;
   }
@@ -715,7 +741,9 @@ function renderReferenceLanes(references) {
         noteEditor.focus();
       }
     });
-    noteEditor.addEventListener('input', () => setNote('branches', reference.name, noteEditor.value));
+    noteEditor.addEventListener('input', () =>
+      setNote('branches', reference.name, noteEditor.value)
+    );
     lane.dataset.hasNote = String(Object.hasOwn(notes.branches, reference.name));
     lane.append(checkbox, marker, labelGroup, noteToggle, noteEditor);
     laneList.append(lane);
@@ -738,27 +766,37 @@ function filterBranchPicker() {
 }
 
 function setVisibleBranches(predicate) {
-  visibleReferences = new Set(currentGraph.references
-    .filter(predicate)
-    .map((reference) => reference.name));
+  visibleReferences = new Set(
+    currentGraph.references.filter(predicate).map((reference) => reference.name)
+  );
   saveViewState();
   renderReferenceLanes(currentGraph.references);
   renderFilteredGraph();
 }
 
 document.getElementById('commit-graph').addEventListener('click', (event) => {
-  if (!event.target.closest('[data-testid="commit-node"], [data-testid="compacted-commit-count"]')) {
+  if (
+    !event.target.closest('[data-testid="commit-node"], [data-testid="compacted-commit-count"]')
+  ) {
     selectCommit(null);
     closeCompactedPopover();
   }
 });
 document.querySelector('.graph-scroll').addEventListener('scroll', closeCompactedPopover);
 document.addEventListener('click', (event) => {
-  if (!event.target.closest('#compacted-popover, [data-testid="compacted-commit-count"], #commit-graph')) {
+  if (
+    !event.target.closest(
+      '#compacted-popover, [data-testid="compacted-commit-count"], #commit-graph'
+    )
+  ) {
     closeCompactedPopover();
   }
 });
-for (const [id, key] of [['show-tags', 'tags'], ['show-hashes', 'hashes'], ['show-releases', 'releases']]) {
+for (const [id, key] of [
+  ['show-tags', 'tags'],
+  ['show-hashes', 'hashes'],
+  ['show-releases', 'releases']
+]) {
   document.getElementById(id).addEventListener('change', (event) => {
     displayOptions[key] = event.target.checked;
     applyDisplayOptions();
@@ -766,9 +804,15 @@ for (const [id, key] of [['show-tags', 'tags'], ['show-hashes', 'hashes'], ['sho
   });
 }
 document.getElementById('branch-picker-search').addEventListener('input', filterBranchPicker);
-document.getElementById('branch-picker-all').addEventListener('click', () => setVisibleBranches(() => true));
-document.getElementById('branch-picker-local').addEventListener('click', () => setVisibleBranches((reference) => !reference.remote));
-document.getElementById('branch-picker-none').addEventListener('click', () => setVisibleBranches(() => false));
+document
+  .getElementById('branch-picker-all')
+  .addEventListener('click', () => setVisibleBranches(() => true));
+document
+  .getElementById('branch-picker-local')
+  .addEventListener('click', () => setVisibleBranches((reference) => !reference.remote));
+document
+  .getElementById('branch-picker-none')
+  .addEventListener('click', () => setVisibleBranches(() => false));
 document.addEventListener('click', (event) => {
   const picker = document.getElementById('branch-picker');
   if (picker.open && !picker.contains(event.target)) {
@@ -834,31 +878,39 @@ function renderTimeAxis(graphElement, commits, commitPositions, width, axisHeigh
   const spanMs = Math.max(...timestamps) - Math.min(...timestamps);
   const showTime = spanMs < 60 * 24 * 60 * 60 * 1000;
   const currentYear = new Date().getFullYear();
-  const withYear = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  const withYear = new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  });
   const withoutYear = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' });
   const timeFormat = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' });
 
   const axis = createSvgElement('g', { 'data-testid': 'time-axis', 'aria-hidden': 'true' });
-  axis.append(createSvgElement('line', {
-    class: 'time-axis-line',
-    x1: 0,
-    y1: axisHeight - 6,
-    x2: width,
-    y2: axisHeight - 6
-  }));
+  axis.append(
+    createSvgElement('line', {
+      class: 'time-axis-line',
+      x1: 0,
+      y1: axisHeight - 6,
+      x2: width,
+      y2: axisHeight - 6
+    })
+  );
   for (const commit of dated) {
     const position = commitPositions.get(commit.hash);
     if (!position) {
       continue;
     }
     const date = new Date(commit.committerTimestamp * 1000);
-    axis.append(createSvgElement('line', {
-      class: 'time-axis-tick',
-      x1: position.x,
-      y1: axisHeight - 10,
-      x2: position.x,
-      y2: axisHeight - 2
-    }));
+    axis.append(
+      createSvgElement('line', {
+        class: 'time-axis-tick',
+        x1: position.x,
+        y1: axisHeight - 10,
+        x2: position.x,
+        y2: axisHeight - 2
+      })
+    );
     const label = createSvgElement('text', {
       class: 'time-axis-label',
       'data-testid': 'time-axis-label',
@@ -918,15 +970,16 @@ function renderGraphContents(graph) {
       span.last = Math.max(span.last, isMergeIn ? childIndex : span.last);
     }
   }
-  const mainReference = graph.references.find((reference) => !reference.remote && reference.name === 'main')
-    || graph.references.find((reference) => !reference.remote && reference.name === 'master')
-    || graph.references.find((reference) => !reference.remote);
+  const mainReference =
+    graph.references.find((reference) => !reference.remote && reference.name === 'main') ||
+    graph.references.find((reference) => !reference.remote && reference.name === 'master') ||
+    graph.references.find((reference) => !reference.remote);
   const rootLane = laneSpans.has(mainReference?.lane) ? mainReference.lane : graph.commits[0]?.lane;
   const rowByLane = new Map();
   const rowEnds = [Infinity];
-  const lanesByStart = [...laneSpans.keys()].sort((a, b) => (
-    laneSpans.get(a).first - laneSpans.get(b).first || a - b
-  ));
+  const lanesByStart = [...laneSpans.keys()].sort(
+    (a, b) => laneSpans.get(a).first - laneSpans.get(b).first || a - b
+  );
   for (const lane of lanesByStart) {
     const span = laneSpans.get(lane);
     let row = 0;
@@ -940,7 +993,10 @@ function renderGraphContents(graph) {
     rowByLane.set(lane, row);
   }
   const rowCount = Math.max(rowEnds.length, 1);
-  const width = Math.max(144, leftPadding + rightPadding + Math.max(graph.commits.length - 1, 0) * columnWidth);
+  const width = Math.max(
+    144,
+    leftPadding + rightPadding + Math.max(graph.commits.length - 1, 0) * columnWidth
+  );
   const height = 60 + axisHeight + rowCount * rowHeight;
   graphElement.setAttribute('width', String(width));
   graphElement.setAttribute('height', String(height));
@@ -959,20 +1015,24 @@ function renderGraphContents(graph) {
     markerHeight: 6,
     orient: 'auto-start-reverse'
   });
-  arrowhead.append(createSvgElement('path', {
-    d: 'M 0 0 L 10 5 L 0 10 z',
-    fill: '#9ca3af'
-  }));
+  arrowhead.append(
+    createSvgElement('path', {
+      d: 'M 0 0 L 10 5 L 0 10 z',
+      fill: '#9ca3af'
+    })
+  );
   definitions.append(arrowhead);
   graphElement.append(definitions);
 
-  const commitPositions = new Map(graph.commits.map((commit, index) => [
-    commit.hash,
-    {
-      x: leftPadding + index * columnWidth,
-      y: 34 + axisHeight + rowByLane.get(commit.lane) * rowHeight
-    }
-  ]));
+  const commitPositions = new Map(
+    graph.commits.map((commit, index) => [
+      commit.hash,
+      {
+        x: leftPadding + index * columnWidth,
+        y: 34 + axisHeight + rowByLane.get(commit.lane) * rowHeight
+      }
+    ])
+  );
 
   renderTimeAxis(graphElement, graph.commits, commitPositions, width, axisHeight);
 
@@ -997,17 +1057,20 @@ function renderGraphContents(graph) {
       }
       const parentCommit = graph.commits[indexByHash.get(parentHash)];
       // Fork and merge lines keep the colour of the branch they leave; a branch takes its own colour after its first commit.
-      const edgeLane = parentCommit && parentCommit.lane !== commit.lane ? parentCommit.lane : commit.lane;
-      graphElement.append(createSvgElement('path', {
-        d: pathData,
-        fill: 'none',
-        stroke: graph.references[edgeLane]?.color || '#9ca3af',
-        'stroke-width': 2,
-        'marker-end': 'url(#commit-arrowhead)',
-        'data-testid': 'commit-edge',
-        'data-parent-hash': parentHash,
-        'data-child-hash': commit.hash
-      }));
+      const edgeLane =
+        parentCommit && parentCommit.lane !== commit.lane ? parentCommit.lane : commit.lane;
+      graphElement.append(
+        createSvgElement('path', {
+          d: pathData,
+          fill: 'none',
+          stroke: graph.references[edgeLane]?.color || '#9ca3af',
+          'stroke-width': 2,
+          'marker-end': 'url(#commit-arrowhead)',
+          'data-testid': 'commit-edge',
+          'data-parent-hash': parentHash,
+          'data-child-hash': commit.hash
+        })
+      );
     }
   }
 
@@ -1031,7 +1094,8 @@ function renderGraphContents(graph) {
         compactedMembership.set(hidden.hash, commit.hash);
       }
       const summaryTitle = createSvgElement('title');
-      const listed = commit.compactedCommits.slice(0, 15)
+      const listed = commit.compactedCommits
+        .slice(0, 15)
         .map((hidden) => `${hidden.hash.slice(0, 7)} ${hidden.subject}`);
       if (commit.compactedCommits.length > 15) {
         listed.push(`…and ${commit.compactedCommits.length - 15} more`);
@@ -1071,7 +1135,8 @@ function renderGraphContents(graph) {
           event.preventDefault();
           openList();
         }
-      });      summaryLayer.append(summary);
+      });
+      summaryLayer.append(summary);
       continue;
     }
 
@@ -1084,7 +1149,9 @@ function renderGraphContents(graph) {
       role: 'button',
       tabindex: 0,
       'aria-pressed': 'false',
-      'data-ref-names': JSON.stringify(commit.references.filter((name) => !commit.tags.includes(name))),
+      'data-ref-names': JSON.stringify(
+        commit.references.filter((name) => !commit.tags.includes(name))
+      ),
       'aria-label': `Inspect ${commit.subject} (${commit.hash.slice(0, 7)})`
     });
     const title = createSvgElement('title');
@@ -1098,21 +1165,22 @@ function renderGraphContents(graph) {
       'aria-hidden': 'true'
     });
     const color = graph.references[commit.lane]?.color || '#9ca3af';
-    const nodeShape = commit.parents.length > 1
-      ? createSvgElement('polygon', {
-        points: '0,-11 11,0 0,11 -11,0',
-        fill: color,
-        stroke: '#111827',
-        'stroke-width': 2,
-        'data-testid': 'merge-node-shape',
-        'data-shape': 'diamond'
-      })
-      : createSvgElement('circle', {
-        r: 8,
-        fill: color,
-        stroke: '#111827',
-        'stroke-width': 2
-      });
+    const nodeShape =
+      commit.parents.length > 1
+        ? createSvgElement('polygon', {
+            points: '0,-11 11,0 0,11 -11,0',
+            fill: color,
+            stroke: '#111827',
+            'stroke-width': 2,
+            'data-testid': 'merge-node-shape',
+            'data-shape': 'diamond'
+          })
+        : createSvgElement('circle', {
+            r: 8,
+            fill: color,
+            stroke: '#111827',
+            'stroke-width': 2
+          });
     const label = createSvgElement('text', {
       x: 0,
       y: 23,
@@ -1137,11 +1205,12 @@ function renderGraphContents(graph) {
       'aria-hidden': 'true'
     });
     noteMarker.textContent = '✎';
-    group.append(title, hitTarget, selectionRing, nodeShape, label, noteMarker);    const branchNames = commit.references.filter((name) => !commit.tags.includes(name));
+    group.append(title, hitTarget, selectionRing, nodeShape, label, noteMarker);
+    const branchNames = commit.references.filter((name) => !commit.tags.includes(name));
     if (branchNames.length > 0) {
-      const shortNames = branchNames.filter((name) => !(
-        name.includes('/') && branchNames.includes(name.slice(name.indexOf('/') + 1))
-      ));
+      const shortNames = branchNames.filter(
+        (name) => !(name.includes('/') && branchNames.includes(name.slice(name.indexOf('/') + 1)))
+      );
       const hasPairedRemote = shortNames.length < branchNames.length;
       const branchLabel = createSvgElement('text', {
         x: 0,
@@ -1154,7 +1223,9 @@ function renderGraphContents(graph) {
       branchLabel.textContent = shortNames.join(', ') + (hasPairedRemote ? ' ⇄' : '');
       group.append(branchLabel);
     }
-    group.addEventListener('click', () => selectCommit(selectedCommit?.hash === commit.hash ? null : commit));
+    group.addEventListener('click', () =>
+      selectCommit(selectedCommit?.hash === commit.hash ? null : commit)
+    );
     group.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
@@ -1198,13 +1269,15 @@ function renderGraphContents(graph) {
         role: 'img',
         'aria-label': `Checked out branch ${checkedOutReference.name}`
       });
-      marker.append(createSvgElement('circle', {
-        r: 14,
-        fill: 'none',
-        stroke: checkedOutReference.color,
-        'stroke-width': 2,
-        'aria-hidden': 'true'
-      }));
+      marker.append(
+        createSvgElement('circle', {
+          r: 14,
+          fill: 'none',
+          stroke: checkedOutReference.color,
+          'stroke-width': 2,
+          'aria-hidden': 'true'
+        })
+      );
       const label = createSvgElement('text', {
         x: 16,
         y: -12,
@@ -1227,14 +1300,16 @@ function renderGraphContents(graph) {
         'aria-label': 'Detached HEAD'
       });
       const headCommit = graph.commits.find((commit) => commit.hash === graph.headHash);
-      marker.append(createSvgElement('circle', {
-        r: 14,
-        fill: 'none',
-        stroke: graph.references[headCommit?.lane]?.color || '#9ca3af',
-        'stroke-width': 2,
-        'data-testid': 'head-marker-ring',
-        'aria-hidden': 'true'
-      }));
+      marker.append(
+        createSvgElement('circle', {
+          r: 14,
+          fill: 'none',
+          stroke: graph.references[headCommit?.lane]?.color || '#9ca3af',
+          'stroke-width': 2,
+          'data-testid': 'head-marker-ring',
+          'aria-hidden': 'true'
+        })
+      );
       const label = createSvgElement('text', {
         x: 0,
         y: 39,
@@ -1349,11 +1424,13 @@ function renderGraphContents(graph) {
   if (graph.commits.length > 0) {
     emptyMessage.textContent = '';
   } else if (currentGraph.commits.length === 0) {
-    emptyMessage.textContent = 'No commits yet. The commit graph will appear after the first commit.';
+    emptyMessage.textContent =
+      'No commits yet. The commit graph will appear after the first commit.';
   } else if (visibleReferences.size === 0) {
     emptyMessage.textContent = 'No references selected. Select a reference to show its history.';
   } else if (timeRange) {
-    emptyMessage.textContent = 'No commits in this time range. Choose a different range or select All history.';
+    emptyMessage.textContent =
+      'No commits in this time range. Choose a different range or select All history.';
   } else {
     emptyMessage.textContent = 'No commits are reachable from the selected references.';
   }
@@ -1369,7 +1446,10 @@ function selectCommit(commit) {
   }
   const memberSummary = hash ? compactedMembership.get(hash) : null;
   for (const summaryNode of document.querySelectorAll('[data-testid="compacted-commit-count"]')) {
-    summaryNode.setAttribute('aria-pressed', String(Boolean(memberSummary) && summaryNode.dataset.summaryHash === memberSummary));
+    summaryNode.setAttribute(
+      'aria-pressed',
+      String(Boolean(memberSummary) && summaryNode.dataset.summaryHash === memberSummary)
+    );
   }
   for (const item of document.querySelectorAll('[data-testid="compacted-commit-item"]')) {
     item.setAttribute('aria-pressed', String(item.dataset.commitHash === hash));
@@ -1390,9 +1470,8 @@ function selectCommit(commit) {
   document.getElementById('selected-commit-author-date').textContent = selectedCommit.authorDate;
   document.getElementById('selected-commit-hash').textContent = selectedCommit.hash;
   const parents = selectedCommit.originalParents || selectedCommit.parents;
-  document.getElementById('selected-commit-parents').textContent = parents.length > 0
-    ? parents.join(', ')
-    : 'None (root commit)';
+  document.getElementById('selected-commit-parents').textContent =
+    parents.length > 0 ? parents.join(', ') : 'None (root commit)';
 
   const references = document.getElementById('selected-commit-references');
   references.replaceChildren();
@@ -1518,12 +1597,15 @@ document.getElementById('copy-fetch-diagnostics').addEventListener('click', asyn
     await window.gitScope.copyDiagnostics(document.getElementById('fetch-diagnostics').textContent);
     document.getElementById('diagnostics-copy-status').textContent = 'Diagnostics copied.';
   } catch (error) {
-    document.getElementById('diagnostics-copy-status').textContent = `Could not copy diagnostics: ${error.message}`;
+    document.getElementById('diagnostics-copy-status').textContent =
+      `Could not copy diagnostics: ${error.message}`;
   }
 });
 
 function parseReleaseVersion(version) {
-  const match = version.match(/^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/);
+  const match = version.match(
+    /^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/
+  );
   if (!match) {
     throw new Error(`GitHub returned an unsupported release version: ${version}`);
   }
@@ -1551,7 +1633,11 @@ function compareReleaseVersions(left, right) {
     return -1;
   }
 
-  for (let index = 0; index < Math.max(left.prerelease.length, right.prerelease.length); index += 1) {
+  for (
+    let index = 0;
+    index < Math.max(left.prerelease.length, right.prerelease.length);
+    index += 1
+  ) {
     const leftIdentifier = left.prerelease[index];
     const rightIdentifier = right.prerelease[index];
     if (leftIdentifier === undefined || rightIdentifier === undefined) {
@@ -1600,17 +1686,17 @@ document.getElementById('check-for-updates').addEventListener('click', async (ev
 
     const release = await response.json();
     if (
-      typeof release?.tag_name !== 'string'
-      || typeof release?.html_url !== 'string'
-      || release.draft
-      || release.prerelease
+      typeof release?.tag_name !== 'string' ||
+      typeof release?.html_url !== 'string' ||
+      release.draft ||
+      release.prerelease
     ) {
       throw new Error('GitHub returned an invalid latest-release response. Try again later.');
     }
     const releaseUrl = new URL(release.html_url);
     if (
-      releaseUrl.origin !== 'https://github.com'
-      || !releaseUrl.pathname.startsWith('/dgooderi/GitScope/releases/')
+      releaseUrl.origin !== 'https://github.com' ||
+      !releaseUrl.pathname.startsWith('/dgooderi/GitScope/releases/')
     ) {
       throw new Error('GitHub returned an unexpected release link.');
     }
@@ -1644,4 +1730,6 @@ document.getElementById('update-release-link').addEventListener('click', async (
   }
 });
 
-document.getElementById('theme-toggle').addEventListener('click', (event) => setTheme(event.currentTarget.dataset.themeTarget));
+document
+  .getElementById('theme-toggle')
+  .addEventListener('click', (event) => setTheme(event.currentTarget.dataset.themeTarget));

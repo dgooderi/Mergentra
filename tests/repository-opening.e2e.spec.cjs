@@ -14,10 +14,11 @@ test('a developer can open a local Git repository', async () => {
   fs.mkdirSync(repositoryPath);
   fs.mkdirSync(invalidRepositoryPath);
 
-  const runGit = (args) => execFileSync('git', args, {
-    cwd: repositoryPath,
-    stdio: 'ignore'
-  });
+  const runGit = (args) =>
+    execFileSync('git', args, {
+      cwd: repositoryPath,
+      stdio: 'ignore'
+    });
 
   runGit(['-c', 'init.defaultBranch=main', 'init']);
   runGit(['config', 'user.name', 'GitScope E2E']);
@@ -70,26 +71,31 @@ test('a manual update check links to a newer GitHub release without downloading 
       env: { ...process.env, GITSCOPE_USER_DATA_DIR: userDataPath }
     });
     const window = await app.firstWindow();
-    await window.route('https://api.github.com/repos/dgooderi/GitScope/releases/latest', async (route) => {
-      releaseChecks += 1;
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          tag_name: 'v0.2.0',
-          html_url: 'https://github.com/dgooderi/GitScope/releases/tag/v0.2.0',
-          draft: false,
-          prerelease: false
-        })
-      });
-    });
+    await window.route(
+      'https://api.github.com/repos/dgooderi/GitScope/releases/latest',
+      async (route) => {
+        releaseChecks += 1;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            tag_name: 'v0.2.0',
+            html_url: 'https://github.com/dgooderi/GitScope/releases/tag/v0.2.0',
+            draft: false,
+            prerelease: false
+          })
+        });
+      }
+    );
 
     await window.waitForTimeout(100);
     expect(releaseChecks).toBe(0);
     await window.getByRole('button', { name: 'Settings' }).click();
     await window.getByRole('button', { name: 'Check for updates' }).click();
     await expect(window.locator('#update-status')).toContainText('GitScope 0.2.0 is available.');
-    const releaseLink = window.getByRole('link', { name: 'View GitScope 0.2.0 on GitHub Releases' });
+    const releaseLink = window.getByRole('link', {
+      name: 'View GitScope 0.2.0 on GitHub Releases'
+    });
     await expect(releaseLink).toHaveAttribute(
       'href',
       'https://github.com/dgooderi/GitScope/releases/tag/v0.2.0'
@@ -116,18 +122,21 @@ test('a manual update check reports when the installed version is current', asyn
       env: { ...process.env, GITSCOPE_USER_DATA_DIR: path.join(testDirectory, 'user-data') }
     });
     const window = await app.firstWindow();
-    await window.route('https://api.github.com/repos/dgooderi/GitScope/releases/latest', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          tag_name: 'v0.1.0',
-          html_url: 'https://github.com/dgooderi/GitScope/releases/tag/v0.1.0',
-          draft: false,
-          prerelease: false
-        })
-      });
-    });
+    await window.route(
+      'https://api.github.com/repos/dgooderi/GitScope/releases/latest',
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            tag_name: 'v0.1.0',
+            html_url: 'https://github.com/dgooderi/GitScope/releases/tag/v0.1.0',
+            draft: false,
+            prerelease: false
+          })
+        });
+      }
+    );
     await window.getByRole('button', { name: 'Settings' }).click();
     await window.getByRole('button', { name: 'Check for updates' }).click();
     await expect(window.locator('#update-status')).toContainText('GitScope is up to date (0.1.0).');
@@ -150,9 +159,12 @@ test('a failed update check explains the failure and can be retried', async () =
       env: { ...process.env, GITSCOPE_USER_DATA_DIR: path.join(testDirectory, 'user-data') }
     });
     const window = await app.firstWindow();
-    await window.route('https://api.github.com/repos/dgooderi/GitScope/releases/latest', async (route) => {
-      await route.fulfill({ status: 503, body: 'Unavailable' });
-    });
+    await window.route(
+      'https://api.github.com/repos/dgooderi/GitScope/releases/latest',
+      async (route) => {
+        await route.fulfill({ status: 503, body: 'Unavailable' });
+      }
+    );
     await window.getByRole('button', { name: 'Settings' }).click();
     await window.getByRole('button', { name: 'Check for updates' }).click();
     await expect(window.locator('#update-status')).toContainText(
@@ -173,10 +185,11 @@ test('a developer can configure Git when it is not on PATH', async () => {
   const userDataPath = path.join(testDirectory, 'user-data');
   fs.mkdirSync(repositoryPath);
 
-  const runGit = (args) => execFileSync('git', args, {
-    cwd: repositoryPath,
-    stdio: 'ignore'
-  });
+  const runGit = (args) =>
+    execFileSync('git', args, {
+      cwd: repositoryPath,
+      stdio: 'ignore'
+    });
   runGit(['-c', 'init.defaultBranch=main', 'init']);
   runGit(['config', 'user.name', 'GitScope E2E']);
   runGit(['config', 'user.email', 'gitscope-e2e@example.invalid']);
@@ -233,10 +246,11 @@ test('a recently opened repository can be reopened after restarting GitScope', a
   const userDataPath = path.join(testDirectory, 'user-data');
   fs.mkdirSync(repositoryPath);
 
-  const runGit = (args) => execFileSync('git', args, {
-    cwd: repositoryPath,
-    stdio: 'ignore'
-  });
+  const runGit = (args) =>
+    execFileSync('git', args, {
+      cwd: repositoryPath,
+      stdio: 'ignore'
+    });
   runGit(['-c', 'init.defaultBranch=main', 'init']);
   runGit(['config', 'user.name', 'GitScope E2E']);
   runGit(['config', 'user.email', 'gitscope-e2e@example.invalid']);
@@ -312,11 +326,12 @@ test('linear reference histories show their shared commit once and preserve pare
   const userDataPath = path.join(testDirectory, 'user-data');
   fs.mkdirSync(repositoryPath);
 
-  const runGit = (cwd, args) => execFileSync('git', args, {
-    cwd,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe']
-  }).trim();
+  const runGit = (cwd, args) =>
+    execFileSync('git', args, {
+      cwd,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe']
+    }).trim();
   let app;
 
   try {
@@ -356,17 +371,20 @@ test('linear reference histories show their shared commit once and preserve pare
     await expect(commits).toHaveCount(3);
     await expect(commits.nth(0)).toHaveAttribute('data-commit-hash', baseCommit);
     const renderedHashes = [];
-    for (let index = 0; index < await commits.count(); index += 1) {
+    for (let index = 0; index < (await commits.count()); index += 1) {
       renderedHashes.push(await commits.nth(index).getAttribute('data-commit-hash'));
     }
     expect(new Set(renderedHashes).size).toBe(3);
     expect(renderedHashes).toContain(tipCommit);
     expect(renderedHashes).toContain(featureCommit);
-    await expect(window.getByTestId('commit-graph')).toHaveAttribute('data-order', 'parent-before-child');
+    await expect(window.getByTestId('commit-graph')).toHaveAttribute(
+      'data-order',
+      'parent-before-child'
+    );
     const edges = window.getByTestId('commit-edge');
     await expect(edges).toHaveCount(2);
     const renderedIndex = new Map(renderedHashes.map((hash, index) => [hash, index]));
-    for (let index = 0; index < await edges.count(); index += 1) {
+    for (let index = 0; index < (await edges.count()); index += 1) {
       const edge = edges.nth(index);
       const parentIndex = renderedIndex.get(await edge.getAttribute('data-parent-hash'));
       const childIndex = renderedIndex.get(await edge.getAttribute('data-child-hash'));
@@ -381,12 +399,22 @@ test('linear reference histories show their shared commit once and preserve pare
     await expect(lanes.nth(1)).toHaveAttribute('data-remote', 'true');
     await expect(lanes.nth(2)).toHaveAttribute('data-ref-name', 'feature');
     await expect(lanes.nth(3)).toHaveAttribute('data-ref-name', 'origin/feature');
-    await expect(lanes.nth(0)).toHaveAttribute('data-color', await lanes.nth(1).getAttribute('data-color'));
-    await expect(lanes.nth(2)).toHaveAttribute('data-color', await lanes.nth(3).getAttribute('data-color'));
-    await expect(lanes.nth(1).locator('[data-testid="reference-lane-style"]'))
-      .toHaveAttribute('stroke-dasharray', '6 4');
-    await expect(lanes.nth(3).locator('[data-testid="reference-lane-style"]'))
-      .toHaveAttribute('stroke-dasharray', '6 4');
+    await expect(lanes.nth(0)).toHaveAttribute(
+      'data-color',
+      await lanes.nth(1).getAttribute('data-color')
+    );
+    await expect(lanes.nth(2)).toHaveAttribute(
+      'data-color',
+      await lanes.nth(3).getAttribute('data-color')
+    );
+    await expect(lanes.nth(1).locator('[data-testid="reference-lane-style"]')).toHaveAttribute(
+      'stroke-dasharray',
+      '6 4'
+    );
+    await expect(lanes.nth(3).locator('[data-testid="reference-lane-style"]')).toHaveAttribute(
+      'stroke-dasharray',
+      '6 4'
+    );
   } finally {
     if (app) {
       await app.close();
@@ -401,11 +429,12 @@ test('merge commits and grouped tags are annotated in the commit graph', async (
   const userDataPath = path.join(testDirectory, 'user-data');
   fs.mkdirSync(repositoryPath);
 
-  const runGit = (args) => execFileSync('git', args, {
-    cwd: repositoryPath,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe']
-  }).trim();
+  const runGit = (args) =>
+    execFileSync('git', args, {
+      cwd: repositoryPath,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe']
+    }).trim();
   let app;
 
   try {
@@ -441,13 +470,20 @@ test('merge commits and grouped tags are annotated in the commit graph', async (
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
 
-    const mergeNode = window.locator(`[data-testid="commit-node"][data-commit-hash="${mergeCommit}"]`);
+    const mergeNode = window.locator(
+      `[data-testid="commit-node"][data-commit-hash="${mergeCommit}"]`
+    );
     await expect(mergeNode).toHaveAttribute('data-is-merge', 'true');
-    await expect(mergeNode.locator('[data-testid="merge-node-shape"]')).toHaveAttribute('data-shape', 'diamond');
-    const mergeEdges = window.locator(`[data-testid="commit-edge"][data-child-hash="${mergeCommit}"]`);
+    await expect(mergeNode.locator('[data-testid="merge-node-shape"]')).toHaveAttribute(
+      'data-shape',
+      'diamond'
+    );
+    const mergeEdges = window.locator(
+      `[data-testid="commit-edge"][data-child-hash="${mergeCommit}"]`
+    );
     await expect(mergeEdges).toHaveCount(2);
     const mergeParents = [];
-    for (let index = 0; index < await mergeEdges.count(); index += 1) {
+    for (let index = 0; index < (await mergeEdges.count()); index += 1) {
       await expect(mergeEdges.nth(index)).toHaveAttribute('marker-end', 'url(#commit-arrowhead)');
       mergeParents.push(await mergeEdges.nth(index).getAttribute('data-parent-hash'));
     }
@@ -458,7 +494,9 @@ test('merge commits and grouped tags are annotated in the commit graph', async (
     await expect(tags.nth(0)).toHaveAttribute('data-tag-name', 'release-candidate');
     await expect(tags.nth(1)).toHaveAttribute('data-tag-name', 'v1.0.0');
     await expect(window.getByTestId('commit-node')).toHaveCount(4);
-    await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${baseCommit}"]`)).toBeVisible();
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${baseCommit}"]`)
+    ).toBeVisible();
   } finally {
     if (app) {
       await app.close();
@@ -473,11 +511,12 @@ test('divergent branches show inferred markers at their first unique commits', a
   const userDataPath = path.join(testDirectory, 'user-data');
   fs.mkdirSync(repositoryPath);
 
-  const runGit = (args) => execFileSync('git', args, {
-    cwd: repositoryPath,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe']
-  }).trim();
+  const runGit = (args) =>
+    execFileSync('git', args, {
+      cwd: repositoryPath,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe']
+    }).trim();
   let app;
 
   try {
@@ -516,7 +555,9 @@ test('divergent branches show inferred markers at their first unique commits', a
     await expect(marker).toHaveAttribute('data-ancestor-hash', sharedAncestor);
     await expect(marker).toHaveAttribute('data-commit-hash', featureCommit);
     await expect(marker).toContainText('Branch diverges: feature');
-    await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${mainCommit}"]`)).toBeVisible();
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${mainCommit}"]`)
+    ).toBeVisible();
   } finally {
     if (app) {
       await app.close();
@@ -531,11 +572,12 @@ test('pointer and keyboard commit selection show the same Review dock details', 
   const userDataPath = path.join(testDirectory, 'user-data');
   fs.mkdirSync(repositoryPath);
 
-  const runGit = (args) => execFileSync('git', args, {
-    cwd: repositoryPath,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe']
-  }).trim();
+  const runGit = (args) =>
+    execFileSync('git', args, {
+      cwd: repositoryPath,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe']
+    }).trim();
   let app;
 
   try {
@@ -582,8 +624,12 @@ test('pointer and keyboard commit selection show the same Review dock details', 
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
 
-    const commitNode = window.locator(`[data-testid="commit-node"][data-commit-hash="${commitHash}"]`);
-    const childNode = window.locator(`[data-testid="commit-node"][data-commit-hash="${childHash}"]`);
+    const commitNode = window.locator(
+      `[data-testid="commit-node"][data-commit-hash="${commitHash}"]`
+    );
+    const childNode = window.locator(
+      `[data-testid="commit-node"][data-commit-hash="${childHash}"]`
+    );
     await childNode.focus();
     await window.keyboard.press('Enter');
     await expect(childNode).toHaveAttribute('aria-pressed', 'true');
@@ -594,18 +640,26 @@ test('pointer and keyboard commit selection show the same Review dock details', 
     await expect(dock.getByTestId('selected-commit-author-date')).toHaveText(childAuthorDate);
     await expect(dock.getByTestId('selected-commit-hash')).toHaveText(childHash);
     await expect(dock.getByTestId('selected-commit-parents')).toHaveText(commitHash);
-    await expect(dock.getByTestId('selected-commit-references').getByText('main', { exact: true })).toBeVisible();
+    await expect(
+      dock.getByTestId('selected-commit-references').getByText('main', { exact: true })
+    ).toBeVisible();
 
     await commitNode.click({ timeout: 5_000 });
     await expect(commitNode).toHaveAttribute('aria-pressed', 'true');
     await expect(childNode).toHaveAttribute('aria-pressed', 'false');
-    await expect(dock.getByTestId('selected-commit-message')).toHaveText('Inspectable commit subject');
+    await expect(dock.getByTestId('selected-commit-message')).toHaveText(
+      'Inspectable commit subject'
+    );
     await expect(dock.getByTestId('selected-commit-author')).toHaveText(author);
     await expect(dock.getByTestId('selected-commit-author-date')).toHaveText(authorDate);
     await expect(dock.getByTestId('selected-commit-hash')).toHaveText(commitHash);
     await expect(dock.getByTestId('selected-commit-parents')).toHaveText('None (root commit)');
-    await expect(dock.getByTestId('selected-commit-references').getByText('review-branch', { exact: true })).toBeVisible();
-    await expect(dock.getByTestId('selected-commit-references').getByText('review-tag', { exact: true })).toBeVisible();
+    await expect(
+      dock.getByTestId('selected-commit-references').getByText('review-branch', { exact: true })
+    ).toBeVisible();
+    await expect(
+      dock.getByTestId('selected-commit-references').getByText('review-tag', { exact: true })
+    ).toBeVisible();
     await expect(window.getByRole('heading', { name: 'Commit graph' })).toBeVisible();
   } finally {
     if (app) {
@@ -622,11 +676,12 @@ test('reference filters retain shared history reachable from any enabled referen
   const userDataPath = path.join(testDirectory, 'user-data');
   fs.mkdirSync(repositoryPath);
 
-  const runGit = (cwd, args) => execFileSync('git', args, {
-    cwd,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe']
-  }).trim();
+  const runGit = (cwd, args) =>
+    execFileSync('git', args, {
+      cwd,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe']
+    }).trim();
   let app;
 
   try {
@@ -663,7 +718,8 @@ test('reference filters retain shared history reachable from any enabled referen
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
 
-    const commitNode = (hash) => window.locator(`[data-testid="commit-node"][data-commit-hash="${hash}"]`);
+    const commitNode = (hash) =>
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${hash}"]`);
     const graph = window.getByTestId('commit-graph');
     await window.locator('#branch-picker > summary').click();
     const localMain = window.getByRole('checkbox', { name: 'main', exact: true });
@@ -703,7 +759,9 @@ test('reference filters retain shared history reachable from any enabled referen
     await remoteFeature.uncheck();
     await expect(graph).toHaveAttribute('data-reference-count', '0');
     await expect(window.getByTestId('commit-node')).toHaveCount(0);
-    await expect(window.getByText('No references selected. Select a reference to show its history.')).toBeVisible();
+    await expect(
+      window.getByText('No references selected. Select a reference to show its history.')
+    ).toBeVisible();
     await expect(reviewDock).toBeHidden();
 
     await localMain.check();
@@ -753,10 +811,21 @@ test('time presets and custom local dates filter by committer timestamp', async 
       stdio: 'ignore'
     });
     execFileSync('git', ['config', 'user.name', 'GitScope E2E'], { cwd: repositoryPath });
-    execFileSync('git', ['config', 'user.email', 'gitscope-e2e@example.invalid'], { cwd: repositoryPath });
-    const oldestCommit = commitAt('Oldest commit', new Date(frozenNow.getTime() - 50 * 60 * 60 * 1000));
-    const middleCommit = commitAt('Middle commit', new Date(frozenNow.getTime() - 30 * 60 * 60 * 1000));
-    const recentCommit = commitAt('Recent commit', new Date(frozenNow.getTime() - 12 * 60 * 60 * 1000));
+    execFileSync('git', ['config', 'user.email', 'gitscope-e2e@example.invalid'], {
+      cwd: repositoryPath
+    });
+    const oldestCommit = commitAt(
+      'Oldest commit',
+      new Date(frozenNow.getTime() - 50 * 60 * 60 * 1000)
+    );
+    const middleCommit = commitAt(
+      'Middle commit',
+      new Date(frozenNow.getTime() - 30 * 60 * 60 * 1000)
+    );
+    const recentCommit = commitAt(
+      'Recent commit',
+      new Date(frozenNow.getTime() - 12 * 60 * 60 * 1000)
+    );
     const tipCommit = commitAt('Tip commit', new Date(frozenNow.getTime() - 3 * 60 * 60 * 1000));
 
     app = await electron.launch({
@@ -786,10 +855,18 @@ test('time presets and custom local dates filter by committer timestamp', async 
 
     await preset.selectOption('1d');
     await expect(window.getByTestId('commit-node')).toHaveCount(2);
-    await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${oldestCommit}"]`)).toHaveCount(0);
-    await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${middleCommit}"]`)).toHaveCount(0);
-    await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${recentCommit}"]`)).toBeVisible();
-    await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${tipCommit}"]`)).toBeVisible();
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${oldestCommit}"]`)
+    ).toHaveCount(0);
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${middleCommit}"]`)
+    ).toHaveCount(0);
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${recentCommit}"]`)
+    ).toBeVisible();
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${tipCommit}"]`)
+    ).toBeVisible();
     await expect(window.getByTestId('history-cut-marker')).toBeVisible();
 
     await preset.selectOption('custom');
@@ -797,9 +874,15 @@ test('time presets and custom local dates filter by committer timestamp', async 
     await window.getByLabel('End date').fill('2026-05-15');
     await window.getByRole('button', { name: 'Apply date range' }).click();
     await expect(window.getByTestId('commit-node')).toHaveCount(1);
-    await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${middleCommit}"]`)).toBeVisible();
-    await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${recentCommit}"]`)).toHaveCount(0);
-    await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${tipCommit}"]`)).toHaveCount(0);
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${middleCommit}"]`)
+    ).toBeVisible();
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${recentCommit}"]`)
+    ).toHaveCount(0);
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${tipCommit}"]`)
+    ).toHaveCount(0);
   } finally {
     if (app) {
       await app.close();
@@ -814,11 +897,12 @@ test('ordinary commits between important commits compact into an endpoint-exclus
   const userDataPath = path.join(testDirectory, 'user-data');
   fs.mkdirSync(repositoryPath);
 
-  const runGit = (args) => execFileSync('git', args, {
-    cwd: repositoryPath,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe']
-  }).trim();
+  const runGit = (args) =>
+    execFileSync('git', args, {
+      cwd: repositoryPath,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe']
+    }).trim();
   const commitFile = (file, message) => {
     fs.writeFileSync(path.join(repositoryPath, file), message);
     runGit(['add', file]);
@@ -850,12 +934,18 @@ test('ordinary commits between important commits compact into an endpoint-exclus
 
     const commits = window.getByTestId('commit-node');
     await expect(commits).toHaveCount(2);
-    await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${taggedEndpoint}"]`)).toBeVisible();
-    await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${branchTip}"]`)).toBeVisible();
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${taggedEndpoint}"]`)
+    ).toBeVisible();
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${branchTip}"]`)
+    ).toBeVisible();
     const summary = window.getByTestId('compacted-commit-count');
     await expect(summary).toHaveAttribute('data-count', '3');
     for (const hiddenCommit of hiddenCommits) {
-      await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${hiddenCommit}"]`)).toHaveCount(0);
+      await expect(
+        window.locator(`[data-testid="commit-node"][data-commit-hash="${hiddenCommit}"]`)
+      ).toHaveCount(0);
     }
     await expect(summary).toContainText('+3');
   } finally {
@@ -898,7 +988,9 @@ test('calendar-month presets start at the matching local calendar period', async
       stdio: 'ignore'
     });
     execFileSync('git', ['config', 'user.name', 'GitScope E2E'], { cwd: repositoryPath });
-    execFileSync('git', ['config', 'user.email', 'gitscope-e2e@example.invalid'], { cwd: repositoryPath });
+    execFileSync('git', ['config', 'user.email', 'gitscope-e2e@example.invalid'], {
+      cwd: repositoryPath
+    });
     const calendarBoundary = commitAt('Calendar boundary', new Date(2026, 3, 30, 12, 0, 0));
     const branchTip = commitAt('Calendar-window tip', new Date(2026, 4, 31, 10, 0, 0));
 
@@ -914,12 +1006,18 @@ test('calendar-month presets start at the matching local calendar period', async
     const preset = window.getByLabel('Time range', { exact: true });
     await preset.selectOption('1m');
     await expect(window.getByTestId('commit-node')).toHaveCount(2);
-    await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${calendarBoundary}"]`)).toBeVisible();
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${calendarBoundary}"]`)
+    ).toBeVisible();
 
     await preset.selectOption('5d');
     await expect(window.getByTestId('commit-node')).toHaveCount(1);
-    await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${calendarBoundary}"]`)).toHaveCount(0);
-    await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${branchTip}"]`)).toBeVisible();
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${calendarBoundary}"]`)
+    ).toHaveCount(0);
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${branchTip}"]`)
+    ).toBeVisible();
   } finally {
     if (app) {
       await app.close();
@@ -959,7 +1057,9 @@ test('custom date ranges include their start and end dates without including the
       stdio: 'ignore'
     });
     execFileSync('git', ['config', 'user.name', 'GitScope E2E'], { cwd: repositoryPath });
-    execFileSync('git', ['config', 'user.email', 'gitscope-e2e@example.invalid'], { cwd: repositoryPath });
+    execFileSync('git', ['config', 'user.email', 'gitscope-e2e@example.invalid'], {
+      cwd: repositoryPath
+    });
     const beforeRange = commitAt('Before range', new Date(2026, 4, 14, 23, 59, 59));
     const startBoundary = commitAt('Start boundary', new Date(2026, 4, 15, 0, 0, 0));
     const endBoundary = commitAt('End boundary', new Date(2026, 4, 15, 23, 59, 59));
@@ -978,10 +1078,18 @@ test('custom date ranges include their start and end dates without including the
     await window.getByRole('button', { name: 'Apply date range' }).click();
 
     await expect(window.getByTestId('commit-node')).toHaveCount(2);
-    await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${beforeRange}"]`)).toHaveCount(0);
-    await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${startBoundary}"]`)).toBeVisible();
-    await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${endBoundary}"]`)).toBeVisible();
-    await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${afterRange}"]`)).toHaveCount(0);
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${beforeRange}"]`)
+    ).toHaveCount(0);
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${startBoundary}"]`)
+    ).toBeVisible();
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${endBoundary}"]`)
+    ).toBeVisible();
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${afterRange}"]`)
+    ).toHaveCount(0);
   } finally {
     if (app) {
       await app.close();
@@ -1022,16 +1130,33 @@ test('history-edge compacted counts include only ordinary commits inside the sel
       stdio: 'ignore'
     });
     execFileSync('git', ['config', 'user.name', 'GitScope E2E'], { cwd: repositoryPath });
-    execFileSync('git', ['config', 'user.email', 'gitscope-e2e@example.invalid'], { cwd: repositoryPath });
-    const outsideCommit = commitAt('Outside range', new Date(frozenNow.getTime() - 30 * 60 * 60 * 1000));
-    const taggedEndpoint = commitAt('In-range tagged endpoint', new Date(frozenNow.getTime() - 20 * 60 * 60 * 1000));
+    execFileSync('git', ['config', 'user.email', 'gitscope-e2e@example.invalid'], {
+      cwd: repositoryPath
+    });
+    const outsideCommit = commitAt(
+      'Outside range',
+      new Date(frozenNow.getTime() - 30 * 60 * 60 * 1000)
+    );
+    const taggedEndpoint = commitAt(
+      'In-range tagged endpoint',
+      new Date(frozenNow.getTime() - 20 * 60 * 60 * 1000)
+    );
     execFileSync('git', ['tag', 'in-range-anchor', taggedEndpoint], {
       cwd: repositoryPath,
       stdio: 'ignore'
     });
-    const firstHiddenCommit = commitAt('In-range ordinary one', new Date(frozenNow.getTime() - 12 * 60 * 60 * 1000));
-    const secondHiddenCommit = commitAt('In-range ordinary two', new Date(frozenNow.getTime() - 8 * 60 * 60 * 1000));
-    const branchTip = commitAt('In-range branch tip', new Date(frozenNow.getTime() - 2 * 60 * 60 * 1000));
+    const firstHiddenCommit = commitAt(
+      'In-range ordinary one',
+      new Date(frozenNow.getTime() - 12 * 60 * 60 * 1000)
+    );
+    const secondHiddenCommit = commitAt(
+      'In-range ordinary two',
+      new Date(frozenNow.getTime() - 8 * 60 * 60 * 1000)
+    );
+    const branchTip = commitAt(
+      'In-range branch tip',
+      new Date(frozenNow.getTime() - 2 * 60 * 60 * 1000)
+    );
 
     app = await electron.launch({
       args: [path.resolve(__dirname, '..')],
@@ -1045,12 +1170,22 @@ test('history-edge compacted counts include only ordinary commits inside the sel
     await window.getByLabel('Time range', { exact: true }).selectOption('1d');
 
     await expect(window.getByTestId('commit-node')).toHaveCount(2);
-    await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${taggedEndpoint}"]`)).toBeVisible();
-    await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${branchTip}"]`)).toBeVisible();
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${taggedEndpoint}"]`)
+    ).toBeVisible();
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${branchTip}"]`)
+    ).toBeVisible();
     await expect(window.getByTestId('compacted-commit-count')).toHaveAttribute('data-count', '2');
-    await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${outsideCommit}"]`)).toHaveCount(0);
-    await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${firstHiddenCommit}"]`)).toHaveCount(0);
-    await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${secondHiddenCommit}"]`)).toHaveCount(0);
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${outsideCommit}"]`)
+    ).toHaveCount(0);
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${firstHiddenCommit}"]`)
+    ).toHaveCount(0);
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${secondHiddenCommit}"]`)
+    ).toHaveCount(0);
     await expect(window.getByTestId('history-cut-marker')).toBeVisible();
   } finally {
     if (app) {
@@ -1069,11 +1204,12 @@ test('remote-tracking references refresh only after explicit Fetch', async () =>
   fs.mkdirSync(producerPath);
   let app;
 
-  const runGit = (cwd, args) => execFileSync('git', args, {
-    cwd,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe']
-  }).trim();
+  const runGit = (cwd, args) =>
+    execFileSync('git', args, {
+      cwd,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe']
+    }).trim();
 
   try {
     runGit(testDirectory, ['init', '--bare', '--initial-branch=main', remotePath]);
@@ -1102,18 +1238,26 @@ test('remote-tracking references refresh only after explicit Fetch', async () =>
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
 
-    const remoteLane = window.locator('[data-testid="reference-lane"][data-ref-name="origin/main"]');
+    const remoteLane = window.locator(
+      '[data-testid="reference-lane"][data-ref-name="origin/main"]'
+    );
     await expect(remoteLane).toHaveAttribute('data-target-hash', originalRemoteTip);
-    await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${updatedRemoteTip}"]`)).toHaveCount(0);
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${updatedRemoteTip}"]`)
+    ).toHaveCount(0);
     await window.locator('#branch-picker > summary').click();
     await window.getByRole('checkbox', { name: 'main', exact: true }).uncheck();
     await expect(remoteLane).toHaveAttribute('data-target-hash', originalRemoteTip);
-    await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${updatedRemoteTip}"]`)).toHaveCount(0);
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${updatedRemoteTip}"]`)
+    ).toHaveCount(0);
 
     await window.getByRole('button', { name: 'Fetch' }).click();
     await expect(window.locator('#fetch-status')).toContainText('Fetch completed');
     await expect(remoteLane).toHaveAttribute('data-target-hash', updatedRemoteTip);
-    await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${updatedRemoteTip}"]`)).toBeVisible();
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${updatedRemoteTip}"]`)
+    ).toBeVisible();
     expect(runGit(repositoryPath, ['rev-parse', 'refs/heads/main'])).toBe(originalRemoteTip);
   } finally {
     if (app) {
@@ -1133,11 +1277,12 @@ test('failed explicit fetch keeps the graph and exposes copyable diagnostics', a
   fs.mkdirSync(producerPath);
   let app;
 
-  const runGit = (cwd, args) => execFileSync('git', args, {
-    cwd,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe']
-  }).trim();
+  const runGit = (cwd, args) =>
+    execFileSync('git', args, {
+      cwd,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe']
+    }).trim();
 
   try {
     runGit(testDirectory, ['init', '--bare', '--initial-branch=main', remotePath]);
@@ -1167,9 +1312,12 @@ test('failed explicit fetch keeps the graph and exposes copyable diagnostics', a
     await expect(window.getByText(/fatal:|does not appear to be a git repository/i)).toBeVisible();
     await window.getByRole('button', { name: 'Copy diagnostics' }).click();
     await expect(window.locator('#diagnostics-copy-status')).toHaveText('Diagnostics copied.');
-    await expect(window.locator('[data-testid="reference-lane"][data-ref-name="origin/main"]'))
-      .toHaveAttribute('data-target-hash', originalRemoteTip);
-    await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${originalRemoteTip}"]`)).toBeVisible();
+    await expect(
+      window.locator('[data-testid="reference-lane"][data-ref-name="origin/main"]')
+    ).toHaveAttribute('data-target-hash', originalRemoteTip);
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${originalRemoteTip}"]`)
+    ).toBeVisible();
   } finally {
     if (app) {
       await app.close();
@@ -1185,11 +1333,12 @@ test('detached HEAD is marked at its commit without inventing a branch', async (
   fs.mkdirSync(repositoryPath);
   let app;
 
-  const runGit = (args) => execFileSync('git', args, {
-    cwd: repositoryPath,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe']
-  }).trim();
+  const runGit = (args) =>
+    execFileSync('git', args, {
+      cwd: repositoryPath,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe']
+    }).trim();
 
   try {
     runGit(['-c', 'init.defaultBranch=main', 'init']);
@@ -1211,8 +1360,12 @@ test('detached HEAD is marked at its commit without inventing a branch', async (
 
     await expect(window.locator('#branch-name')).toHaveText('Detached HEAD');
     await expect(window.getByTestId('head-marker')).toHaveAttribute('data-commit-hash', head);
-    await expect(window.locator('[data-testid="reference-lane"][data-ref-name="HEAD"]')).toHaveCount(0);
-    await expect(window.locator(`[data-testid="commit-node"][data-commit-hash="${head}"]`)).toBeVisible();
+    await expect(
+      window.locator('[data-testid="reference-lane"][data-ref-name="HEAD"]')
+    ).toHaveCount(0);
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${head}"]`)
+    ).toBeVisible();
   } finally {
     if (app) {
       await app.close();
@@ -1243,7 +1396,9 @@ test('an unborn branch shows its name and an empty graph', async () => {
 
     await expect(window.locator('#branch-name')).toHaveText('first-work');
     await expect(window.getByTestId('commit-node')).toHaveCount(0);
-    await expect(window.getByText('No commits yet. The commit graph will appear after the first commit.')).toBeVisible();
+    await expect(
+      window.getByText('No commits yet. The commit graph will appear after the first commit.')
+    ).toBeVisible();
   } finally {
     if (app) {
       await app.close();
@@ -1260,11 +1415,12 @@ test('branches identify the worktree where they are checked out', async () => {
   fs.mkdirSync(repositoryPath);
   let app;
 
-  const runGit = (args) => execFileSync('git', args, {
-    cwd: repositoryPath,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe']
-  }).trim();
+  const runGit = (args) =>
+    execFileSync('git', args, {
+      cwd: repositoryPath,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe']
+    }).trim();
 
   try {
     runGit(['-c', 'init.defaultBranch=main', 'init']);
@@ -1283,18 +1439,30 @@ test('branches identify the worktree where they are checked out', async () => {
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
 
-    const mainLocation = window.locator('[data-testid="reference-lane"][data-ref-name="main"] [data-testid="reference-worktree"]');
-    const featureLocation = window.locator('[data-testid="reference-lane"][data-ref-name="feature"] [data-testid="reference-worktree"]');
-    await expect(window.getByTestId('worktree').filter({ hasText: repositoryPath })).toHaveAttribute('data-current', 'true');
-    await expect(window.getByTestId('worktree').filter({ hasText: linkedWorktreePath })).toHaveAttribute('data-current', 'false');
+    const mainLocation = window.locator(
+      '[data-testid="reference-lane"][data-ref-name="main"] [data-testid="reference-worktree"]'
+    );
+    const featureLocation = window.locator(
+      '[data-testid="reference-lane"][data-ref-name="feature"] [data-testid="reference-worktree"]'
+    );
+    await expect(
+      window.getByTestId('worktree').filter({ hasText: repositoryPath })
+    ).toHaveAttribute('data-current', 'true');
+    await expect(
+      window.getByTestId('worktree').filter({ hasText: linkedWorktreePath })
+    ).toHaveAttribute('data-current', 'false');
     await expect(mainLocation).toHaveText(repositoryPath);
     await expect(featureLocation).toHaveText(linkedWorktreePath);
 
     await window.getByRole('button', { name: 'Open another repository' }).click();
     await window.getByLabel('Repository folder').fill(linkedWorktreePath);
     await window.getByRole('button', { name: 'Open repository' }).click();
-    await expect(window.getByTestId('worktree').filter({ hasText: repositoryPath })).toHaveAttribute('data-current', 'false');
-    await expect(window.getByTestId('worktree').filter({ hasText: linkedWorktreePath })).toHaveAttribute('data-current', 'true');
+    await expect(
+      window.getByTestId('worktree').filter({ hasText: repositoryPath })
+    ).toHaveAttribute('data-current', 'false');
+    await expect(
+      window.getByTestId('worktree').filter({ hasText: linkedWorktreePath })
+    ).toHaveAttribute('data-current', 'true');
   } finally {
     if (app) {
       await app.close();
@@ -1312,11 +1480,12 @@ test('shallow clones mark the visible history boundary', async () => {
   fs.mkdirSync(sourcePath);
   let app;
 
-  const runGit = (args, cwd) => execFileSync('git', args, {
-    cwd,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe']
-  }).trim();
+  const runGit = (args, cwd) =>
+    execFileSync('git', args, {
+      cwd,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe']
+    }).trim();
 
   try {
     runGit(['-c', 'init.defaultBranch=main', 'init'], sourcePath);
@@ -1343,7 +1512,9 @@ test('shallow clones mark the visible history boundary', async () => {
     await expect(marker).toHaveAttribute('data-commit-hash', shallowHead);
     await expect(marker).toHaveText('Shallow boundary');
     await expect(window.locator('[data-testid="commit-node"]')).toHaveCount(1);
-    await expect(window.locator('[data-testid="history-boundary"][data-boundary-type="missing-object"]')).toHaveCount(0);
+    await expect(
+      window.locator('[data-testid="history-boundary"][data-boundary-type="missing-object"]')
+    ).toHaveCount(0);
   } finally {
     if (app) {
       await app.close();
@@ -1361,12 +1532,13 @@ test('partial clones mark missing-object boundaries without fetching', async () 
   fs.mkdirSync(sourcePath);
   let app;
 
-  const runGit = (args, cwd) => execFileSync('git', args, {
-    cwd,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
-    env: { ...process.env, GIT_NO_LAZY_FETCH: '1' }
-  }).trim();
+  const runGit = (args, cwd) =>
+    execFileSync('git', args, {
+      cwd,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: { ...process.env, GIT_NO_LAZY_FETCH: '1' }
+    }).trim();
 
   try {
     runGit(['-c', 'init.defaultBranch=main', 'init'], sourcePath);
@@ -1376,18 +1548,26 @@ test('partial clones mark missing-object boundaries without fetching', async () 
     runGit(['add', 'content.txt'], sourcePath);
     runGit(['commit', '-m', 'Partial clone commit'], sourcePath);
     runGit(['clone', '--bare', sourcePath, remotePath], testDirectory);
-    runGit(['config', '--file', path.join(remotePath, 'config'), 'uploadpack.allowFilter', 'true'], testDirectory);
-    runGit([
-      'clone', '--filter=tree:0', '--no-checkout',
-      pathToFileURL(remotePath).href,
-      repositoryPath
-    ], testDirectory);
+    runGit(
+      ['config', '--file', path.join(remotePath, 'config'), 'uploadpack.allowFilter', 'true'],
+      testDirectory
+    );
+    runGit(
+      ['clone', '--filter=tree:0', '--no-checkout', pathToFileURL(remotePath).href, repositoryPath],
+      testDirectory
+    );
     const head = runGit(['rev-parse', 'HEAD'], repositoryPath);
     const commitObject = runGit(['cat-file', '-p', head], repositoryPath);
     const headTree = commitObject.match(/^tree ([0-9a-f]+)$/m)?.[1];
     assert(headTree, 'the fixture commit must identify its root tree');
-    const missingObjects = runGit(['rev-list', '--objects', '--missing=print', '--all'], repositoryPath);
-    assert(missingObjects.split(/\r?\n/).includes(`?${headTree}`), 'the fixture must have an intentionally missing commit tree');
+    const missingObjects = runGit(
+      ['rev-list', '--objects', '--missing=print', '--all'],
+      repositoryPath
+    );
+    assert(
+      missingObjects.split(/\r?\n/).includes(`?${headTree}`),
+      'the fixture must have an intentionally missing commit tree'
+    );
     fs.rmSync(remotePath, { recursive: true, force: true });
 
     app = await electron.launch({
@@ -1398,10 +1578,14 @@ test('partial clones mark missing-object boundaries without fetching', async () 
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
 
-    const marker = window.locator('[data-testid="history-boundary"][data-boundary-type="missing-object"]');
+    const marker = window.locator(
+      '[data-testid="history-boundary"][data-boundary-type="missing-object"]'
+    );
     await expect(marker).toHaveAttribute('data-commit-hash', head);
     await expect(marker).toHaveText('Missing-object boundary');
-    await expect(window.locator('[data-testid="commit-node"][data-commit-hash="' + head + '"]')).toBeVisible();
+    await expect(
+      window.locator('[data-testid="commit-node"][data-commit-hash="' + head + '"]')
+    ).toBeVisible();
   } finally {
     if (app) {
       await app.close();
@@ -1429,17 +1613,25 @@ test('the complex branch scenario shows its merge history and fetchable bare rem
 
     await expect(window.locator('#repository-name')).toHaveText('complex-branch-scenario');
     await expect(window.locator('[data-testid="reference-lane"]')).toHaveCount(18);
-    await expect(window.locator('[data-testid="commit-node"][data-is-merge="true"]')).toHaveCount(6);
+    await expect(window.locator('[data-testid="commit-node"][data-is-merge="true"]')).toHaveCount(
+      6
+    );
     expect(await window.getByTestId('time-axis-label').count()).toBeGreaterThan(3);
     await expect(window.locator('[data-testid="commit-tag"]')).toHaveCount(3);
     expect(await window.getByTestId('divergence-marker').count()).toBeGreaterThanOrEqual(2);
     remoteOnlyTip = execFileSync('git', ['ls-remote', 'origin', 'refs/heads/main'], {
       cwd: repositoryPath,
       encoding: 'utf8'
-    }).trim().split(/\s+/)[0];
-    const remoteMain = window.locator('[data-testid="reference-lane"][data-ref-name="origin/main"]');
+    })
+      .trim()
+      .split(/\s+/)[0];
+    const remoteMain = window.locator(
+      '[data-testid="reference-lane"][data-ref-name="origin/main"]'
+    );
     initialRemoteTrackingTip = await remoteMain.getAttribute('data-target-hash');
-    const remoteOnlyNode = window.locator(`[data-testid="commit-node"][data-commit-hash="${remoteOnlyTip}"]`);
+    const remoteOnlyNode = window.locator(
+      `[data-testid="commit-node"][data-commit-hash="${remoteOnlyTip}"]`
+    );
     await expect(remoteOnlyNode).not.toBeVisible();
 
     await window.getByRole('button', { name: 'Fetch' }).click();
@@ -1452,7 +1644,13 @@ test('the complex branch scenario shows its merge history and fetchable bare rem
       await app.close();
     }
     if (initialRemoteTrackingTip && remoteOnlyTip) {
-      execFileSync('git', ['--git-dir', bareRemotePath, 'update-ref', 'refs/heads/main', remoteOnlyTip]);
+      execFileSync('git', [
+        '--git-dir',
+        bareRemotePath,
+        'update-ref',
+        'refs/heads/main',
+        remoteOnlyTip
+      ]);
       execFileSync('git', ['update-ref', 'refs/remotes/origin/main', initialRemoteTrackingTip], {
         cwd: repositoryPath
       });
@@ -1491,9 +1689,11 @@ test('the checked-out branch is highlighted in the reference list and at its gra
     await expect(checkedOutLane).toHaveCSS('border-top-style', 'solid');
     await expect(checkedOutLane).toHaveCSS('border-top-width', '2px');
     await expect(checkedOutLane.getByTestId('checked-out-label')).toHaveText('Checked out');
-    await expect(window.locator(
-      `[data-testid="checked-out-branch-marker"][data-branch-name="${branchName}"][data-commit-hash="${head}"]`
-    )).toBeVisible();
+    await expect(
+      window.locator(
+        `[data-testid="checked-out-branch-marker"][data-branch-name="${branchName}"][data-commit-hash="${head}"]`
+      )
+    ).toBeVisible();
   } finally {
     if (app) {
       await app.close();
@@ -1508,10 +1708,12 @@ test('the complex scenario shows both merge directions and recent history', asyn
   let app;
 
   try {
-    const latestSampleCommitDate = new Date(execFileSync('git', ['show', '-s', '--format=%cI', 'HEAD'], {
-      cwd: repositoryPath,
-      encoding: 'utf8'
-    }).trim());
+    const latestSampleCommitDate = new Date(
+      execFileSync('git', ['show', '-s', '--format=%cI', 'HEAD'], {
+        cwd: repositoryPath,
+        encoding: 'utf8'
+      }).trim()
+    );
     app = await electron.launch({
       args: [path.resolve(__dirname, '..')],
       env: { ...process.env, GITSCOPE_USER_DATA_DIR: path.join(testDirectory, 'user-data') }
@@ -1535,7 +1737,9 @@ test('the complex scenario shows both merge directions and recent history', asyn
     await expect(mainIntoFeatureAfterIntegration).toBeVisible();
     await expect(featureIntoMain).toBeVisible();
     const allHistoryCount = await window.getByTestId('commit-node').count();
-    await expect(window.locator('[data-testid="commit-node"][aria-label*="Initial project skeleton"]')).toBeVisible();
+    await expect(
+      window.locator('[data-testid="commit-node"][aria-label*="Initial project skeleton"]')
+    ).toBeVisible();
 
     await window.locator('#time-range').selectOption('1d');
     await expect(mainIntoFeature).toBeVisible();
@@ -1543,10 +1747,14 @@ test('the complex scenario shows both merge directions and recent history', asyn
     await expect(featureIntoMain).toBeVisible();
     expect(await window.getByTestId('commit-node').count()).toBeGreaterThan(0);
     expect(await window.getByTestId('commit-node').count()).toBeLessThan(allHistoryCount);
-    await expect(window.getByTestId('compacted-commit-count').filter({ hasText: '+1' })).toHaveCount(0);
+    await expect(
+      window.getByTestId('compacted-commit-count').filter({ hasText: '+1' })
+    ).toHaveCount(0);
 
     await window.locator('#time-range').selectOption('all');
-    await expect(window.locator('[data-testid="commit-node"][aria-label*="Initial project skeleton"]')).toBeVisible();
+    await expect(
+      window.locator('[data-testid="commit-node"][aria-label*="Initial project skeleton"]')
+    ).toBeVisible();
   } finally {
     if (app) {
       await app.close();
@@ -1567,7 +1775,9 @@ test('the repository view expands and contracts with the application window', as
       stdio: 'ignore'
     });
     execFileSync('git', ['config', 'user.name', 'GitScope E2E'], { cwd: repositoryPath });
-    execFileSync('git', ['config', 'user.email', 'gitscope-e2e@example.invalid'], { cwd: repositoryPath });
+    execFileSync('git', ['config', 'user.email', 'gitscope-e2e@example.invalid'], {
+      cwd: repositoryPath
+    });
     fs.writeFileSync(path.join(repositoryPath, 'README.md'), 'Responsive layout test\n');
     execFileSync('git', ['add', 'README.md'], { cwd: repositoryPath, stdio: 'ignore' });
     execFileSync('git', ['commit', '-m', 'Create layout fixture'], {
@@ -1581,9 +1791,12 @@ test('the repository view expands and contracts with the application window', as
     });
     const window = await app.firstWindow();
     const resizeWindow = async (width, height) => {
-      await app.evaluate(({ BrowserWindow }, size) => {
-        BrowserWindow.getAllWindows()[0].setSize(size.width, size.height);
-      }, { width, height });
+      await app.evaluate(
+        ({ BrowserWindow }, size) => {
+          BrowserWindow.getAllWindows()[0].setSize(size.width, size.height);
+        },
+        { width, height }
+      );
       await expect.poll(() => window.evaluate(() => window.innerWidth)).toBeGreaterThan(width - 40);
     };
     await resizeWindow(1366, 768);
@@ -1602,8 +1815,9 @@ test('the repository view expands and contracts with the application window', as
     await resizeWindow(1000, 720);
     const narrowLayout = await repositoryView.boundingBox();
     expect(narrowLayout.width).toBeLessThan(standardLayout.width);
-    expect(await window.evaluate(() => document.documentElement.scrollWidth))
-      .toBeLessThanOrEqual(await window.evaluate(() => window.innerWidth));
+    expect(await window.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      await window.evaluate(() => window.innerWidth)
+    );
   } finally {
     if (app) {
       await app.close();
@@ -1622,11 +1836,12 @@ test('dense histories show a useful graph and keep filters responsive at target 
   fs.mkdirSync(repositoryPath);
   let app;
 
-  const runGit = (args) => execFileSync('git', args, {
-    cwd: repositoryPath,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe']
-  }).trim();
+  const runGit = (args) =>
+    execFileSync('git', args, {
+      cwd: repositoryPath,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe']
+    }).trim();
 
   async function createHistory() {
     const author = 'GitScope E2E <gitscope-e2e@example.invalid>';
@@ -1638,7 +1853,9 @@ test('dense histories show a useful graph and keep filters responsive at target 
     });
     let stderr = '';
     stream.stderr.setEncoding('utf8');
-    stream.stderr.on('data', (chunk) => { stderr += chunk; });
+    stream.stderr.on('data', (chunk) => {
+      stderr += chunk;
+    });
     const lines = [];
     for (let index = 0; index < commitCount; index += 1) {
       const mark = index + 1;
@@ -1672,7 +1889,9 @@ test('dense histories show a useful graph and keep filters responsive at target 
     runGit(['-c', 'init.defaultBranch=main', 'init']);
     await createHistory();
     expect(runGit(['rev-list', '--count', '--all'])).toBe(String(commitCount));
-    expect(runGit(['for-each-ref', '--format=%(refname)', 'refs/heads']).split(/\r?\n/)).toHaveLength(referenceCount);
+    expect(
+      runGit(['for-each-ref', '--format=%(refname)', 'refs/heads']).split(/\r?\n/)
+    ).toHaveLength(referenceCount);
 
     app = await electron.launch({
       args: [path.resolve(__dirname, '..')],
@@ -1691,16 +1910,20 @@ test('dense histories show a useful graph and keep filters responsive at target 
       String(referenceCount)
     );
     const displayedCommitCount = await window.getByTestId('commit-node').count();
-    const compactedCommitCount = await window.getByTestId('compacted-commit-count').evaluateAll((summaries) => (
-      summaries.reduce((sum, summary) => sum + Number(summary.dataset.count), 0)
-    ));
+    const compactedCommitCount = await window
+      .getByTestId('compacted-commit-count')
+      .evaluateAll((summaries) =>
+        summaries.reduce((sum, summary) => sum + Number(summary.dataset.count), 0)
+      );
     expect(displayedCommitCount + compactedCommitCount).toBe(commitCount);
     await expect(window.getByTestId('commit-node').first()).toBeVisible();
     const graphReadyMs = Number(process.hrtime.bigint() - graphStartedAt) / 1_000_000;
     expect(graphReadyMs, `graph ready in ${graphReadyMs.toFixed(1)} ms`).toBeLessThan(5_000);
 
     await window.locator('#branch-picker > summary').click();
-    const branchFilter = window.locator('[data-testid="reference-filter"][aria-label="branch-050"]');
+    const branchFilter = window.locator(
+      '[data-testid="reference-filter"][aria-label="branch-050"]'
+    );
     const branchFilterStartedAt = process.hrtime.bigint();
     await branchFilter.uncheck();
     await expect(window.locator('[data-testid="commit-graph"]')).toHaveAttribute(
@@ -1708,24 +1931,39 @@ test('dense histories show a useful graph and keep filters responsive at target 
       String(referenceCount - 1)
     );
     const branchFilterMs = Number(process.hrtime.bigint() - branchFilterStartedAt) / 1_000_000;
-    expect(branchFilterMs, `reference filter responded in ${branchFilterMs.toFixed(1)} ms`).toBeLessThan(250);
+    expect(
+      branchFilterMs,
+      `reference filter responded in ${branchFilterMs.toFixed(1)} ms`
+    ).toBeLessThan(250);
 
     const timeFilterStartedAt = process.hrtime.bigint();
     await window.getByLabel('Time range', { exact: true }).selectOption('1d');
-    await expect(window.getByTestId('history-cut-marker')).toContainText('Earlier history continues');
+    await expect(window.getByTestId('history-cut-marker')).toContainText(
+      'Earlier history continues'
+    );
     const timeFilterMs = Number(process.hrtime.bigint() - timeFilterStartedAt) / 1_000_000;
-    expect(timeFilterMs, `time filter responded in ${timeFilterMs.toFixed(1)} ms`).toBeLessThan(250);
+    expect(timeFilterMs, `time filter responded in ${timeFilterMs.toFixed(1)} ms`).toBeLessThan(
+      250
+    );
     const recentNodeCount = await window.getByTestId('commit-node').count();
-    expect(recentNodeCount, 'the selected time window should keep recent commit nodes visible').toBeGreaterThan(0);
-    expect(recentNodeCount, 'the selected time window should clip dense older history').toBeLessThan(25);
+    expect(
+      recentNodeCount,
+      'the selected time window should keep recent commit nodes visible'
+    ).toBeGreaterThan(0);
+    expect(
+      recentNodeCount,
+      'the selected time window should clip dense older history'
+    ).toBeLessThan(25);
     await expect(window.getByTestId('compacted-commit-count')).toBeVisible();
-    console.log(JSON.stringify({
-      target: { commits: commitCount, references: referenceCount },
-      graphReadyMs: Math.round(graphReadyMs),
-      branchFilterMs: Math.round(branchFilterMs),
-      timeFilterMs: Math.round(timeFilterMs),
-      recentNodeCount
-    }));
+    console.log(
+      JSON.stringify({
+        target: { commits: commitCount, references: referenceCount },
+        graphReadyMs: Math.round(graphReadyMs),
+        branchFilterMs: Math.round(branchFilterMs),
+        timeFilterMs: Math.round(timeFilterMs),
+        recentNodeCount
+      })
+    );
   } finally {
     if (app) {
       await app.close();
@@ -1737,7 +1975,8 @@ test('dense histories show a useful graph and keep filters responsive at target 
 test('branch selection and time range are remembered per repository', async () => {
   const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-view-state-e2e-'));
   const userDataPath = path.join(testDirectory, 'user-data');
-  const runGit = (cwd, args) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  const runGit = (cwd, args) =>
+    execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   const createRepository = (name) => {
     const repositoryPath = path.join(testDirectory, name);
     fs.mkdirSync(repositoryPath);
@@ -1750,10 +1989,11 @@ test('branch selection and time range are remembered per repository', async () =
   };
   const firstRepository = createRepository('first');
   const secondRepository = createRepository('second');
-  const launch = () => electron.launch({
-    args: [path.resolve(__dirname, '..')],
-    env: { ...process.env, GITSCOPE_USER_DATA_DIR: userDataPath }
-  });
+  const launch = () =>
+    electron.launch({
+      args: [path.resolve(__dirname, '..')],
+      env: { ...process.env, GITSCOPE_USER_DATA_DIR: userDataPath }
+    });
   let app;
 
   try {
@@ -1790,7 +2030,12 @@ test('commit and branch notes persist per repository and selection can be cleare
   const userDataPath = path.join(testDirectory, 'user-data');
   const repositoryPath = path.join(testDirectory, 'notes-repository');
   fs.mkdirSync(repositoryPath);
-  const runGit = (args) => execFileSync('git', args, { cwd: repositoryPath, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  const runGit = (args) =>
+    execFileSync('git', args, {
+      cwd: repositoryPath,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe']
+    }).trim();
   runGit(['-c', 'init.defaultBranch=main', 'init']);
   runGit(['config', 'user.name', 'GitScope E2E']);
   runGit(['config', 'user.email', 'gitscope-e2e@example.invalid']);
@@ -1798,10 +2043,11 @@ test('commit and branch notes persist per repository and selection can be cleare
   runGit(['commit', '--allow-empty', '-m', 'Second']);
   runGit(['branch', 'feature']);
   const tip = runGit(['rev-parse', 'HEAD']);
-  const launch = () => electron.launch({
-    args: [path.resolve(__dirname, '..')],
-    env: { ...process.env, GITSCOPE_USER_DATA_DIR: userDataPath }
-  });
+  const launch = () =>
+    electron.launch({
+      args: [path.resolve(__dirname, '..')],
+      env: { ...process.env, GITSCOPE_USER_DATA_DIR: userDataPath }
+    });
   let app;
 
   try {
@@ -1838,7 +2084,9 @@ test('commit and branch notes persist per repository and selection can be cleare
     await window.getByRole('button', { name: 'Open repository' }).click();
     await window.locator(`[data-testid="commit-node"][data-commit-hash="${tip}"]`).click();
     await expect(window.getByTestId('selected-commit-note')).toHaveValue('Part of project X');
-    await expect(window.getByTestId('selected-commit-branch-notes')).toContainText('feature: Prototype for project X');
+    await expect(window.getByTestId('selected-commit-branch-notes')).toContainText(
+      'feature: Prototype for project X'
+    );
   } finally {
     await app?.close();
     fs.rmSync(testDirectory, { recursive: true, force: true });
@@ -1848,7 +2096,12 @@ test('collapsed commit groups list their commits, highlight with the selection, 
   const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-collapsed-e2e-'));
   const repositoryPath = path.join(testDirectory, 'collapsed-repository');
   fs.mkdirSync(repositoryPath);
-  const runGit = (args) => execFileSync('git', args, { cwd: repositoryPath, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  const runGit = (args) =>
+    execFileSync('git', args, {
+      cwd: repositoryPath,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe']
+    }).trim();
   runGit(['-c', 'init.defaultBranch=main', 'init']);
   runGit(['config', 'user.name', 'GitScope E2E']);
   runGit(['config', 'user.email', 'gitscope-e2e@example.invalid']);

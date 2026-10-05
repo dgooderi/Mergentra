@@ -30,18 +30,21 @@ function loadSettings() {
   }
 
   if (
-    typeof storedSettings !== 'object'
-    || storedSettings === null
-    || typeof storedSettings.gitPath !== 'string'
-    || !Array.isArray(storedSettings.recentRepositories)
-    || !storedSettings.recentRepositories.every((repository) => (
-      typeof repository === 'object'
-      && repository !== null
-      && typeof repository.path === 'string'
-      && typeof repository.name === 'string'
-    ))
+    typeof storedSettings !== 'object' ||
+    storedSettings === null ||
+    typeof storedSettings.gitPath !== 'string' ||
+    !Array.isArray(storedSettings.recentRepositories) ||
+    !storedSettings.recentRepositories.every(
+      (repository) =>
+        typeof repository === 'object' &&
+        repository !== null &&
+        typeof repository.path === 'string' &&
+        typeof repository.name === 'string'
+    )
   ) {
-    throw new Error('GitScope settings have an unsupported format. Move settings.json out of the user data folder and restart GitScope.');
+    throw new Error(
+      'GitScope settings have an unsupported format. Move settings.json out of the user data folder and restart GitScope.'
+    );
   }
 
   return storedSettings;
@@ -137,9 +140,7 @@ async function runGitWithInput(gitPath, args, input) {
 }
 
 function sanitizeDiagnostics(diagnostics) {
-  return diagnostics
-    .replace(/(https?:\/\/)[^/\s@]+@/gi, '$1[redacted]@')
-    .trim();
+  return diagnostics.replace(/(https?:\/\/)[^/\s@]+@/gi, '$1[redacted]@').trim();
 }
 
 function orderReferences(references) {
@@ -176,17 +177,21 @@ function orderReferences(references) {
     if (local.name === 'main') {
       continue;
     }
-    const matchingRemote = remoteReferences.find((reference) => (
-      !pairedRemotes.has(reference.name)
-      && reference.name.slice(reference.name.indexOf('/') + 1) === local.name
-    ));
+    const matchingRemote = remoteReferences.find(
+      (reference) =>
+        !pairedRemotes.has(reference.name) &&
+        reference.name.slice(reference.name.indexOf('/') + 1) === local.name
+    );
     if (matchingRemote) {
       addPair(local, matchingRemote);
     }
   }
 
   const unpairedReferences = [
-    ...localReferences.filter((reference) => reference.name !== 'main' && !ordered.some((item) => item.name === reference.name)),
+    ...localReferences.filter(
+      (reference) =>
+        reference.name !== 'main' && !ordered.some((item) => item.name === reference.name)
+    ),
     ...remoteReferences.filter((reference) => !pairedRemotes.has(reference.name))
   ].sort((left, right) => left.name.localeCompare(right.name));
 
@@ -204,8 +209,12 @@ async function loadCommitGraph(gitPath, repositoryPath, branchName, currentWorkt
   let headHash = null;
   try {
     const headResult = await runGit(gitPath, [
-      '-C', repositoryPath,
-      'rev-parse', '--verify', '--quiet', 'HEAD'
+      '-C',
+      repositoryPath,
+      'rev-parse',
+      '--verify',
+      '--quiet',
+      'HEAD'
     ]);
     headHash = headResult.stdout.trim() || null;
   } catch (error) {
@@ -218,40 +227,43 @@ async function loadCommitGraph(gitPath, repositoryPath, branchName, currentWorkt
   if (headHash) {
     logRoots.push('HEAD');
   }
-  const [logResult, refsResult, tagsResult, worktreesResult, shallowPathResult] = await Promise.all([
-    runGit(gitPath, [
-      '-C', repositoryPath,
-      'log', ...logRoots, '--topo-order', '--reverse',
-      '--format=%H%x00%T%x00%P%x00%s%x00%an%x00%ae%x00%aI%x00%ct'
-    ]),
-    runGit(gitPath, [
-      '-C', repositoryPath,
-      'for-each-ref',
-      '--format=%(refname:short)%00%(objectname)%00%(symref)%00%(refname)',
-      'refs/heads', 'refs/remotes'
-    ]),
-    runGit(gitPath, [
-      '-C', repositoryPath,
-      'for-each-ref',
-      '--format=%(refname:short)%00%(objectname)%00%(*objectname)',
-      'refs/tags'
-    ]),
-    runGit(gitPath, [
-      '-C', repositoryPath,
-      'worktree', 'list', '--porcelain'
-    ]),
-    runGit(gitPath, [
-      '-C', repositoryPath,
-      'rev-parse', '--git-path', 'shallow'
-    ])
-  ]);
+  const [logResult, refsResult, tagsResult, worktreesResult, shallowPathResult] = await Promise.all(
+    [
+      runGit(gitPath, [
+        '-C',
+        repositoryPath,
+        'log',
+        ...logRoots,
+        '--topo-order',
+        '--reverse',
+        '--format=%H%x00%T%x00%P%x00%s%x00%an%x00%ae%x00%aI%x00%ct'
+      ]),
+      runGit(gitPath, [
+        '-C',
+        repositoryPath,
+        'for-each-ref',
+        '--format=%(refname:short)%00%(objectname)%00%(symref)%00%(refname)',
+        'refs/heads',
+        'refs/remotes'
+      ]),
+      runGit(gitPath, [
+        '-C',
+        repositoryPath,
+        'for-each-ref',
+        '--format=%(refname:short)%00%(objectname)%00%(*objectname)',
+        'refs/tags'
+      ]),
+      runGit(gitPath, ['-C', repositoryPath, 'worktree', 'list', '--porcelain']),
+      runGit(gitPath, ['-C', repositoryPath, 'rev-parse', '--git-path', 'shallow'])
+    ]
+  );
 
   let shallowBoundaries = [];
   try {
-    shallowBoundaries = fs.readFileSync(
-      path.resolve(repositoryPath, shallowPathResult.stdout.trim()),
-      'utf8'
-    ).split(/\r?\n/).filter(Boolean);
+    shallowBoundaries = fs
+      .readFileSync(path.resolve(repositoryPath, shallowPathResult.stdout.trim()), 'utf8')
+      .split(/\r?\n/)
+      .filter(Boolean);
   } catch (error) {
     if (error.code !== 'ENOENT') {
       throw new Error(`Git shallow boundaries could not be read: ${error.message}`);
@@ -272,7 +284,11 @@ async function loadCommitGraph(gitPath, repositoryPath, branchName, currentWorkt
       saveWorktree();
     } else if (line.startsWith('worktree ')) {
       saveWorktree();
-      worktree = { path: path.normalize(line.slice('worktree '.length)), branch: null, detached: false };
+      worktree = {
+        path: path.normalize(line.slice('worktree '.length)),
+        branch: null,
+        detached: false
+      };
     } else if (worktree && line.startsWith('branch ')) {
       worktree.branch = line.slice('branch '.length).replace(/^refs\/heads\//, '');
     } else if (worktree && line === 'detached') {
@@ -281,19 +297,21 @@ async function loadCommitGraph(gitPath, repositoryPath, branchName, currentWorkt
   }
   saveWorktree();
 
-  const normalizedCurrentPath = process.platform === 'win32'
-    ? path.resolve(currentWorktreePath).toLowerCase()
-    : path.resolve(currentWorktreePath);
+  const normalizedCurrentPath =
+    process.platform === 'win32'
+      ? path.resolve(currentWorktreePath).toLowerCase()
+      : path.resolve(currentWorktreePath);
   for (const entry of worktrees) {
-    const normalizedWorktreePath = process.platform === 'win32'
-      ? path.resolve(entry.path).toLowerCase()
-      : path.resolve(entry.path);
+    const normalizedWorktreePath =
+      process.platform === 'win32'
+        ? path.resolve(entry.path).toLowerCase()
+        : path.resolve(entry.path);
     entry.current = normalizedWorktreePath === normalizedCurrentPath;
   }
 
-  const worktreeByBranch = new Map(worktrees
-    .filter((entry) => entry.branch)
-    .map((entry) => [entry.branch, entry.path]));
+  const worktreeByBranch = new Map(
+    worktrees.filter((entry) => entry.branch).map((entry) => [entry.branch, entry.path])
+  );
   const references = refsResult.stdout
     .split(/\r?\n/)
     .filter(Boolean)
@@ -346,20 +364,24 @@ async function loadCommitGraph(gitPath, repositoryPath, branchName, currentWorkt
   }
   let missingObjectHashes = new Set();
   if (objectHashesToCheck.size > 0) {
-    const missingObjectsResult = await runGitWithInput(gitPath, [
-      '-C', repositoryPath,
-      'cat-file', '--batch-check'
-    ], `${[...objectHashesToCheck].join('\n')}\n`);
-    missingObjectHashes = new Set(missingObjectsResult.stdout
-    .split(/\r?\n/)
-      .filter((line) => line.endsWith(' missing'))
-      .map((line) => line.split(' ', 1)[0]));
+    const missingObjectsResult = await runGitWithInput(
+      gitPath,
+      ['-C', repositoryPath, 'cat-file', '--batch-check'],
+      `${[...objectHashesToCheck].join('\n')}\n`
+    );
+    missingObjectHashes = new Set(
+      missingObjectsResult.stdout
+        .split(/\r?\n/)
+        .filter((line) => line.endsWith(' missing'))
+        .map((line) => line.split(' ', 1)[0])
+    );
   }
   const missingObjectBoundaries = commits
-    .filter((commit) => (
-      missingObjectHashes.has(commit.treeHash)
-      || commit.parents.some((parentHash) => missingObjectHashes.has(parentHash))
-    ))
+    .filter(
+      (commit) =>
+        missingObjectHashes.has(commit.treeHash) ||
+        commit.parents.some((parentHash) => missingObjectHashes.has(parentHash))
+    )
     .map((commit) => commit.hash);
   const tagsByHash = new Map();
   for (const line of tagsResult.stdout.split(/\r?\n/).filter(Boolean)) {
@@ -387,7 +409,9 @@ async function loadCommitGraph(gitPath, repositoryPath, branchName, currentWorkt
   }
 
   for (const commit of commits) {
-    commit.tags = (tagsByHash.get(commit.hash) || []).sort((left, right) => left.localeCompare(right));
+    commit.tags = (tagsByHash.get(commit.hash) || []).sort((left, right) =>
+      left.localeCompare(right)
+    );
     commit.references = orderedReferences
       .filter((reference) => reference.hash === commit.hash)
       .map((reference) => reference.name)
@@ -438,8 +462,8 @@ async function loadCommitGraph(gitPath, repositoryPath, branchName, currentWorkt
   }
 
   const localReferences = orderedReferences.filter((reference) => !reference.remote);
-  const mainReference = localReferences.find((reference) => reference.name === 'main')
-    || localReferences[0];
+  const mainReference =
+    localReferences.find((reference) => reference.name === 'main') || localReferences[0];
   const divergenceMarkers = [];
 
   if (mainReference) {
@@ -505,7 +529,9 @@ async function openRepository(repositoryPath) {
     repositoryStat = fs.statSync(resolvedPath);
   } catch (error) {
     if (error.code === 'ENOENT' || error.code === 'ENOTDIR') {
-      throw new Error('The selected folder does not exist. Choose an existing Git repository folder.');
+      throw new Error(
+        'The selected folder does not exist. Choose an existing Git repository folder.'
+      );
     }
     throw new Error(`The selected folder could not be accessed: ${error.message}`);
   }
@@ -524,14 +550,18 @@ async function openRepository(repositoryPath) {
   }
 
   try {
-    repositoryRoot = (await runGit(gitPath, [
-      '-C', resolvedPath, 'rev-parse', '--show-toplevel'
-    ])).stdout.trim();
+    repositoryRoot = (
+      await runGit(gitPath, ['-C', resolvedPath, 'rev-parse', '--show-toplevel'])
+    ).stdout.trim();
   } catch (error) {
     if (error.code === 'ENOENT') {
-      throw new Error('The selected folder does not exist. Choose an existing Git repository folder.');
+      throw new Error(
+        'The selected folder does not exist. Choose an existing Git repository folder.'
+      );
     }
-    throw new Error('The selected folder is not a Git repository. Choose a folder containing a Git repository.');
+    throw new Error(
+      'The selected folder is not a Git repository. Choose a folder containing a Git repository.'
+    );
   }
 
   const { stdout } = await runGit(gitPath, ['-C', resolvedPath, 'branch', '--show-current']);
@@ -546,9 +576,8 @@ async function openRepository(repositoryPath) {
 
 async function openAndRememberRepository(repositoryPath) {
   const repository = await openRepository(repositoryPath);
-  const normalizedPath = process.platform === 'win32'
-    ? repository.path.toLowerCase()
-    : repository.path;
+  const normalizedPath =
+    process.platform === 'win32' ? repository.path.toLowerCase() : repository.path;
   const recentRepositories = [
     repository,
     ...settings.recentRepositories.filter((recent) => {
@@ -640,7 +669,9 @@ app.whenReady().then(() => {
     return result.canceled ? null : result.filePaths[0];
   });
 
-  ipcMain.handle('repository:open', (_event, repositoryPath) => openAndRememberRepository(repositoryPath));
+  ipcMain.handle('repository:open', (_event, repositoryPath) =>
+    openAndRememberRepository(repositoryPath)
+  );
   ipcMain.handle('repository:fetch', () => fetchRemoteReferences());
   ipcMain.handle('app:version', () => app.getVersion());
   ipcMain.handle('external:open-release', async (_event, releaseUrl) => {
@@ -655,8 +686,8 @@ app.whenReady().then(() => {
       throw new Error('The GitHub release link is invalid.');
     }
     if (
-      parsedUrl.origin !== 'https://github.com'
-      || !parsedUrl.pathname.startsWith('/dgooderi/GitScope/releases/')
+      parsedUrl.origin !== 'https://github.com' ||
+      !parsedUrl.pathname.startsWith('/dgooderi/GitScope/releases/')
     ) {
       throw new Error('Only GitScope GitHub release links can be opened.');
     }

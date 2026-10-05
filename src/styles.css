@@ -1,6 +1,6 @@
 :root {
   color-scheme: dark;
-  font-family: "Segoe UI", sans-serif;
+  font-family: 'Segoe UI', sans-serif;
   color: #e5e7eb;
   background: #111827;
   --app-background: #111827;
@@ -17,7 +17,7 @@
   text-rendering: optimizeLegibility;
 }
 
-:root[data-theme="light"] {
+:root[data-theme='light'] {
   color-scheme: light;
   color: #1f2937;
   background: #f3f4f6;
@@ -42,8 +42,7 @@ body {
   min-height: 100vh;
   margin: 0;
   background:
-    radial-gradient(ellipse at 15% 0%, rgb(37 99 235 / 16%), transparent 45%),
-    var(--app-background);
+    radial-gradient(ellipse at 15% 0%, rgb(37 99 235 / 16%), transparent 45%), var(--app-background);
   color: var(--text);
 }
 
@@ -106,7 +105,7 @@ section {
   font-size: 13px;
 }
 
-.fetch-controls > p[role="status"]:not(:empty) {
+.fetch-controls > p[role='status']:not(:empty) {
   color: var(--text);
 }
 
@@ -129,7 +128,9 @@ section {
   max-height: 180px;
   margin: 0 0 10px;
   color: var(--text);
-  font: 12px/1.5 Consolas, monospace;
+  font:
+    12px/1.5 Consolas,
+    monospace;
   white-space: pre-wrap;
   user-select: text;
 }
@@ -273,13 +274,13 @@ section {
   font-size: 13px;
 }
 
-#reference-lanes li[data-checked-out="true"] {
+#reference-lanes li[data-checked-out='true'] {
   border: 2px solid #2563eb;
   background: color-mix(in srgb, #2563eb 12%, var(--field-background));
   font-weight: 600;
 }
 
-#reference-lanes input[type="checkbox"] {
+#reference-lanes input[type='checkbox'] {
   width: 15px;
   height: 15px;
   flex: 0 0 15px;
@@ -380,17 +381,17 @@ section {
   display: block;
 }
 
-#commit-graph [data-testid="commit-node"] {
+#commit-graph [data-testid='commit-node'] {
   cursor: pointer;
 }
 
 #commit-graph text {
   fill: var(--muted);
-  font-family: "Segoe UI", sans-serif;
+  font-family: 'Segoe UI', sans-serif;
   font-size: 10px;
 }
 
-#commit-graph [data-testid="compacted-commit-count"] text {
+#commit-graph [data-testid='compacted-commit-count'] text {
   fill: #111827;
   font-size: 12px;
   font-weight: 700;
@@ -458,7 +459,7 @@ section {
   font-size: 13px;
 }
 
-.theme-control button[aria-pressed="true"] {
+.theme-control button[aria-pressed='true'] {
   border-color: #2563eb;
   background: #2563eb;
   color: white;
@@ -725,7 +726,7 @@ button:focus-visible {
   filter: drop-shadow(0 0 4px #f59e0b);
 }
 
-#commit-graph [data-testid="commit-node"][aria-pressed="true"] .selection-ring {
+#commit-graph [data-testid='commit-node'][aria-pressed='true'] .selection-ring {
   display: inline;
 }
 
@@ -735,7 +736,7 @@ button:focus-visible {
   font-size: 13px;
 }
 
-#commit-graph [data-testid="commit-node"][data-has-note="true"] .note-marker {
+#commit-graph [data-testid='commit-node'][data-has-note='true'] .note-marker {
   display: inline;
 }
 
@@ -812,9 +813,9 @@ button:focus-visible {
   font-weight: 600;
 }
 
-#commit-graph[data-show-hashes="false"] .hash-label,
-#commit-graph[data-show-tags="false"] .plain-tag,
-#commit-graph[data-show-releases="false"] .release-tag {
+#commit-graph[data-show-hashes='false'] .hash-label,
+#commit-graph[data-show-tags='false'] .plain-tag,
+#commit-graph[data-show-releases='false'] .release-tag {
   display: none;
 }
 
@@ -823,11 +824,11 @@ button:focus-visible {
   font-weight: 700;
 }
 
-#commit-graph [data-testid="compacted-commit-count"] {
+#commit-graph [data-testid='compacted-commit-count'] {
   cursor: pointer;
 }
 
-#commit-graph [data-testid="compacted-commit-count"][aria-pressed="true"] .selection-ring {
+#commit-graph [data-testid='compacted-commit-count'][aria-pressed='true'] .selection-ring {
   display: inline;
 }
 
@@ -879,7 +880,7 @@ button:focus-visible {
   background: var(--field-background);
 }
 
-.compacted-popover button[aria-pressed="true"] {
+.compacted-popover button[aria-pressed='true'] {
   border-color: #f59e0b;
   background: color-mix(in srgb, #f59e0b 18%, transparent);
 }
