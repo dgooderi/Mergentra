@@ -11,6 +11,10 @@ export default [
     languageOptions: { sourceType: 'commonjs', globals: { ...globals.node } }
   },
   {
+    files: ['tests/**/*.cjs'],
+    languageOptions: { globals: { ...globals.browser } }
+  },
+  {
     files: ['src/renderer.js'],
     languageOptions: { sourceType: 'script', globals: { ...globals.browser } }
   }

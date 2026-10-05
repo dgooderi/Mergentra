@@ -24,9 +24,9 @@ function loadSettings() {
       return { gitPath: '', recentRepositories: [] };
     }
     if (error instanceof SyntaxError) {
-      throw new Error(`GitScope settings are not valid JSON: ${error.message}`);
+      throw new Error(`GitScope settings are not valid JSON: ${error.message}`, { cause: error });
     }
-    throw new Error(`GitScope settings could not be read: ${error.message}`);
+    throw new Error(`GitScope settings could not be read: ${error.message}`, { cause: error });
   }
 
   if (
@@ -266,7 +266,9 @@ async function loadCommitGraph(gitPath, repositoryPath, branchName, currentWorkt
       .filter(Boolean);
   } catch (error) {
     if (error.code !== 'ENOENT') {
-      throw new Error(`Git shallow boundaries could not be read: ${error.message}`);
+      throw new Error(`Git shallow boundaries could not be read: ${error.message}`, {
+        cause: error
+      });
     }
   }
 
@@ -530,10 +532,13 @@ async function openRepository(repositoryPath) {
   } catch (error) {
     if (error.code === 'ENOENT' || error.code === 'ENOTDIR') {
       throw new Error(
-        'The selected folder does not exist. Choose an existing Git repository folder.'
+        'The selected folder does not exist. Choose an existing Git repository folder.',
+        { cause: error }
       );
     }
-    throw new Error(`The selected folder could not be accessed: ${error.message}`);
+    throw new Error(`The selected folder could not be accessed: ${error.message}`, {
+      cause: error
+    });
   }
 
   if (!repositoryStat.isDirectory()) {
@@ -544,9 +549,12 @@ async function openRepository(repositoryPath) {
     await runGit(gitPath, ['--version']);
   } catch (error) {
     if (error.code === 'ENOENT' && !settings.gitPath) {
-      throw new Error('Git was not found on PATH. Install Git for Windows, then restart GitScope.');
+      throw new Error(
+        'Git was not found on PATH. Install Git for Windows, then restart GitScope.',
+        { cause: error }
+      );
     }
-    throw new Error(`Git could not be started: ${error.message}`);
+    throw new Error(`Git could not be started: ${error.message}`, { cause: error });
   }
 
   try {
@@ -556,11 +564,13 @@ async function openRepository(repositoryPath) {
   } catch (error) {
     if (error.code === 'ENOENT') {
       throw new Error(
-        'The selected folder does not exist. Choose an existing Git repository folder.'
+        'The selected folder does not exist. Choose an existing Git repository folder.',
+        { cause: error }
       );
     }
     throw new Error(
-      'The selected folder is not a Git repository. Choose a folder containing a Git repository.'
+      'The selected folder is not a Git repository. Choose a folder containing a Git repository.',
+      { cause: error }
     );
   }
 
@@ -725,7 +735,9 @@ app.whenReady().then(() => {
     try {
       await runGit(resolvedGitPath, ['--version']);
     } catch (error) {
-      throw new Error(`Git could not be started from "${resolvedGitPath}": ${error.message}`);
+      throw new Error(`Git could not be started from "${resolvedGitPath}": ${error.message}`, {
+        cause: error
+      });
     }
 
     saveSettings({ ...settings, gitPath: resolvedGitPath });

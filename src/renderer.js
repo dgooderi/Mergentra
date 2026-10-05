@@ -2,7 +2,7 @@ const picker = document.getElementById('repository-picker');
 const form = document.getElementById('repository-form');
 const pathInput = document.getElementById('repository-path');
 const gitPathInput = document.getElementById('git-executable-path');
-const status = document.getElementById('status');
+const statusMessage = document.getElementById('status');
 const repositoryView = document.getElementById('repository-view');
 let selectedCommit = null;
 let currentGraph = null;
@@ -125,7 +125,7 @@ function renderSelectedBranchNotes() {
 }
 
 function setStatus(message) {
-  status.textContent = message;
+  statusMessage.textContent = message;
 }
 
 async function openRepository(repositoryPath, triggerButton) {
@@ -375,7 +375,6 @@ function renderFilteredGraph() {
   }
 
   const reachableHashes = new Set(laneByHash.keys());
-  const timeRangeStatus = document.getElementById('time-range-status');
   const commitsInRange = currentGraph.commits.filter(
     (commit) =>
       reachableHashes.has(commit.hash) &&
