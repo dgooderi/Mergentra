@@ -1211,14 +1211,13 @@ function renderGraphContents(graph) {
         continue;
       }
       const isMergeIn = commit.parents.length > 1 && parentHash !== commit.parents[0];
-      const bend = Math.min(
-        isMergeIn && childPosition.x - parentPosition.x <= MERGE_CURVE_AT_START_SPAN ? 176 : 48,
-        childPosition.x - parentPosition.x
-      );
+      const curvesAtEnd =
+        isMergeIn && childPosition.x - parentPosition.x <= MERGE_CURVE_AT_START_SPAN;
+      const bend = Math.min(curvesAtEnd ? 176 : 48, childPosition.x - parentPosition.x);
       let pathData;
       if (parentPosition.y === childPosition.y) {
         pathData = `M ${parentPosition.x} ${parentPosition.y} L ${childPosition.x} ${childPosition.y}`;
-      } else if (isMergeIn && childPosition.x - parentPosition.x <= MERGE_CURVE_AT_START_SPAN) {
+      } else if (curvesAtEnd) {
         const turn = childPosition.x - bend;
         pathData = `M ${parentPosition.x} ${parentPosition.y} L ${turn} ${parentPosition.y} C ${turn + bend * 0.8} ${parentPosition.y}, ${turn + bend * 0.2} ${childPosition.y}, ${childPosition.x} ${childPosition.y}`;
       } else {
@@ -1231,11 +1230,11 @@ function renderGraphContents(graph) {
         parentCommit && parentCommit.lane !== commit.lane ? parentCommit.lane : commit.lane;
       let stroke = graph.references[edgeLane]?.color || '#9ca3af';
       const branchColor = graph.references[commit.lane]?.color;
-      const isFork = !isMergeIn && edgeLane !== commit.lane;
+      const leavesAtStart = !curvesAtEnd && edgeLane !== commit.lane;
       const fadeStart = parentPosition.x + bend;
       const fadeEnd = Math.min(fadeStart + window.innerWidth * 0.05, childPosition.x);
-      if (isFork && branchColor && branchColor !== stroke && fadeEnd > fadeStart) {
-        // Switch to the branch colour just past the curve, within 5% of the window width.
+      if (leavesAtStart && branchColor && branchColor !== stroke && fadeEnd > fadeStart) {
+        // Switch to the target branch colour just past the curve, within 5% of the window width, so a long line does not masquerade as the source branch.
         const gradientId = `fork-gradient-${commit.hash}-${parentHash}`;
         const gradient = createSvgElement('linearGradient', {
           id: gradientId,
