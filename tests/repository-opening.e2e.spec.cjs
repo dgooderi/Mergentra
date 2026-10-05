@@ -79,8 +79,8 @@ test('a manual update check links to a newer GitHub release without downloading 
           status: 200,
           contentType: 'application/json',
           body: JSON.stringify({
-            tag_name: 'v0.2.0',
-            html_url: 'https://github.com/dgooderi/GitScope/releases/tag/v0.2.0',
+            tag_name: 'v1.0.0',
+            html_url: 'https://github.com/dgooderi/GitScope/releases/tag/v1.0.0',
             draft: false,
             prerelease: false
           })
@@ -92,13 +92,13 @@ test('a manual update check links to a newer GitHub release without downloading 
     expect(releaseChecks).toBe(0);
     await window.getByRole('button', { name: 'Settings' }).click();
     await window.getByRole('button', { name: 'Check for updates' }).click();
-    await expect(window.locator('#update-status')).toContainText('GitScope 0.2.0 is available.');
+    await expect(window.locator('#update-status')).toContainText('GitScope 1.0.0 is available.');
     const releaseLink = window.getByRole('link', {
-      name: 'View GitScope 0.2.0 on GitHub Releases'
+      name: 'View GitScope 1.0.0 on GitHub Releases'
     });
     await expect(releaseLink).toHaveAttribute(
       'href',
-      'https://github.com/dgooderi/GitScope/releases/tag/v0.2.0'
+      'https://github.com/dgooderi/GitScope/releases/tag/v1.0.0'
     );
     await expect(releaseLink).toHaveAttribute('target', '_blank');
     await expect(window.getByRole('button', { name: 'Check for updates' })).toBeEnabled();
@@ -129,8 +129,8 @@ test('a manual update check reports when the installed version is current', asyn
           status: 200,
           contentType: 'application/json',
           body: JSON.stringify({
-            tag_name: 'v0.1.0',
-            html_url: 'https://github.com/dgooderi/GitScope/releases/tag/v0.1.0',
+            tag_name: 'v0.9.0',
+            html_url: 'https://github.com/dgooderi/GitScope/releases/tag/v0.9.0',
             draft: false,
             prerelease: false
           })
@@ -139,7 +139,7 @@ test('a manual update check reports when the installed version is current', asyn
     );
     await window.getByRole('button', { name: 'Settings' }).click();
     await window.getByRole('button', { name: 'Check for updates' }).click();
-    await expect(window.locator('#update-status')).toContainText('GitScope is up to date (0.1.0).');
+    await expect(window.locator('#update-status')).toContainText('GitScope is up to date (0.9.0).');
     await expect(window.locator('#update-release-link')).toBeHidden();
   } finally {
     if (app) {

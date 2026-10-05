@@ -1,6 +1,6 @@
 {
   "name": "gitscope",
-  "version": "0.1.0",
+  "version": "0.9.0",
   "description": "A Windows-first desktop app for exploring local Git history.",
   "author": "GitScope contributors",
   "main": "src/main.js",
