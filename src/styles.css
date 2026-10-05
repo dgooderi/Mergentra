@@ -1108,3 +1108,17 @@ main:not(:has(#repository-view:not([hidden]))) #open-explorer {
 .graph-context-menu button:focus-visible {
   background: rgb(96 165 250 / 22%);
 }
+
+.graph-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.zoom-controls {
+  display: flex;
+  gap: 4px;
+}
+.zoom-controls button {
+  min-width: 40px;
+}

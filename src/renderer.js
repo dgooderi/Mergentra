@@ -15,6 +15,8 @@ const viewStateKeyPrefix = 'gitscope:view-state:';
 const notesKeyPrefix = 'gitscope:notes:';
 const repositoryNoteKeyPrefix = 'gitscope:repository-note:';
 let notes = { commits: {}, branches: {} };
+const ZOOM_STEPS = [0.25, 0.4, 0.5, 0.67, 0.8, 1, 1.25, 1.5, 2, 3];
+let zoomLevel = 1;
 let displayOptions = { tags: true, hashes: true, releases: true };
 let compactedMembership = new Map();
 const releaseTagPattern = /^v?\d+(\.\d+)+([-+.].*)?$/;
@@ -273,6 +275,43 @@ function loadViewState() {
     return null;
   }
 }
+
+function setZoom(level, anchor) {
+  const graphElement = document.getElementById('commit-graph');
+  const scroller = graphElement.parentElement;
+  const previous = zoomLevel;
+  zoomLevel = Math.min(Math.max(level, ZOOM_STEPS[0]), ZOOM_STEPS[ZOOM_STEPS.length - 1]);
+  document.getElementById('zoom-reset').textContent = `${Math.round(zoomLevel * 100)}%`;
+  document.getElementById('zoom-in').disabled = zoomLevel >= ZOOM_STEPS[ZOOM_STEPS.length - 1];
+  document.getElementById('zoom-out').disabled = zoomLevel <= ZOOM_STEPS[0];
+  const baseWidth = Number(graphElement.dataset.baseWidth);
+  if (!baseWidth || previous === zoomLevel) {
+    return;
+  }
+  // Keep the point under the cursor (or the view centre) in place while zooming.
+  const box = scroller.getBoundingClientRect();
+  const anchorX = anchor ? anchor.x - box.left : scroller.clientWidth / 2;
+  const anchorY = anchor ? anchor.y - box.top : scroller.clientHeight / 2;
+  const contentX = (scroller.scrollLeft + anchorX) / previous;
+  const contentY = (scroller.scrollTop + anchorY) / previous;
+  graphElement.setAttribute('width', String(Math.round(baseWidth * zoomLevel)));
+  graphElement.setAttribute(
+    'height',
+    String(Math.round(Number(graphElement.dataset.baseHeight) * zoomLevel))
+  );
+  scroller.scrollLeft = contentX * zoomLevel - anchorX;
+  scroller.scrollTop = contentY * zoomLevel - anchorY;
+}
+
+function stepZoom(direction, anchor) {
+  const index = ZOOM_STEPS.findIndex((step) => step >= zoomLevel - 0.001);
+  const next = Math.min(Math.max(index + direction, 0), ZOOM_STEPS.length - 1);
+  setZoom(ZOOM_STEPS[next], anchor);
+}
+
+document.getElementById('zoom-in').addEventListener('click', () => stepZoom(1));
+document.getElementById('zoom-out').addEventListener('click', () => stepZoom(-1));
+document.getElementById('zoom-reset').addEventListener('click', () => setZoom(1));
 
 function saveViewState() {
   if (!currentRepositoryPath || !currentGraph) {
@@ -999,6 +1038,11 @@ function setVisibleBranches(predicate) {
 }
 
 document.getElementById('commit-graph').addEventListener('click', (event) => {
+  if (event.shiftKey && !event.target.closest('[data-testid="commit-node"]')) {
+    // Shift+click zooms in on the clicked point; Shift+Alt+click zooms out.
+    stepZoom(event.altKey ? -1 : 1, { x: event.clientX, y: event.clientY });
+    return;
+  }
   if (
     !event.target.closest('[data-testid="commit-node"], [data-testid="compacted-commit-count"]')
   ) {
@@ -1268,8 +1312,10 @@ function renderGraphContents(graph) {
     leftPadding + rightPadding + Math.max(graph.commits.length - 1, 0) * columnWidth
   );
   const height = 60 + axisHeight + totalRowsHeight;
-  graphElement.setAttribute('width', String(width));
-  graphElement.setAttribute('height', String(height));
+  graphElement.dataset.baseWidth = String(width);
+  graphElement.dataset.baseHeight = String(height);
+  graphElement.setAttribute('width', String(Math.round(width * zoomLevel)));
+  graphElement.setAttribute('height', String(Math.round(height * zoomLevel)));
   graphElement.setAttribute('viewBox', `0 0 ${width} ${height}`);
   graphElement.dataset.order = graph.order;
   graphElement.dataset.referenceCount = String(graph.references.length);

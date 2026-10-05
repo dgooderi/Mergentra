@@ -2141,6 +2141,22 @@ test('collapsed commit groups list their commits, highlight with the selection, 
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
 
+    await expect(window.getByTestId('compacted-commit-count')).toBeVisible();
+    const graphSvg = window.getByTestId('commit-graph');
+    const baseWidth = Number(await graphSvg.getAttribute('width'));
+    await window.getByRole('button', { name: 'Zoom in' }).click();
+    await expect(window.getByRole('button', { name: 'Reset zoom' })).toHaveText('125%');
+    expect(Number(await graphSvg.getAttribute('width'))).toBe(Math.round(baseWidth * 1.25));
+    await window.getByRole('button', { name: 'Zoom out' }).click();
+    await window.getByRole('button', { name: 'Zoom out' }).click();
+    await expect(window.getByRole('button', { name: 'Reset zoom' })).toHaveText('80%');
+    await graphSvg.click({ position: { x: 5, y: 5 }, modifiers: ['Shift'] });
+    await expect(window.getByRole('button', { name: 'Reset zoom' })).toHaveText('100%');
+    await graphSvg.click({ position: { x: 5, y: 5 }, modifiers: ['Shift', 'Alt'] });
+    await expect(window.getByRole('button', { name: 'Reset zoom' })).toHaveText('80%');
+    await window.getByRole('button', { name: 'Reset zoom' }).click();
+    expect(Number(await graphSvg.getAttribute('width'))).toBe(baseWidth);
+
     const summary = window.getByTestId('compacted-commit-count');
     await expect(summary).toHaveAttribute('data-count', '3');
     await expect(summary).toHaveAttribute('aria-pressed', 'false');

@@ -176,7 +176,38 @@
                 <ul id="worktree-list"></ul>
               </details>
             </div>
-            <h2>Commit graph</h2>
+            <div class="graph-heading">
+              <h2>Commit graph</h2>
+              <div class="zoom-controls" role="group" aria-label="Zoom">
+                <button
+                  id="zoom-out"
+                  class="secondary"
+                  type="button"
+                  aria-label="Zoom out"
+                  title="Zoom out (Shift+Alt+click on the graph)"
+                >
+                  &minus;
+                </button>
+                <button
+                  id="zoom-reset"
+                  class="secondary"
+                  type="button"
+                  aria-label="Reset zoom"
+                  title="Reset zoom"
+                >
+                  100%
+                </button>
+                <button
+                  id="zoom-in"
+                  class="secondary"
+                  type="button"
+                  aria-label="Zoom in"
+                  title="Zoom in (Shift+click on the graph)"
+                >
+                  +
+                </button>
+              </div>
+            </div>
             <div class="graph-scroll">
               <svg
                 id="commit-graph"
