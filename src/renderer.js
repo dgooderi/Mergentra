@@ -270,6 +270,8 @@ function showRepository(repository) {
   repositoryView.hidden = false;
 }
 
+const LARGE_HISTORY_COMMITS = 100000;
+
 function renderGraph(graph) {
   currentGraph = graph;
   selectedCommit = null;
@@ -303,6 +305,10 @@ function renderGraph(graph) {
   } else if (saved && getPresetRange(saved.preset, new Date())) {
     selectedTimePreset = saved.preset;
     timeRange = getPresetRange(saved.preset, new Date());
+  } else if (!saved && graph.commits.length > LARGE_HISTORY_COMMITS) {
+    // Drawing every commit of a very large history freezes the window, so start with recent work.
+    selectedTimePreset = '1w';
+    timeRange = getPresetRange('1w', new Date());
   }
   document.getElementById('time-range').value = selectedTimePreset;
   document.getElementById('custom-time-range').hidden = selectedTimePreset !== 'custom';
@@ -1004,11 +1010,8 @@ function renderGraphContents(graph) {
     rowByLane.set(lane, row);
   }
   const rowCount = Math.max(rowEnds.length, 1);
-  // Each branch name sits on the first level where it does not overlap another label in its row;
-  // rows grow to make room for the extra levels.
-  const labelLevels = new Map();
-  const levelEnds = Array.from({ length: rowCount }, () => []);
-  const rowLevelCounts = Array.from({ length: rowCount }, () => 1);
+  // A commit whose labels would overlap the previous commit in its row drops to a lower level,
+  // carrying its labels with it; rows grow to make room for the extra levels.
   const cutMarkersByHash = new Map();
   for (const marker of graph.cutMarkers) {
     cutMarkersByHash.set(marker.commitHash, [
@@ -1016,32 +1019,37 @@ function renderGraphContents(graph) {
       marker
     ]);
   }
+  const commitLevels = new Map();
+  const levelEnds = Array.from({ length: rowCount }, () => []);
+  const rowMaxLevel = Array.from({ length: rowCount }, () => 0);
+  const rowLabelHeight = Array.from({ length: rowCount }, () => 0);
   graph.commits.forEach((commit, index) => {
     const row = rowByLane.get(commit.lane);
     const centre = leftPadding + index * columnWidth;
-    function placeLabel(key, textLength) {
-      const half = (textLength * 7.4) / 2 + 4;
-      const ends = levelEnds[row];
-      let level = ends.findIndex((end) => end < centre - half);
-      if (level === -1) {
-        level = ends.length;
-      }
-      ends[level] = centre + half;
-      labelLevels.set(key, level);
-      rowLevelCounts[row] = Math.max(rowLevelCounts[row], level + 1);
+    const names = branchLabelNames(commit).shortNames;
+    const hasCut = cutMarkersByHash.has(commit.hash);
+    const textLength = Math.max(
+      7,
+      hasCut ? 'Earlier history continues'.length : 0,
+      ...names.map((name) => truncateBranchName(name).length + 2)
+    );
+    const half = (textLength * 7) / 2 + 6;
+    const ends = levelEnds[row];
+    let level = ends.findIndex((end) => end < centre - half);
+    if (level === -1) {
+      level = ends.length;
     }
-    (cutMarkersByHash.get(commit.hash) || []).forEach((marker, markerIndex) =>
-      placeLabel(`${commit.hash}:cut:${markerIndex}`, 'Earlier history continues'.length)
-    );
-    branchLabelNames(commit).shortNames.forEach((name, nameIndex) =>
-      placeLabel(`${commit.hash}:${nameIndex}`, truncateBranchName(name).length)
-    );
+    ends[level] = centre + half;
+    commitLevels.set(commit.hash, level);
+    rowMaxLevel[row] = Math.max(rowMaxLevel[row], level);
+    rowLabelHeight[row] = Math.max(rowLabelHeight[row], (hasCut ? 1 : 0) + names.length);
   });
+  const levelStepByRow = rowLabelHeight.map((lines) => rowHeight + Math.max(lines - 1, 0) * 13);
   const rowTops = [];
   let totalRowsHeight = 0;
-  for (const levelCount of rowLevelCounts) {
+  for (let row = 0; row < rowCount; row += 1) {
     rowTops.push(totalRowsHeight);
-    totalRowsHeight += rowHeight + (levelCount - 1) * 13;
+    totalRowsHeight += rowHeight + rowMaxLevel[row] * levelStepByRow[row];
   }
   const width = Math.max(
     144,
@@ -1079,7 +1087,11 @@ function renderGraphContents(graph) {
       commit.hash,
       {
         x: leftPadding + index * columnWidth,
-        y: 34 + axisHeight + rowTops[rowByLane.get(commit.lane)]
+        y:
+          34 +
+          axisHeight +
+          rowTops[rowByLane.get(commit.lane)] +
+          commitLevels.get(commit.hash) * levelStepByRow[rowByLane.get(commit.lane)]
       }
     ])
   );
@@ -1303,7 +1315,7 @@ function renderGraphContents(graph) {
     for (const [nameIndex, name] of shortNames.entries()) {
       const branchLabel = createSvgElement('text', {
         x: 0,
-        y: 37 + labelLevels.get(`${commit.hash}:${nameIndex}`) * 13,
+        y: 37 + (cutMarkersByHash.has(commit.hash) ? 13 : 0) + nameIndex * 13,
         'text-anchor': 'middle',
         class: 'branch-label',
         'data-testid': 'commit-branch-label',
@@ -1495,13 +1507,11 @@ function renderGraphContents(graph) {
     if (!position) {
       continue;
     }
-    const markerIndex = cutMarkersByHash.get(marker.commitHash).indexOf(marker);
-    const cutLevel = labelLevels.get(`${marker.commitHash}:cut:${markerIndex}`) || 0;
     const cutMarker = createSvgElement('g', {
       'data-testid': 'history-cut-marker',
       'data-direction': marker.direction,
       'data-commit-hash': marker.commitHash,
-      transform: `translate(${position.x} ${position.y + 34 + cutLevel * 13})`,
+      transform: `translate(${position.x} ${position.y + 34})`,
       role: 'img',
       'aria-label': `${marker.direction === 'older' ? 'Earlier' : 'Later'} history continues`
     });
