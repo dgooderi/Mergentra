@@ -1266,8 +1266,9 @@ function renderGraphContents(graph) {
     viewBox: '0 0 10 10',
     refX: 8,
     refY: 5,
-    markerWidth: 6,
-    markerHeight: 6,
+    markerWidth: 12,
+    markerHeight: 12,
+    markerUnits: 'userSpaceOnUse',
     orient: 'auto-start-reverse'
   });
   arrowhead.append(
@@ -1355,7 +1356,10 @@ function renderGraphContents(graph) {
           d: pathData,
           fill: 'none',
           stroke,
-          'stroke-width': graph.references[edgeLane]?.name === 'main' ? 5 : 2,
+          'stroke-width':
+            graph.references[commit.lane]?.name === 'main' && parentCommit?.lane === commit.lane
+              ? 5
+              : 2,
           'marker-end': 'url(#commit-arrowhead)',
           'data-testid': 'commit-edge',
           'data-parent-hash': parentHash,
