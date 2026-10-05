@@ -29,6 +29,44 @@ function applyDisplayOptions() {
   document.getElementById('show-releases').checked = displayOptions.releases;
 }
 
+function closeGraphContextMenu() {
+  document.getElementById('graph-context-menu')?.remove();
+}
+
+function openGraphContextMenu(event, items) {
+  event.preventDefault();
+  closeGraphContextMenu();
+  const menu = document.createElement('div');
+  menu.id = 'graph-context-menu';
+  menu.className = 'graph-context-menu';
+  menu.setAttribute('role', 'menu');
+  for (const { label, action } of items) {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.setAttribute('role', 'menuitem');
+    item.textContent = label;
+    item.addEventListener('click', () => {
+      closeGraphContextMenu();
+      action();
+    });
+    menu.append(item);
+  }
+  document.body.append(menu);
+  menu.style.left = `${Math.min(event.clientX, window.innerWidth - menu.offsetWidth - 4)}px`;
+  menu.style.top = `${Math.min(event.clientY, window.innerHeight - menu.offsetHeight - 4)}px`;
+  menu.querySelector('button')?.focus();
+}
+
+function focusOnCommit(commit, position) {
+  selectCommit(commit);
+  const scroller = document.getElementById('commit-graph').parentElement;
+  scroller.scrollTo({
+    left: Math.max(position.x - scroller.clientWidth / 2, 0),
+    top: Math.max(position.y - scroller.clientHeight / 2, 0),
+    behavior: 'smooth'
+  });
+}
+
 function closeCompactedPopover() {
   document.getElementById('compacted-popover')?.remove();
 }
@@ -941,9 +979,13 @@ document.addEventListener('click', (event) => {
     picker.open = false;
   }
 });
+document.addEventListener('click', closeGraphContextMenu);
+window.addEventListener('blur', closeGraphContextMenu);
 document.addEventListener('keydown', (event) => {
   const picker = document.getElementById('branch-picker');
-  if (event.key === 'Escape' && picker.open) {
+  if (event.key === 'Escape' && document.getElementById('graph-context-menu')) {
+    closeGraphContextMenu();
+  } else if (event.key === 'Escape' && picker.open) {
     picker.open = false;
     picker.querySelector('summary').focus();
   } else if (event.key === 'Escape' && document.getElementById('compacted-popover')) {
@@ -1273,6 +1315,8 @@ function renderGraphContents(graph) {
           'stroke-width': 12,
           'pointer-events': 'stroke',
           'data-testid': 'commit-edge-hover',
+          'data-parent-hash': parentHash,
+          'data-child-hash': commit.hash,
           'data-ref-name': hoverReference.name
         });
         const title = createSvgElement('title');
@@ -1281,6 +1325,16 @@ function renderGraphContents(graph) {
           const note = notes.branches[hoverReference.name];
           title.textContent = note ? `${hoverReference.name}\n${note}` : hoverReference.name;
         });
+        if (isMergeIn) {
+          hit.addEventListener('contextmenu', (event) =>
+            openGraphContextMenu(event, [
+              {
+                label: 'Focus on destination',
+                action: () => focusOnCommit(commit, childPosition)
+              }
+            ])
+          );
+        }
         graphElement.append(hit);
       }
     }

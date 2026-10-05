@@ -489,6 +489,23 @@ test('merge commits and grouped tags are annotated in the commit graph', async (
     }
     expect(new Set(mergeParents)).toEqual(new Set([featureCommit, mainCommit]));
 
+    const mergeLine = window.locator(
+      `[data-testid="commit-edge-hover"][data-child-hash="${mergeCommit}"][data-parent-hash="${featureCommit}"]`
+    );
+    await mergeLine.evaluate((path) =>
+      path.dispatchEvent(
+        new MouseEvent('contextmenu', {
+          bubbles: true,
+          cancelable: true,
+          clientX: 300,
+          clientY: 300
+        })
+      )
+    );
+    await window.getByRole('menuitem', { name: 'Focus on destination' }).click();
+    await expect(mergeNode).toHaveAttribute('aria-pressed', 'true');
+    await expect(window.locator('#graph-context-menu')).toHaveCount(0);
+
     const tags = mergeNode.getByTestId('commit-tag');
     await expect(tags).toHaveCount(2);
     await expect(tags.nth(0)).toHaveAttribute('data-tag-name', 'release-candidate');

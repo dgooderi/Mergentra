@@ -1079,3 +1079,32 @@ main:not(:has(#repository-view:not([hidden]))) #open-explorer {
   margin-top: 6px;
   padding: 6px 10px;
 }
+
+.graph-context-menu {
+  position: fixed;
+  z-index: 30;
+  min-width: 180px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-background);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 35%);
+}
+
+.graph-context-menu button {
+  display: block;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.graph-context-menu button:hover,
+.graph-context-menu button:focus-visible {
+  background: rgb(96 165 250 / 22%);
+}
