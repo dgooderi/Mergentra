@@ -1058,11 +1058,33 @@ function renderGraphContents(graph) {
       // Fork and merge lines keep the colour of the branch they leave; a branch takes its own colour after its first commit.
       const edgeLane =
         parentCommit && parentCommit.lane !== commit.lane ? parentCommit.lane : commit.lane;
+      let stroke = graph.references[edgeLane]?.color || '#9ca3af';
+      const branchColor = graph.references[commit.lane]?.color;
+      const isFork = !isMergeIn && edgeLane !== commit.lane;
+      if (isFork && branchColor && branchColor !== stroke && childPosition.x > parentPosition.x) {
+        // Fade from the parent colour to the branch colour once the line has turned into the branch lane.
+        const gradientId = `fork-gradient-${commit.hash}-${parentHash}`;
+        const gradient = createSvgElement('linearGradient', {
+          id: gradientId,
+          gradientUnits: 'userSpaceOnUse',
+          x1: parentPosition.x,
+          y1: 0,
+          x2: childPosition.x,
+          y2: 0
+        });
+        const turnOffset = Math.min(bend / (childPosition.x - parentPosition.x), 1);
+        gradient.append(
+          createSvgElement('stop', { offset: turnOffset, 'stop-color': stroke }),
+          createSvgElement('stop', { offset: 1, 'stop-color': branchColor })
+        );
+        definitions.append(gradient);
+        stroke = `url(#${gradientId})`;
+      }
       graphElement.append(
         createSvgElement('path', {
           d: pathData,
           fill: 'none',
-          stroke: graph.references[edgeLane]?.color || '#9ca3af',
+          stroke,
           'stroke-width': 2,
           'marker-end': 'url(#commit-arrowhead)',
           'data-testid': 'commit-edge',
