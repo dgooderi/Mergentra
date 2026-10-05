@@ -1099,7 +1099,10 @@ function renderReferenceLanes(references) {
 }
 
 function referenceOwner(reference) {
-  return currentGraph.commits.find((commit) => commit.hash === reference.hash)?.author || '';
+  const author =
+    currentGraph.commits.find((commit) => commit.hash === reference.hash)?.author || '';
+  // The same person often commits under several email addresses, so owners are matched by name.
+  return author.replace(/\s*<[^>]*>$/, '').trim();
 }
 
 function renderOwnerFilter() {
@@ -1109,7 +1112,7 @@ function renderOwnerFilter() {
   ].sort((left, right) => left.localeCompare(right));
   select.replaceChildren(new Option('All owners', ''));
   for (const owner of owners) {
-    select.append(new Option(owner.replace(/\s*<[^>]*>$/, ''), owner));
+    select.append(new Option(owner, owner));
   }
   if (!owners.includes(ownerFilter)) {
     ownerFilter = '';
