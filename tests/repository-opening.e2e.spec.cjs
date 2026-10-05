@@ -2023,14 +2023,30 @@ test('branch selection and time range are remembered per repository', async () =
     await window.getByRole('checkbox', { name: 'feature', exact: true }).uncheck();
     await expect(window.locator('#branch-picker-summary')).toHaveText('Branches: 1 of 2 shown');
     await window.locator('#time-range').selectOption('1w');
+    await expect(window.locator('#branch-owner-filter option')).toHaveText([
+      'All owners',
+      'GitScope E2E'
+    ]);
+    await window.locator('#branch-owner-filter').selectOption({ label: 'GitScope E2E' });
+    await expect(window.locator('#branch-picker-summary')).toHaveText('Branches: 2 of 2 shown');
+    await window.getByTestId('commit-node').first().click();
+    await window.getByRole('button', { name: 'Centre on selected' }).click();
+    await expect(window.getByTestId('commit-node')).toHaveCount(1);
+    await expect(window.getByRole('button', { name: 'Later' })).toBeDisabled();
+    await window.getByRole('button', { name: 'Earlier' }).click();
+    await expect(window.getByTestId('commit-node')).toHaveCount(0);
+    await window.getByRole('button', { name: 'Later' }).click();
+    await expect(window.getByTestId('commit-node')).toHaveCount(1);
+    await window.getByRole('button', { name: 'Earlier' }).click();
     await app.close();
 
     app = await launch();
     window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(firstRepository);
     await window.getByRole('button', { name: 'Open repository' }).click();
-    await expect(window.locator('#branch-picker-summary')).toHaveText('Branches: 1 of 2 shown');
+    await expect(window.locator('#branch-picker-summary')).toHaveText('Branches: 0 of 0 shown');
     await expect(window.locator('#time-range')).toHaveValue('1w');
+    await expect(window.getByTestId('commit-node')).toHaveCount(0);
 
     await window.getByRole('button', { name: 'Open another repository' }).click();
     await window.getByLabel('Repository folder').fill(secondRepository);

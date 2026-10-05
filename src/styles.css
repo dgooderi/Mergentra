@@ -1122,3 +1122,17 @@ main:not(:has(#repository-view:not([hidden]))) #open-explorer {
 .zoom-controls button {
   min-width: 40px;
 }
+
+.time-navigation {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.owner-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.owner-filter select {
+  flex: 1;
+}

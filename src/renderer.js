@@ -11,6 +11,8 @@ let selectedTimePreset = 'all';
 let timeRange = null;
 let currentRepositoryPath = null;
 let customRangeValues = null;
+let rangeAdjusted = false;
+let ownerFilter = '';
 const viewStateKeyPrefix = 'gitscope:view-state:';
 const notesKeyPrefix = 'gitscope:notes:';
 const repositoryNoteKeyPrefix = 'gitscope:repository-note:';
@@ -327,7 +329,8 @@ function saveViewState() {
         hidden,
         preset: selectedTimePreset,
         display: displayOptions,
-        custom: selectedTimePreset === 'custom' ? customRangeValues : null
+        custom: selectedTimePreset === 'custom' ? customRangeValues : null,
+        range: rangeAdjusted && timeRange ? timeRange : null
       })
     );
   } catch {
@@ -389,6 +392,20 @@ function renderGraph(graph) {
     selectedTimePreset = '1w';
     timeRange = getPresetRange('1w', new Date());
   }
+  rangeAdjusted = false;
+  if (
+    timeRange &&
+    Number.isFinite(saved?.range?.start) &&
+    Number.isFinite(saved?.range?.end) &&
+    saved.range.end > saved.range.start
+  ) {
+    timeRange = { start: saved.range.start, end: saved.range.end };
+    rangeAdjusted = true;
+    if (selectedTimePreset === 'custom') {
+      syncCustomInputsToRange();
+    }
+  }
+  ownerFilter = '';
   document.getElementById('time-range').value = selectedTimePreset;
   document.getElementById('custom-time-range').hidden = selectedTimePreset !== 'custom';
   document.getElementById('time-range-status').textContent = '';
@@ -460,6 +477,7 @@ function renderFilteredGraph() {
     return;
   }
   availableReferenceNames = computeAvailableReferences();
+  updateTimeNavigation();
   updateBranchPickerSummary();
   filterBranchPicker();
 
@@ -859,6 +877,65 @@ function getPresetRange(preset, now) {
   return null;
 }
 
+function localDateString(timestamp) {
+  const date = new Date(timestamp);
+  const pad = (value) => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function syncCustomInputsToRange() {
+  customRangeValues = {
+    start: localDateString(timeRange.start),
+    end: localDateString(timeRange.end - 1)
+  };
+  document.getElementById('time-range-start').value = customRangeValues.start;
+  document.getElementById('time-range-end').value = customRangeValues.end;
+}
+
+function setAdjustedRange(start, end) {
+  timeRange = { start, end };
+  rangeAdjusted = true;
+  if (selectedTimePreset === 'custom') {
+    syncCustomInputsToRange();
+  }
+  saveViewState();
+  renderFilteredGraph();
+}
+
+function shiftTimeRange(direction) {
+  if (!timeRange) {
+    return;
+  }
+  const span = timeRange.end - timeRange.start;
+  let start = timeRange.start + direction * span;
+  // The range cannot move past the present.
+  start = Math.min(start, Date.now() - span);
+  setAdjustedRange(start, start + span);
+}
+
+function centreTimeRangeOnSelection() {
+  if (!timeRange || !selectedCommit?.committerTimestamp) {
+    return;
+  }
+  const span = timeRange.end - timeRange.start;
+  const middle = selectedCommit.committerTimestamp * 1000;
+  setAdjustedRange(middle - span / 2, middle + span / 2);
+  const node = document.querySelector(`[data-commit-hash="${selectedCommit.hash}"]`);
+  node?.scrollIntoView({ inline: 'center', block: 'nearest' });
+}
+
+function updateTimeNavigation() {
+  const hasRange = Boolean(timeRange);
+  document.getElementById('time-earlier').disabled = !hasRange;
+  document.getElementById('time-later').disabled = !hasRange || timeRange.end >= Date.now();
+  document.getElementById('time-centre').disabled =
+    !hasRange || !selectedCommit?.committerTimestamp;
+}
+
+document.getElementById('time-earlier').addEventListener('click', () => shiftTimeRange(-1));
+document.getElementById('time-later').addEventListener('click', () => shiftTimeRange(1));
+document.getElementById('time-centre').addEventListener('click', centreTimeRangeOnSelection);
+
 function applyCustomTimeRange() {
   const startValue = document.getElementById('time-range-start').value;
   const endValue = document.getElementById('time-range-end').value;
@@ -884,6 +961,7 @@ function applyCustomTimeRange() {
   timeRange = { start: startDate.getTime(), end: endDate.getTime() };
   selectedTimePreset = 'custom';
   customRangeValues = { start: startValue, end: endValue };
+  rangeAdjusted = false;
   saveViewState();
   status.textContent = '';
   renderFilteredGraph();
@@ -901,6 +979,7 @@ document.getElementById('time-range').addEventListener('change', (event) => {
   }
 
   customRange.hidden = true;
+  rangeAdjusted = false;
   timeRange = getPresetRange(selectedTimePreset, new Date());
   saveViewState();
   renderFilteredGraph();
@@ -1002,9 +1081,37 @@ function renderReferenceLanes(references) {
     lane.append(checkbox, marker, labelGroup, noteToggle, noteEditor);
     laneList.append(lane);
   }
+  renderOwnerFilter();
   filterBranchPicker();
   updateBranchPickerSummary();
 }
+
+function referenceOwner(reference) {
+  return currentGraph.commits.find((commit) => commit.hash === reference.hash)?.author || '';
+}
+
+function renderOwnerFilter() {
+  const select = document.getElementById('branch-owner-filter');
+  const owners = [
+    ...new Set(currentGraph.references.map(referenceOwner).filter((owner) => owner !== ''))
+  ].sort((left, right) => left.localeCompare(right));
+  select.replaceChildren(new Option('All owners', ''));
+  for (const owner of owners) {
+    select.append(new Option(owner.replace(/\s*<[^>]*>$/, ''), owner));
+  }
+  if (!owners.includes(ownerFilter)) {
+    ownerFilter = '';
+  }
+  select.value = ownerFilter;
+}
+
+document.getElementById('branch-owner-filter').addEventListener('change', (event) => {
+  const owner = event.target.value;
+  // Owner is the author of a branch's latest commit.
+  setVisibleBranches((reference) => owner === '' || referenceOwner(reference) === owner);
+  ownerFilter = owner;
+  event.target.value = owner;
+});
 
 function updateBranchPickerSummary() {
   const total = currentGraph
@@ -1029,6 +1136,7 @@ function filterBranchPicker() {
 }
 
 function setVisibleBranches(predicate) {
+  ownerFilter = '';
   visibleReferences = new Set(
     currentGraph.references.filter(predicate).map((reference) => reference.name)
   );
@@ -1855,6 +1963,7 @@ function renderGraphContents(graph) {
 
 function selectCommit(commit) {
   selectedCommit = commit;
+  updateTimeNavigation();
   const hash = commit?.hash;
   const dock = document.getElementById('review-dock');
   const commitNodes = document.querySelectorAll('[data-testid="commit-node"]');

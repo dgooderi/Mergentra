@@ -110,6 +110,12 @@
                 aria-label="Search branches"
                 autocomplete="off"
               />
+              <label class="owner-filter">
+                Owner
+                <select id="branch-owner-filter" aria-label="Show branches owned by">
+                  <option value="">All owners</option>
+                </select>
+              </label>
               <div class="branch-picker-actions">
                 <button id="branch-picker-all" class="secondary" type="button">All</button>
                 <button id="branch-picker-local" class="secondary" type="button">Local only</button>
@@ -140,6 +146,33 @@
               <input id="time-range-end" type="date" required />
               <button class="secondary" type="submit">Apply date range</button>
             </form>
+            <div class="time-navigation" role="group" aria-label="Move time range">
+              <button
+                id="time-earlier"
+                class="secondary"
+                type="button"
+                title="Move back by the range"
+              >
+                &laquo; Earlier
+              </button>
+              <button
+                id="time-later"
+                class="secondary"
+                type="button"
+                title="Move forward by the range"
+              >
+                Later &raquo;
+              </button>
+              <button
+                id="time-centre"
+                class="secondary"
+                type="button"
+                disabled
+                title="Centre the range on the selected commit"
+              >
+                Centre on selected
+              </button>
+            </div>
             <p id="time-range-status" role="alert" aria-live="polite"></p>
           </div>
           <details class="branch-picker display-menu">
