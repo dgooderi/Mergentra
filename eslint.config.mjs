@@ -15,7 +15,7 @@ export default [
     languageOptions: { globals: { ...globals.browser } }
   },
   {
-    files: ['src/renderer.js'],
+    files: ['src/renderer.js', 'src/renderer/**/*.js'],
     languageOptions: { sourceType: 'module', globals: { ...globals.browser } }
   }
 ];
