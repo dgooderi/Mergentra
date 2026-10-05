@@ -61,11 +61,13 @@ function saveSettings(nextSettings) {
   settings = nextSettings;
 }
 
-async function runGit(gitPath, args) {
+const LOG_LIMITS = { timeout: 300_000, maxBuffer: 400 * 1024 * 1024 };
+
+async function runGit(gitPath, args, { timeout = 30_000, maxBuffer = 32 * 1024 * 1024 } = {}) {
   return execFileAsync(gitPath, args, {
     windowsHide: true,
-    timeout: 30_000,
-    maxBuffer: 32 * 1024 * 1024,
+    timeout,
+    maxBuffer,
     env: {
       ...process.env,
       GIT_NO_LAZY_FETCH: '1',
@@ -229,15 +231,19 @@ async function loadCommitGraph(gitPath, repositoryPath, branchName, currentWorkt
   }
   const [logResult, refsResult, tagsResult, worktreesResult, shallowPathResult] = await Promise.all(
     [
-      runGit(gitPath, [
-        '-C',
-        repositoryPath,
-        'log',
-        ...logRoots,
-        '--topo-order',
-        '--reverse',
-        '--format=%H%x00%T%x00%P%x00%s%x00%an%x00%ae%x00%aI%x00%ct'
-      ]),
+      runGit(
+        gitPath,
+        [
+          '-C',
+          repositoryPath,
+          'log',
+          ...logRoots,
+          '--topo-order',
+          '--reverse',
+          '--format=%H%x00%T%x00%P%x00%s%x00%an%x00%ae%x00%aI%x00%ct'
+        ],
+        LOG_LIMITS
+      ),
       runGit(gitPath, [
         '-C',
         repositoryPath,
