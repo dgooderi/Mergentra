@@ -1101,18 +1101,29 @@ function renderReferenceLanes(references) {
 function referenceOwner(reference) {
   const author =
     currentGraph.commits.find((commit) => commit.hash === reference.hash)?.author || '';
-  // The same person often commits under several email addresses, so owners are matched by name.
-  return author.replace(/\s*<[^>]*>$/, '').trim();
+  // The same person often commits under several emails or capitalisations, so owners are matched
+  // by name without regard to case.
+  return author
+    .replace(/\s*<[^>]*>$/, '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
 }
 
 function renderOwnerFilter() {
   const select = document.getElementById('branch-owner-filter');
-  const owners = [
-    ...new Set(currentGraph.references.map(referenceOwner).filter((owner) => owner !== ''))
-  ].sort((left, right) => left.localeCompare(right));
+  const displayNames = new Map();
+  for (const reference of currentGraph.references) {
+    const owner = referenceOwner(reference);
+    const author = currentGraph.commits.find((commit) => commit.hash === reference.hash)?.author;
+    if (owner !== '' && !displayNames.has(owner)) {
+      displayNames.set(owner, author.replace(/\s*<[^>]*>$/, '').trim());
+    }
+  }
+  const owners = [...displayNames.keys()].sort((left, right) => left.localeCompare(right));
   select.replaceChildren(new Option('All owners', ''));
   for (const owner of owners) {
-    select.append(new Option(owner, owner));
+    select.append(new Option(displayNames.get(owner), owner));
   }
   if (!owners.includes(ownerFilter)) {
     ownerFilter = '';
