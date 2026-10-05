@@ -1061,20 +1061,21 @@ function renderGraphContents(graph) {
       let stroke = graph.references[edgeLane]?.color || '#9ca3af';
       const branchColor = graph.references[commit.lane]?.color;
       const isFork = !isMergeIn && edgeLane !== commit.lane;
-      if (isFork && branchColor && branchColor !== stroke && childPosition.x > parentPosition.x) {
-        // Fade from the parent colour to the branch colour once the line has turned into the branch lane.
+      const fadeStart = parentPosition.x + bend;
+      const fadeEnd = Math.min(fadeStart + window.innerWidth * 0.05, childPosition.x);
+      if (isFork && branchColor && branchColor !== stroke && fadeEnd > fadeStart) {
+        // Switch to the branch colour just past the curve, within 5% of the window width.
         const gradientId = `fork-gradient-${commit.hash}-${parentHash}`;
         const gradient = createSvgElement('linearGradient', {
           id: gradientId,
           gradientUnits: 'userSpaceOnUse',
-          x1: parentPosition.x,
+          x1: fadeStart,
           y1: 0,
-          x2: childPosition.x,
+          x2: fadeEnd,
           y2: 0
         });
-        const turnOffset = Math.min(bend / (childPosition.x - parentPosition.x), 1);
         gradient.append(
-          createSvgElement('stop', { offset: turnOffset, 'stop-color': stroke }),
+          createSvgElement('stop', { offset: 0, 'stop-color': stroke }),
           createSvgElement('stop', { offset: 1, 'stop-color': branchColor })
         );
         definitions.append(gradient);
