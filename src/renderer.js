@@ -14,6 +14,7 @@ import {
   drawHistoryBoundaries,
   renderTimeAxis
 } from './renderer/graph-view.js';
+import { state } from './renderer/state.js';
 import { createViewStorage } from './renderer/view-storage.js';
 import { getPresetRange, localDateString } from './renderer/time-range.js';
 const picker = document.getElementById('repository-picker');
@@ -22,30 +23,17 @@ const pathInput = document.getElementById('repository-path');
 const gitPathInput = document.getElementById('git-executable-path');
 const statusMessage = document.getElementById('status');
 const repositoryView = document.getElementById('repository-view');
-let selectedCommit = null;
-let currentGraph = null;
-let visibleReferences = new Set();
-let selectedTimePreset = 'all';
-let timeRange = null;
-let currentRepositoryPath = null;
-let customRangeValues = null;
-let rangeAdjusted = false;
-let ownerFilter = '';
 const viewStorage = createViewStorage(localStorage);
-let notes = { commits: {}, branches: {} };
 const ZOOM_STEPS = [0.25, 0.4, 0.5, 0.67, 0.8, 1, 1.25, 1.5, 2, 3];
-let zoomLevel = 1;
-let displayOptions = { tags: true, hashes: true, releases: true };
-let compactedMembership = new Map();
 
 function applyDisplayOptions() {
   const graphElement = document.getElementById('commit-graph');
-  graphElement.dataset.showTags = String(displayOptions.tags);
-  graphElement.dataset.showHashes = String(displayOptions.hashes);
-  graphElement.dataset.showReleases = String(displayOptions.releases);
-  document.getElementById('show-tags').checked = displayOptions.tags;
-  document.getElementById('show-hashes').checked = displayOptions.hashes;
-  document.getElementById('show-releases').checked = displayOptions.releases;
+  graphElement.dataset.showTags = String(state.displayOptions.tags);
+  graphElement.dataset.showHashes = String(state.displayOptions.hashes);
+  graphElement.dataset.showReleases = String(state.displayOptions.releases);
+  document.getElementById('show-tags').checked = state.displayOptions.tags;
+  document.getElementById('show-hashes').checked = state.displayOptions.hashes;
+  document.getElementById('show-releases').checked = state.displayOptions.releases;
 }
 
 function closeGraphContextMenu() {
@@ -109,14 +97,14 @@ function openCompactedPopover(summary, anchor) {
     button.type = 'button';
     button.dataset.testid = 'compacted-commit-item';
     button.dataset.commitHash = commit.hash;
-    button.setAttribute('aria-pressed', String(selectedCommit?.hash === commit.hash));
+    button.setAttribute('aria-pressed', String(state.selectedCommit?.hash === commit.hash));
     const hash = document.createElement('code');
     hash.textContent = commit.hash.slice(0, 7);
     const subject = document.createElement('span');
     subject.textContent = commit.subject;
     button.append(hash, subject);
     button.addEventListener('click', () => {
-      selectCommit(selectedCommit?.hash === commit.hash ? null : commit);
+      selectCommit(state.selectedCommit?.hash === commit.hash ? null : commit);
     });
     item.append(button);
     list.append(item);
@@ -126,16 +114,16 @@ function openCompactedPopover(summary, anchor) {
 }
 
 function loadNotes() {
-  notes = viewStorage.loadNotes(currentRepositoryPath);
+  state.notes = viewStorage.loadNotes(state.currentRepositoryPath);
 }
 
 function setNote(kind, key, text) {
   if (text.trim() === '') {
-    delete notes[kind][key];
+    delete state.notes[kind][key];
   } else {
-    notes[kind][key] = text;
+    state.notes[kind][key] = text;
   }
-  viewStorage.saveNotes(currentRepositoryPath, notes);
+  viewStorage.saveNotes(state.currentRepositoryPath, state.notes);
   refreshNoteMarkers();
 }
 
@@ -143,12 +131,12 @@ function refreshNoteMarkers() {
   for (const node of document.querySelectorAll('[data-testid="commit-node"]')) {
     const refNames = JSON.parse(node.dataset.refNames || '[]');
     const hasNote =
-      Object.hasOwn(notes.commits, node.dataset.commitHash) ||
-      refNames.some((name) => Object.hasOwn(notes.branches, name));
+      Object.hasOwn(state.notes.commits, node.dataset.commitHash) ||
+      refNames.some((name) => Object.hasOwn(state.notes.branches, name));
     node.dataset.hasNote = String(hasNote);
   }
   for (const lane of document.querySelectorAll('#reference-lanes li')) {
-    const hasNote = Object.hasOwn(notes.branches, lane.dataset.refName);
+    const hasNote = Object.hasOwn(state.notes.branches, lane.dataset.refName);
     lane.dataset.hasNote = String(hasNote);
     lane.querySelector('[data-testid="branch-note-toggle"]').textContent = hasNote
       ? 'Note ✎'
@@ -160,12 +148,12 @@ function refreshNoteMarkers() {
 function renderSelectedBranchNotes() {
   const list = document.getElementById('selected-commit-branch-notes');
   list.replaceChildren();
-  const names = (selectedCommit?.references || []).filter((name) =>
-    Object.hasOwn(notes.branches, name)
+  const names = (state.selectedCommit?.references || []).filter((name) =>
+    Object.hasOwn(state.notes.branches, name)
   );
   for (const name of names) {
     const item = document.createElement('li');
-    item.textContent = `${name}: ${notes.branches[name]}`;
+    item.textContent = `${name}: ${state.notes.branches[name]}`;
     list.append(item);
   }
   document.getElementById('selected-commit-branch-notes-heading').hidden = names.length === 0;
@@ -257,19 +245,20 @@ async function loadPickerSettings() {
 loadPickerSettings();
 
 function loadViewState() {
-  return viewStorage.loadViewState(currentRepositoryPath);
+  return viewStorage.loadViewState(state.currentRepositoryPath);
 }
 
 function setZoom(level, anchor) {
   const graphElement = document.getElementById('commit-graph');
   const scroller = graphElement.parentElement;
-  const previous = zoomLevel;
-  zoomLevel = Math.min(Math.max(level, ZOOM_STEPS[0]), ZOOM_STEPS[ZOOM_STEPS.length - 1]);
-  document.getElementById('zoom-reset').textContent = `${Math.round(zoomLevel * 100)}%`;
-  document.getElementById('zoom-in').disabled = zoomLevel >= ZOOM_STEPS[ZOOM_STEPS.length - 1];
-  document.getElementById('zoom-out').disabled = zoomLevel <= ZOOM_STEPS[0];
+  const previous = state.zoomLevel;
+  state.zoomLevel = Math.min(Math.max(level, ZOOM_STEPS[0]), ZOOM_STEPS[ZOOM_STEPS.length - 1]);
+  document.getElementById('zoom-reset').textContent = `${Math.round(state.zoomLevel * 100)}%`;
+  document.getElementById('zoom-in').disabled =
+    state.zoomLevel >= ZOOM_STEPS[ZOOM_STEPS.length - 1];
+  document.getElementById('zoom-out').disabled = state.zoomLevel <= ZOOM_STEPS[0];
   const baseWidth = Number(graphElement.dataset.baseWidth);
-  if (!baseWidth || previous === zoomLevel) {
+  if (!baseWidth || previous === state.zoomLevel) {
     return;
   }
   // Keep the point under the cursor (or the view centre) in place while zooming.
@@ -278,17 +267,17 @@ function setZoom(level, anchor) {
   const anchorY = anchor ? anchor.y - box.top : scroller.clientHeight / 2;
   const contentX = (scroller.scrollLeft + anchorX) / previous;
   const contentY = (scroller.scrollTop + anchorY) / previous;
-  graphElement.setAttribute('width', String(Math.round(baseWidth * zoomLevel)));
+  graphElement.setAttribute('width', String(Math.round(baseWidth * state.zoomLevel)));
   graphElement.setAttribute(
     'height',
-    String(Math.round(Number(graphElement.dataset.baseHeight) * zoomLevel))
+    String(Math.round(Number(graphElement.dataset.baseHeight) * state.zoomLevel))
   );
-  scroller.scrollLeft = contentX * zoomLevel - anchorX;
-  scroller.scrollTop = contentY * zoomLevel - anchorY;
+  scroller.scrollLeft = contentX * state.zoomLevel - anchorX;
+  scroller.scrollTop = contentY * state.zoomLevel - anchorY;
 }
 
 function stepZoom(direction, anchor) {
-  const index = ZOOM_STEPS.findIndex((step) => step >= zoomLevel - 0.001);
+  const index = ZOOM_STEPS.findIndex((step) => step >= state.zoomLevel - 0.001);
   const next = Math.min(Math.max(index + direction, 0), ZOOM_STEPS.length - 1);
   setZoom(ZOOM_STEPS[next], anchor);
 }
@@ -298,23 +287,23 @@ document.getElementById('zoom-out').addEventListener('click', () => stepZoom(-1)
 document.getElementById('zoom-reset').addEventListener('click', () => setZoom(1));
 
 function saveViewState() {
-  if (!currentRepositoryPath || !currentGraph) {
+  if (!state.currentRepositoryPath || !state.currentGraph) {
     return;
   }
-  const hidden = currentGraph.references
-    .filter((reference) => !visibleReferences.has(reference.name))
+  const hidden = state.currentGraph.references
+    .filter((reference) => !state.visibleReferences.has(reference.name))
     .map((reference) => reference.name);
-  viewStorage.saveViewState(currentRepositoryPath, {
+  viewStorage.saveViewState(state.currentRepositoryPath, {
     hidden,
-    preset: selectedTimePreset,
-    display: displayOptions,
-    custom: selectedTimePreset === 'custom' ? customRangeValues : null,
-    range: rangeAdjusted && timeRange ? timeRange : null
+    preset: state.selectedTimePreset,
+    display: state.displayOptions,
+    custom: state.selectedTimePreset === 'custom' ? state.customRangeValues : null,
+    range: state.rangeAdjusted && state.timeRange ? state.timeRange : null
   });
 }
 
 function showRepository(repository) {
-  currentRepositoryPath = repository.path;
+  state.currentRepositoryPath = repository.path;
   loadNotes();
   document.getElementById('repository-name').textContent = repository.name;
   document.getElementById('repository-path-value').textContent = repository.path;
@@ -330,20 +319,20 @@ function showRepository(repository) {
 const LARGE_HISTORY_COMMITS = 100000;
 
 function renderGraph(graph) {
-  currentGraph = graph;
-  selectedCommit = null;
+  state.currentGraph = graph;
+  state.selectedCommit = null;
   const saved = loadViewState();
-  displayOptions = { tags: true, hashes: true, releases: true, ...(saved?.display || {}) };
+  state.displayOptions = { tags: true, hashes: true, releases: true, ...(saved?.display || {}) };
   applyDisplayOptions();
   const hidden = new Set(saved?.hidden || []);
-  visibleReferences = new Set(
+  state.visibleReferences = new Set(
     graph.references
       .filter((reference) => !hidden.has(reference.name))
       .map((reference) => reference.name)
   );
-  selectedTimePreset = 'all';
-  timeRange = null;
-  customRangeValues = null;
+  state.selectedTimePreset = 'all';
+  state.timeRange = null;
+  state.customRangeValues = null;
   const startInput = document.getElementById('time-range-start');
   const endInput = document.getElementById('time-range-end');
   startInput.value = '';
@@ -353,36 +342,36 @@ function renderGraph(graph) {
     const end = new Date(`${saved.custom.end}T00:00:00`);
     if (Number.isFinite(start.getTime()) && Number.isFinite(end.getTime())) {
       end.setDate(end.getDate() + 1);
-      selectedTimePreset = 'custom';
-      timeRange = { start: start.getTime(), end: end.getTime() };
-      customRangeValues = saved.custom;
+      state.selectedTimePreset = 'custom';
+      state.timeRange = { start: start.getTime(), end: end.getTime() };
+      state.customRangeValues = saved.custom;
       startInput.value = saved.custom.start;
       endInput.value = saved.custom.end;
     }
   } else if (saved && getPresetRange(saved.preset, new Date())) {
-    selectedTimePreset = saved.preset;
-    timeRange = getPresetRange(saved.preset, new Date());
+    state.selectedTimePreset = saved.preset;
+    state.timeRange = getPresetRange(saved.preset, new Date());
   } else if (!saved && graph.commits.length > LARGE_HISTORY_COMMITS) {
     // Drawing every commit of a very large history freezes the window, so start with recent work.
-    selectedTimePreset = '1w';
-    timeRange = getPresetRange('1w', new Date());
+    state.selectedTimePreset = '1w';
+    state.timeRange = getPresetRange('1w', new Date());
   }
-  rangeAdjusted = false;
+  state.rangeAdjusted = false;
   if (
-    timeRange &&
+    state.timeRange &&
     Number.isFinite(saved?.range?.start) &&
     Number.isFinite(saved?.range?.end) &&
     saved.range.end > saved.range.start
   ) {
-    timeRange = { start: saved.range.start, end: saved.range.end };
-    rangeAdjusted = true;
-    if (selectedTimePreset === 'custom') {
+    state.timeRange = { start: saved.range.start, end: saved.range.end };
+    state.rangeAdjusted = true;
+    if (state.selectedTimePreset === 'custom') {
       syncCustomInputsToRange();
     }
   }
-  ownerFilter = '';
-  document.getElementById('time-range').value = selectedTimePreset;
-  document.getElementById('custom-time-range').hidden = selectedTimePreset !== 'custom';
+  state.ownerFilter = '';
+  document.getElementById('time-range').value = state.selectedTimePreset;
+  document.getElementById('custom-time-range').hidden = state.selectedTimePreset !== 'custom';
   document.getElementById('time-range-status').textContent = '';
   document.getElementById('review-dock').hidden = true;
   renderWorktrees(graph.worktrees);
@@ -392,61 +381,59 @@ function renderGraph(graph) {
 
 function refreshRepositoryGraph(repository) {
   document.getElementById('branch-name').textContent = repository.branch;
-  const previouslyVisible = visibleReferences;
-  currentGraph = repository.graph;
-  visibleReferences = new Set(
-    currentGraph.references
+  const previouslyVisible = state.visibleReferences;
+  state.currentGraph = repository.graph;
+  state.visibleReferences = new Set(
+    state.currentGraph.references
       .filter((reference) => previouslyVisible.has(reference.name))
       .map((reference) => reference.name)
   );
-  for (const reference of currentGraph.references) {
+  for (const reference of state.currentGraph.references) {
     if (!previouslyVisible.has(reference.name)) {
-      visibleReferences.add(reference.name);
+      state.visibleReferences.add(reference.name);
     }
   }
-  renderWorktrees(currentGraph.worktrees);
-  renderReferenceLanes(currentGraph.references);
+  renderWorktrees(state.currentGraph.worktrees);
+  renderReferenceLanes(state.currentGraph.references);
   renderFilteredGraph();
 }
 
-let availableReferenceNames = null;
-
 function renderFilteredGraph() {
-  if (!currentGraph) {
+  if (!state.currentGraph) {
     return;
   }
-  availableReferenceNames = computeAvailableReferences(currentGraph, timeRange);
+  state.availableReferenceNames = computeAvailableReferences(state.currentGraph, state.timeRange);
   updateTimeNavigation();
   updateBranchPickerSummary();
   filterBranchPicker();
 
-  const graph = buildFilteredGraph(currentGraph, visibleReferences, timeRange);
+  const graph = buildFilteredGraph(state.currentGraph, state.visibleReferences, state.timeRange);
   const displayGraph = compactSameLaneRuns(compactOrdinaryHistory(graph));
   renderGraphContents(displayGraph);
   refreshNoteMarkers();
-  if (selectedCommit) {
+  if (state.selectedCommit) {
     const updatedSelection =
-      displayGraph.commits.find((commit) => commit.hash === selectedCommit.hash) ||
+      displayGraph.commits.find((commit) => commit.hash === state.selectedCommit.hash) ||
       displayGraph.commits
         .flatMap((commit) => commit.compactedCommits || [])
-        .find((commit) => commit.hash === selectedCommit.hash);
+        .find((commit) => commit.hash === state.selectedCommit.hash);
     selectCommit(updatedSelection || null);
   }
 }
 
 function syncCustomInputsToRange() {
-  customRangeValues = {
-    start: localDateString(timeRange.start),
-    end: localDateString(timeRange.end - 1)
+  state.customRangeValues = {
+    start: localDateString(state.timeRange.start),
+    end: localDateString(state.timeRange.end - 1)
   };
-  document.getElementById('time-range-start').value = customRangeValues.start;
-  document.getElementById('time-range-end').value = customRangeValues.end;
+  document.getElementById('time-range-start').value = state.customRangeValues.start;
+  document.getElementById('time-range-end').value = state.customRangeValues.end;
 }
 
 function setAdjustedRange(start, end) {
-  timeRange = { start, end };
-  rangeAdjusted = true;
-  if (selectedTimePreset === 'custom') {
+  state.timeRange = { start, end };
+  state.rangeAdjusted = true;
+  if (state.selectedTimePreset === 'custom') {
     syncCustomInputsToRange();
   }
   saveViewState();
@@ -454,33 +441,33 @@ function setAdjustedRange(start, end) {
 }
 
 function shiftTimeRange(direction) {
-  if (!timeRange) {
+  if (!state.timeRange) {
     return;
   }
-  const span = timeRange.end - timeRange.start;
-  let start = timeRange.start + direction * span;
+  const span = state.timeRange.end - state.timeRange.start;
+  let start = state.timeRange.start + direction * span;
   // The range cannot move past the present.
   start = Math.min(start, Date.now() - span);
   setAdjustedRange(start, start + span);
 }
 
 function centreTimeRangeOnSelection() {
-  if (!timeRange || !selectedCommit?.committerTimestamp) {
+  if (!state.timeRange || !state.selectedCommit?.committerTimestamp) {
     return;
   }
-  const span = timeRange.end - timeRange.start;
-  const middle = selectedCommit.committerTimestamp * 1000;
+  const span = state.timeRange.end - state.timeRange.start;
+  const middle = state.selectedCommit.committerTimestamp * 1000;
   setAdjustedRange(middle - span / 2, middle + span / 2);
-  const node = document.querySelector(`[data-commit-hash="${selectedCommit.hash}"]`);
+  const node = document.querySelector(`[data-commit-hash="${state.selectedCommit.hash}"]`);
   node?.scrollIntoView({ inline: 'center', block: 'nearest' });
 }
 
 function updateTimeNavigation() {
-  const hasRange = Boolean(timeRange);
+  const hasRange = Boolean(state.timeRange);
   document.getElementById('time-earlier').disabled = !hasRange;
-  document.getElementById('time-later').disabled = !hasRange || timeRange.end >= Date.now();
+  document.getElementById('time-later').disabled = !hasRange || state.timeRange.end >= Date.now();
   document.getElementById('time-centre').disabled =
-    !hasRange || !selectedCommit?.committerTimestamp;
+    !hasRange || !state.selectedCommit?.committerTimestamp;
 }
 
 document.getElementById('time-earlier').addEventListener('click', () => shiftTimeRange(-1));
@@ -509,41 +496,41 @@ function applyCustomTimeRange() {
   }
 
   endDate.setDate(endDate.getDate() + 1);
-  timeRange = { start: startDate.getTime(), end: endDate.getTime() };
-  selectedTimePreset = 'custom';
-  customRangeValues = { start: startValue, end: endValue };
-  rangeAdjusted = false;
+  state.timeRange = { start: startDate.getTime(), end: endDate.getTime() };
+  state.selectedTimePreset = 'custom';
+  state.customRangeValues = { start: startValue, end: endValue };
+  state.rangeAdjusted = false;
   saveViewState();
   status.textContent = '';
   renderFilteredGraph();
 }
 
 document.getElementById('time-range').addEventListener('change', (event) => {
-  selectedTimePreset = event.target.value;
+  state.selectedTimePreset = event.target.value;
   const customRange = document.getElementById('custom-time-range');
   const status = document.getElementById('time-range-status');
   status.textContent = '';
 
-  if (selectedTimePreset === 'custom') {
+  if (state.selectedTimePreset === 'custom') {
     customRange.hidden = false;
     return;
   }
 
   customRange.hidden = true;
-  rangeAdjusted = false;
-  timeRange = getPresetRange(selectedTimePreset, new Date());
-  if (timeRange && selectedCommit?.committerTimestamp) {
+  state.rangeAdjusted = false;
+  state.timeRange = getPresetRange(state.selectedTimePreset, new Date());
+  if (state.timeRange && state.selectedCommit?.committerTimestamp) {
     // Keep the selected commit in the middle of the new range.
-    const half = (timeRange.end - timeRange.start) / 2;
-    const middle = selectedCommit.committerTimestamp * 1000;
-    timeRange = { start: middle - half, end: middle + half };
-    rangeAdjusted = true;
+    const half = (state.timeRange.end - state.timeRange.start) / 2;
+    const middle = state.selectedCommit.committerTimestamp * 1000;
+    state.timeRange = { start: middle - half, end: middle + half };
+    state.rangeAdjusted = true;
   }
   saveViewState();
   renderFilteredGraph();
-  if (rangeAdjusted) {
+  if (state.rangeAdjusted) {
     document
-      .querySelector(`[data-commit-hash="${selectedCommit.hash}"]`)
+      .querySelector(`[data-commit-hash="${state.selectedCommit.hash}"]`)
       ?.scrollIntoView({ inline: 'center', block: 'nearest' });
   }
 });
@@ -584,14 +571,14 @@ function renderReferenceLanes(references) {
     lane.dataset.laneIndex = String(reference.lane);
     lane.dataset.targetHash = reference.hash;
     checkbox.type = 'checkbox';
-    checkbox.checked = visibleReferences.has(reference.name);
+    checkbox.checked = state.visibleReferences.has(reference.name);
     checkbox.setAttribute('aria-label', reference.name);
     checkbox.dataset.testid = 'reference-filter';
     checkbox.addEventListener('change', () => {
       if (checkbox.checked) {
-        visibleReferences.add(reference.name);
+        state.visibleReferences.add(reference.name);
       } else {
-        visibleReferences.delete(reference.name);
+        state.visibleReferences.delete(reference.name);
       }
       saveViewState();
       updateBranchPickerSummary();
@@ -623,14 +610,16 @@ function renderReferenceLanes(references) {
     noteToggle.className = 'note-toggle secondary';
     noteToggle.dataset.testid = 'branch-note-toggle';
     noteToggle.setAttribute('aria-label', `Note for ${reference.name}`);
-    noteToggle.textContent = Object.hasOwn(notes.branches, reference.name) ? 'Note ✎' : 'Note';
+    noteToggle.textContent = Object.hasOwn(state.notes.branches, reference.name)
+      ? 'Note ✎'
+      : 'Note';
     noteEditor.hidden = true;
     noteEditor.rows = 2;
     noteEditor.className = 'note-editor';
     noteEditor.dataset.testid = 'branch-note-input';
     noteEditor.placeholder = 'Private note about this branch';
     noteEditor.setAttribute('aria-label', `Note text for ${reference.name}`);
-    noteEditor.value = notes.branches[reference.name] || '';
+    noteEditor.value = state.notes.branches[reference.name] || '';
     noteToggle.addEventListener('click', () => {
       noteEditor.hidden = !noteEditor.hidden;
       if (!noteEditor.hidden) {
@@ -640,7 +629,7 @@ function renderReferenceLanes(references) {
     noteEditor.addEventListener('input', () =>
       setNote('branches', reference.name, noteEditor.value)
     );
-    lane.dataset.hasNote = String(Object.hasOwn(notes.branches, reference.name));
+    lane.dataset.hasNote = String(Object.hasOwn(state.notes.branches, reference.name));
     lane.append(checkbox, marker, labelGroup, noteToggle, noteEditor);
     laneList.append(lane);
   }
@@ -653,23 +642,23 @@ const ownerCache = new WeakMap();
 
 // Owners are computed once per loaded graph; scanning every commit per branch is far too slow on large repositories.
 function ownersForGraph() {
-  let owners = ownerCache.get(currentGraph);
+  let owners = ownerCache.get(state.currentGraph);
   if (!owners) {
-    const tips = new Set(currentGraph.references.map((reference) => reference.hash));
+    const tips = new Set(state.currentGraph.references.map((reference) => reference.hash));
     const authorByTip = new Map();
-    for (const commit of currentGraph.commits) {
+    for (const commit of state.currentGraph.commits) {
       if (tips.has(commit.hash)) {
         authorByTip.set(commit.hash, commit.author || '');
       }
     }
     owners = new Map();
-    for (const reference of currentGraph.references) {
+    for (const reference of state.currentGraph.references) {
       const author = (authorByTip.get(reference.hash) || '').replace(/\s*<[^>]*>$/, '').trim();
       // The same person often commits under several emails or capitalisations, so owners are
       // matched by name without regard to case.
       owners.set(reference.name, author.replace(/\s+/g, ' ').toLowerCase());
     }
-    ownerCache.set(currentGraph, owners);
+    ownerCache.set(state.currentGraph, owners);
   }
   return owners;
 }
@@ -681,7 +670,7 @@ function referenceOwner(reference) {
 function renderOwnerFilter() {
   const select = document.getElementById('branch-owner-filter');
   const displayNames = new Map();
-  for (const reference of currentGraph.references) {
+  for (const reference of state.currentGraph.references) {
     const owner = referenceOwner(reference);
     if (owner !== '' && !displayNames.has(owner)) {
       displayNames.set(
@@ -695,29 +684,29 @@ function renderOwnerFilter() {
   for (const owner of owners) {
     select.append(new Option(displayNames.get(owner), owner));
   }
-  if (!owners.includes(ownerFilter)) {
-    ownerFilter = '';
+  if (!owners.includes(state.ownerFilter)) {
+    state.ownerFilter = '';
   }
-  select.value = ownerFilter;
+  select.value = state.ownerFilter;
 }
 
 document.getElementById('branch-owner-filter').addEventListener('change', (event) => {
   const owner = event.target.value;
   // Owner is the author of a branch's latest commit.
   setVisibleBranches((reference) => owner === '' || referenceOwner(reference) === owner);
-  ownerFilter = owner;
+  state.ownerFilter = owner;
   event.target.value = owner;
 });
 
 function updateBranchPickerSummary() {
-  const total = currentGraph
-    ? availableReferenceNames
-      ? availableReferenceNames.size
-      : currentGraph.references.length
+  const total = state.currentGraph
+    ? state.availableReferenceNames
+      ? state.availableReferenceNames.size
+      : state.currentGraph.references.length
     : 0;
-  const shown = availableReferenceNames
-    ? [...visibleReferences].filter((name) => availableReferenceNames.has(name)).length
-    : visibleReferences.size;
+  const shown = state.availableReferenceNames
+    ? [...state.visibleReferences].filter((name) => state.availableReferenceNames.has(name)).length
+    : state.visibleReferences.size;
   document.getElementById('branch-picker-summary').textContent =
     `Branches: ${shown} of ${total} shown`;
 }
@@ -727,17 +716,18 @@ function filterBranchPicker() {
   for (const lane of document.getElementById('reference-lanes').children) {
     lane.hidden =
       (query !== '' && !lane.dataset.refName.toLowerCase().includes(query)) ||
-      (availableReferenceNames !== null && !availableReferenceNames.has(lane.dataset.refName));
+      (state.availableReferenceNames !== null &&
+        !state.availableReferenceNames.has(lane.dataset.refName));
   }
 }
 
 function setVisibleBranches(predicate) {
-  ownerFilter = '';
-  visibleReferences = new Set(
-    currentGraph.references.filter(predicate).map((reference) => reference.name)
+  state.ownerFilter = '';
+  state.visibleReferences = new Set(
+    state.currentGraph.references.filter(predicate).map((reference) => reference.name)
   );
   saveViewState();
-  renderReferenceLanes(currentGraph.references);
+  renderReferenceLanes(state.currentGraph.references);
   renderFilteredGraph();
 }
 
@@ -770,7 +760,7 @@ for (const [id, key] of [
   ['show-releases', 'releases']
 ]) {
   document.getElementById(id).addEventListener('change', (event) => {
-    displayOptions[key] = event.target.checked;
+    state.displayOptions[key] = event.target.checked;
     applyDisplayOptions();
     saveViewState();
   });
@@ -802,7 +792,11 @@ document.addEventListener('keydown', (event) => {
     picker.querySelector('summary').focus();
   } else if (event.key === 'Escape' && document.getElementById('compacted-popover')) {
     closeCompactedPopover();
-  } else if (event.key === 'Escape' && selectedCommit && event.target.tagName !== 'TEXTAREA') {
+  } else if (
+    event.key === 'Escape' &&
+    state.selectedCommit &&
+    event.target.tagName !== 'TEXTAREA'
+  ) {
     selectCommit(null);
   }
 });
@@ -835,13 +829,13 @@ function renderWorktrees(worktrees) {
 }
 
 const graphActions = {
-  getNotes: () => notes,
-  getSelectedCommit: () => selectedCommit,
+  getNotes: () => state.notes,
+  getSelectedCommit: () => state.selectedCommit,
   selectCommit: (commit) => selectCommit(commit),
   focusOnCommit,
   openGraphContextMenu,
   openCompactedPopover,
-  registerCompactedMember: (hash, summaryHash) => compactedMembership.set(hash, summaryHash)
+  registerCompactedMember: (hash, summaryHash) => state.compactedMembership.set(hash, summaryHash)
 };
 
 function renderGraphContents(graph) {
@@ -849,7 +843,7 @@ function renderGraphContents(graph) {
   const emptyMessage = document.getElementById('graph-empty');
   graphElement.replaceChildren();
   closeCompactedPopover();
-  compactedMembership = new Map();
+  state.compactedMembership = new Map();
   applyDisplayOptions();
 
   const ownerReference = (lane) => graph.references[graph.sideLanes?.get(lane) ?? lane];
@@ -857,13 +851,13 @@ function renderGraphContents(graph) {
     computeGraphLayout(graph);
   graphElement.dataset.baseWidth = String(width);
   graphElement.dataset.baseHeight = String(height);
-  graphElement.setAttribute('width', String(Math.round(width * zoomLevel)));
-  graphElement.setAttribute('height', String(Math.round(height * zoomLevel)));
+  graphElement.setAttribute('width', String(Math.round(width * state.zoomLevel)));
+  graphElement.setAttribute('height', String(Math.round(height * state.zoomLevel)));
   graphElement.setAttribute('viewBox', `0 0 ${width} ${height}`);
   graphElement.dataset.order = graph.order;
   graphElement.dataset.referenceCount = String(graph.references.length);
-  graphElement.dataset.timeRangeStart = timeRange ? String(timeRange.start) : '';
-  graphElement.dataset.timeRangeEnd = timeRange ? String(timeRange.end) : '';
+  graphElement.dataset.timeRangeStart = state.timeRange ? String(state.timeRange.start) : '';
+  graphElement.dataset.timeRangeEnd = state.timeRange ? String(state.timeRange.end) : '';
   const ctx = {
     graph,
     graphElement,
@@ -885,12 +879,12 @@ function renderGraphContents(graph) {
   emptyMessage.hidden = graph.commits.length > 0;
   if (graph.commits.length > 0) {
     emptyMessage.textContent = '';
-  } else if (currentGraph.commits.length === 0) {
+  } else if (state.currentGraph.commits.length === 0) {
     emptyMessage.textContent =
       'No commits yet. The commit graph will appear after the first commit.';
-  } else if (visibleReferences.size === 0) {
+  } else if (state.visibleReferences.size === 0) {
     emptyMessage.textContent = 'No references selected. Select a reference to show its history.';
-  } else if (timeRange) {
+  } else if (state.timeRange) {
     emptyMessage.textContent =
       'No commits in this time range. Choose a different range or select All history.';
   } else {
@@ -899,7 +893,7 @@ function renderGraphContents(graph) {
 }
 
 function selectCommit(commit) {
-  selectedCommit = commit;
+  state.selectedCommit = commit;
   updateTimeNavigation();
   const hash = commit?.hash;
   const dock = document.getElementById('review-dock');
@@ -907,7 +901,7 @@ function selectCommit(commit) {
   for (const node of commitNodes) {
     node.setAttribute('aria-pressed', String(node.getAttribute('data-commit-hash') === hash));
   }
-  const memberSummary = hash ? compactedMembership.get(hash) : null;
+  const memberSummary = hash ? state.compactedMembership.get(hash) : null;
   for (const summaryNode of document.querySelectorAll('[data-testid="compacted-commit-count"]')) {
     summaryNode.setAttribute(
       'aria-pressed',
@@ -917,31 +911,32 @@ function selectCommit(commit) {
   for (const item of document.querySelectorAll('[data-testid="compacted-commit-item"]')) {
     item.setAttribute('aria-pressed', String(item.dataset.commitHash === hash));
   }
-  if (!selectedCommit) {
+  if (!state.selectedCommit) {
     dock.hidden = true;
     renderSelectedBranchNotes();
     return;
   }
 
   const noteInput = document.getElementById('selected-commit-note');
-  noteInput.value = notes.commits[selectedCommit.hash] || '';
-  noteInput.oninput = () => setNote('commits', selectedCommit.hash, noteInput.value);
+  noteInput.value = state.notes.commits[state.selectedCommit.hash] || '';
+  noteInput.oninput = () => setNote('commits', state.selectedCommit.hash, noteInput.value);
   renderSelectedBranchNotes();
 
-  document.getElementById('selected-commit-message').textContent = selectedCommit.subject;
-  document.getElementById('selected-commit-author').textContent = selectedCommit.author;
-  document.getElementById('selected-commit-author-date').textContent = selectedCommit.authorDate;
-  document.getElementById('selected-commit-hash').textContent = selectedCommit.hash;
-  const parents = selectedCommit.originalParents || selectedCommit.parents;
+  document.getElementById('selected-commit-message').textContent = state.selectedCommit.subject;
+  document.getElementById('selected-commit-author').textContent = state.selectedCommit.author;
+  document.getElementById('selected-commit-author-date').textContent =
+    state.selectedCommit.authorDate;
+  document.getElementById('selected-commit-hash').textContent = state.selectedCommit.hash;
+  const parents = state.selectedCommit.originalParents || state.selectedCommit.parents;
   document.getElementById('selected-commit-parents').textContent =
     parents.length > 0 ? parents.join(', ') : 'None (root commit)';
 
   const references = document.getElementById('selected-commit-references');
   references.replaceChildren();
-  if (selectedCommit.references.length === 0) {
+  if (state.selectedCommit.references.length === 0) {
     references.textContent = 'None';
   } else {
-    for (const referenceName of selectedCommit.references) {
+    for (const referenceName of state.selectedCommit.references) {
       const item = document.createElement('li');
       item.textContent = referenceName;
       references.append(item);
@@ -992,7 +987,7 @@ settingsButton.addEventListener('click', () => {
 });
 
 document.getElementById('repository-note').addEventListener('input', (event) => {
-  viewStorage.writeRepositoryNote(currentRepositoryPath, event.currentTarget.value);
+  viewStorage.writeRepositoryNote(state.currentRepositoryPath, event.currentTarget.value);
 });
 
 document.getElementById('open-explorer').addEventListener('click', async () => {
