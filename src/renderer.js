@@ -1093,6 +1093,26 @@ function renderGraphContents(graph) {
           'data-child-hash': commit.hash
         })
       );
+      const hoverReference =
+        graph.references[isMergeIn && parentCommit ? parentCommit.lane : commit.lane];
+      if (hoverReference) {
+        const hit = createSvgElement('path', {
+          d: pathData,
+          fill: 'none',
+          stroke: 'transparent',
+          'stroke-width': 12,
+          'pointer-events': 'stroke',
+          'data-testid': 'commit-edge-hover',
+          'data-ref-name': hoverReference.name
+        });
+        const title = createSvgElement('title');
+        hit.append(title);
+        hit.addEventListener('pointerenter', () => {
+          const note = notes.branches[hoverReference.name];
+          title.textContent = note ? `${hoverReference.name}\n${note}` : hoverReference.name;
+        });
+        graphElement.append(hit);
+      }
     }
   }
 

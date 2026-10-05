@@ -5,7 +5,12 @@ const path = require('node:path');
 const { promisify } = require('node:util');
 
 const execFileAsync = promisify(execFile);
-const GRAPH_COLORS = ['#60a5fa', '#f472b6', '#34d399', '#fbbf24', '#a78bfa', '#fb7185'];
+// The golden angle keeps consecutive hues far apart, and alternating lightness separates close neighbours further.
+function graphColor(index) {
+  const hue = Math.round((index * 137.508 + 215) % 360);
+  const lightness = index % 2 === 0 ? 62 : 48;
+  return `hsl(${hue} 78% ${lightness}%)`;
+}
 let settings;
 let activeRepositoryPath = null;
 
@@ -157,7 +162,7 @@ function orderReferences(references) {
   let pairIndex = 0;
 
   function addPair(local, remote) {
-    const color = GRAPH_COLORS[pairIndex++ % GRAPH_COLORS.length];
+    const color = graphColor(pairIndex++);
     ordered.push({ ...local, color });
     if (remote) {
       pairedRemotes.add(remote.name);
@@ -170,7 +175,7 @@ function orderReferences(references) {
   if (main) {
     addPair(main, originMain);
   } else if (originMain) {
-    const color = GRAPH_COLORS[pairIndex++ % GRAPH_COLORS.length];
+    const color = graphColor(pairIndex++);
     ordered.push({ ...originMain, color });
     pairedRemotes.add(originMain.name);
   }
@@ -200,7 +205,7 @@ function orderReferences(references) {
   for (const reference of unpairedReferences) {
     ordered.push({
       ...reference,
-      color: GRAPH_COLORS[pairIndex++ % GRAPH_COLORS.length]
+      color: graphColor(pairIndex++)
     });
   }
 
