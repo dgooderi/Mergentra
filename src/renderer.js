@@ -1098,16 +1098,33 @@ function renderReferenceLanes(references) {
   updateBranchPickerSummary();
 }
 
+const ownerCache = new WeakMap();
+
+// Owners are computed once per loaded graph; scanning every commit per branch is far too slow on large repositories.
+function ownersForGraph() {
+  let owners = ownerCache.get(currentGraph);
+  if (!owners) {
+    const tips = new Set(currentGraph.references.map((reference) => reference.hash));
+    const authorByTip = new Map();
+    for (const commit of currentGraph.commits) {
+      if (tips.has(commit.hash)) {
+        authorByTip.set(commit.hash, commit.author || '');
+      }
+    }
+    owners = new Map();
+    for (const reference of currentGraph.references) {
+      const author = (authorByTip.get(reference.hash) || '').replace(/\s*<[^>]*>$/, '').trim();
+      // The same person often commits under several emails or capitalisations, so owners are
+      // matched by name without regard to case.
+      owners.set(reference.name, author.replace(/\s+/g, ' ').toLowerCase());
+    }
+    ownerCache.set(currentGraph, owners);
+  }
+  return owners;
+}
+
 function referenceOwner(reference) {
-  const author =
-    currentGraph.commits.find((commit) => commit.hash === reference.hash)?.author || '';
-  // The same person often commits under several emails or capitalisations, so owners are matched
-  // by name without regard to case.
-  return author
-    .replace(/\s*<[^>]*>$/, '')
-    .trim()
-    .replace(/\s+/g, ' ')
-    .toLowerCase();
+  return ownersForGraph().get(reference.name) || '';
 }
 
 function renderOwnerFilter() {
