@@ -433,7 +433,7 @@ function renderFilteredGraph() {
     laneCount: Math.max(references.length, 1)
   };
 
-  const displayGraph = compactOrdinaryHistory(graph);
+  const displayGraph = compactSameLaneRuns(compactOrdinaryHistory(graph));
   renderGraphContents(displayGraph);
   refreshNoteMarkers();
   if (selectedCommit) {
@@ -571,6 +571,109 @@ function compactOrdinaryHistory(graph) {
     });
   }
 
+  return { ...graph, commits: displayCommits };
+}
+
+// Plain commits that stay on one lane (including merges whose side commits share that lane) carry
+// no branching information, so each unbroken run of them becomes one summary pill.
+function compactSameLaneRuns(graph) {
+  const commits = graph.commits;
+  const commitsByHash = new Map(commits.map((commit) => [commit.hash, commit]));
+  const pinned = new Set([
+    ...graph.shallowBoundaries,
+    ...graph.missingObjectBoundaries,
+    ...graph.divergenceMarkers.map((marker) => marker.commitHash),
+    ...graph.cutMarkers.map((marker) => marker.commitHash)
+  ]);
+  if (graph.headDetached && graph.headHash) {
+    pinned.add(graph.headHash);
+  }
+  const crossLane = new Set();
+  for (const commit of commits) {
+    for (const parentHash of commit.parents) {
+      const parent = commitsByHash.get(parentHash);
+      if (parent && parent.lane !== commit.lane) {
+        crossLane.add(commit.hash);
+        crossLane.add(parentHash);
+      }
+    }
+  }
+
+  const runs = [];
+  const openRuns = new Map();
+  for (const commit of commits) {
+    const plain =
+      !crossLane.has(commit.hash) &&
+      !pinned.has(commit.hash) &&
+      commit.references.length === 0 &&
+      commit.tags.length === 0;
+    if (!plain) {
+      openRuns.delete(commit.lane);
+      continue;
+    }
+    let run = openRuns.get(commit.lane);
+    if (!run) {
+      run = [];
+      openRuns.set(commit.lane, run);
+      runs.push(run);
+    }
+    run.push(commit);
+  }
+
+  const summaryByMember = new Map();
+  const summaryByFirst = new Map();
+  for (const run of runs.filter((candidate) => candidate.length >= 2)) {
+    const memberHashes = new Set(run.map((commit) => commit.hash));
+    const compactedCommits = run
+      .flatMap((commit) =>
+        commit.compactCount ? [...commit.compactedCommits].reverse() : [commit]
+      )
+      .reverse();
+    const summary = {
+      hash: `compact-lane:${run[0].hash}:${run[run.length - 1].hash}`,
+      parents: [
+        ...new Set(
+          run.flatMap((commit) => commit.parents).filter((hash) => !memberHashes.has(hash))
+        )
+      ],
+      subject: `${compactedCommits.length} commits`,
+      author: '',
+      authorDate: '',
+      committerTimestamp: 0,
+      lane: run[0].lane,
+      tags: [],
+      references: [],
+      compactCount: compactedCommits.length,
+      compactedCommits,
+      compactedHashes: compactedCommits.map((commit) => commit.hash)
+    };
+    for (const commit of run) {
+      summaryByMember.set(commit.hash, summary);
+    }
+    summaryByFirst.set(run[0].hash, summary);
+  }
+  if (summaryByMember.size === 0) {
+    return graph;
+  }
+
+  const remap = (hashes) => [
+    ...new Set(hashes.map((hash) => summaryByMember.get(hash)?.hash || hash))
+  ];
+  const displayCommits = [];
+  for (const commit of commits) {
+    const summary = summaryByMember.get(commit.hash);
+    if (summary) {
+      if (summaryByFirst.get(commit.hash) === summary) {
+        displayCommits.push({ ...summary, parents: remap(summary.parents) });
+      }
+      continue;
+    }
+    displayCommits.push({
+      ...commit,
+      originalParents: commit.originalParents || commit.parents,
+      parents: remap(commit.parents)
+    });
+  }
   return { ...graph, commits: displayCommits };
 }
 
