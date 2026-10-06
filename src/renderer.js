@@ -15,6 +15,13 @@ import {
   renderTimeAxis
 } from './renderer/graph-view.js';
 import { state } from './renderer/state.js';
+import { loadViewState, saveViewState } from './renderer/view-state.js';
+import {
+  initTimeToolbar,
+  syncCustomInputsToRange,
+  updateTimeNavigation
+} from './renderer/time-toolbar.js';
+import { initZoomControls, stepZoom } from './renderer/zoom.js';
 import { viewStorage } from './renderer/app-storage.js';
 import {
   loadNotes,
@@ -29,15 +36,13 @@ import {
   openGraphContextMenu
 } from './renderer/popovers.js';
 import { renderRecentRepositories } from './renderer/recent-repositories.js';
-import { getPresetRange, localDateString } from './renderer/time-range.js';
+import { getPresetRange } from './renderer/time-range.js';
 const picker = document.getElementById('repository-picker');
 const form = document.getElementById('repository-form');
 const pathInput = document.getElementById('repository-path');
 const gitPathInput = document.getElementById('git-executable-path');
 const statusMessage = document.getElementById('status');
 const repositoryView = document.getElementById('repository-view');
-const ZOOM_STEPS = [0.25, 0.4, 0.5, 0.67, 0.8, 1, 1.25, 1.5, 2, 3];
-
 function applyDisplayOptions() {
   const graphElement = document.getElementById('commit-graph');
   graphElement.dataset.showTags = String(state.displayOptions.tags);
@@ -106,64 +111,6 @@ async function loadPickerSettings() {
 }
 
 loadPickerSettings();
-
-function loadViewState() {
-  return viewStorage.loadViewState(state.currentRepositoryPath);
-}
-
-function setZoom(level, anchor) {
-  const graphElement = document.getElementById('commit-graph');
-  const scroller = graphElement.parentElement;
-  const previous = state.zoomLevel;
-  state.zoomLevel = Math.min(Math.max(level, ZOOM_STEPS[0]), ZOOM_STEPS[ZOOM_STEPS.length - 1]);
-  document.getElementById('zoom-reset').textContent = `${Math.round(state.zoomLevel * 100)}%`;
-  document.getElementById('zoom-in').disabled =
-    state.zoomLevel >= ZOOM_STEPS[ZOOM_STEPS.length - 1];
-  document.getElementById('zoom-out').disabled = state.zoomLevel <= ZOOM_STEPS[0];
-  const baseWidth = Number(graphElement.dataset.baseWidth);
-  if (!baseWidth || previous === state.zoomLevel) {
-    return;
-  }
-  // Keep the point under the cursor (or the view centre) in place while zooming.
-  const box = scroller.getBoundingClientRect();
-  const anchorX = anchor ? anchor.x - box.left : scroller.clientWidth / 2;
-  const anchorY = anchor ? anchor.y - box.top : scroller.clientHeight / 2;
-  const contentX = (scroller.scrollLeft + anchorX) / previous;
-  const contentY = (scroller.scrollTop + anchorY) / previous;
-  graphElement.setAttribute('width', String(Math.round(baseWidth * state.zoomLevel)));
-  graphElement.setAttribute(
-    'height',
-    String(Math.round(Number(graphElement.dataset.baseHeight) * state.zoomLevel))
-  );
-  scroller.scrollLeft = contentX * state.zoomLevel - anchorX;
-  scroller.scrollTop = contentY * state.zoomLevel - anchorY;
-}
-
-function stepZoom(direction, anchor) {
-  const index = ZOOM_STEPS.findIndex((step) => step >= state.zoomLevel - 0.001);
-  const next = Math.min(Math.max(index + direction, 0), ZOOM_STEPS.length - 1);
-  setZoom(ZOOM_STEPS[next], anchor);
-}
-
-document.getElementById('zoom-in').addEventListener('click', () => stepZoom(1));
-document.getElementById('zoom-out').addEventListener('click', () => stepZoom(-1));
-document.getElementById('zoom-reset').addEventListener('click', () => setZoom(1));
-
-function saveViewState() {
-  if (!state.currentRepositoryPath || !state.currentGraph) {
-    return;
-  }
-  const hidden = state.currentGraph.references
-    .filter((reference) => !state.visibleReferences.has(reference.name))
-    .map((reference) => reference.name);
-  viewStorage.saveViewState(state.currentRepositoryPath, {
-    hidden,
-    preset: state.selectedTimePreset,
-    display: state.displayOptions,
-    custom: state.selectedTimePreset === 'custom' ? state.customRangeValues : null,
-    range: state.rangeAdjusted && state.timeRange ? state.timeRange : null
-  });
-}
 
 function showRepository(repository) {
   state.currentRepositoryPath = repository.path;
@@ -284,124 +231,8 @@ function renderFilteredGraph() {
   }
 }
 
-function syncCustomInputsToRange() {
-  state.customRangeValues = {
-    start: localDateString(state.timeRange.start),
-    end: localDateString(state.timeRange.end - 1)
-  };
-  document.getElementById('time-range-start').value = state.customRangeValues.start;
-  document.getElementById('time-range-end').value = state.customRangeValues.end;
-}
-
-function setAdjustedRange(start, end) {
-  state.timeRange = { start, end };
-  state.rangeAdjusted = true;
-  if (state.selectedTimePreset === 'custom') {
-    syncCustomInputsToRange();
-  }
-  saveViewState();
-  renderFilteredGraph();
-}
-
-function shiftTimeRange(direction) {
-  if (!state.timeRange) {
-    return;
-  }
-  const span = state.timeRange.end - state.timeRange.start;
-  let start = state.timeRange.start + direction * span;
-  // The range cannot move past the present.
-  start = Math.min(start, Date.now() - span);
-  setAdjustedRange(start, start + span);
-}
-
-function centreTimeRangeOnSelection() {
-  if (!state.timeRange || !state.selectedCommit?.committerTimestamp) {
-    return;
-  }
-  const span = state.timeRange.end - state.timeRange.start;
-  const middle = state.selectedCommit.committerTimestamp * 1000;
-  setAdjustedRange(middle - span / 2, middle + span / 2);
-  const node = document.querySelector(`[data-commit-hash="${state.selectedCommit.hash}"]`);
-  node?.scrollIntoView({ inline: 'center', block: 'nearest' });
-}
-
-function updateTimeNavigation() {
-  const hasRange = Boolean(state.timeRange);
-  document.getElementById('time-earlier').disabled = !hasRange;
-  document.getElementById('time-later').disabled = !hasRange || state.timeRange.end >= Date.now();
-  document.getElementById('time-centre').disabled =
-    !hasRange || !state.selectedCommit?.committerTimestamp;
-}
-
-document.getElementById('time-earlier').addEventListener('click', () => shiftTimeRange(-1));
-document.getElementById('time-later').addEventListener('click', () => shiftTimeRange(1));
-document.getElementById('time-centre').addEventListener('click', centreTimeRangeOnSelection);
-
-function applyCustomTimeRange() {
-  const startValue = document.getElementById('time-range-start').value;
-  const endValue = document.getElementById('time-range-end').value;
-  const status = document.getElementById('time-range-status');
-  const startDate = new Date(`${startValue}T00:00:00`);
-  const endDate = new Date(`${endValue}T00:00:00`);
-
-  if (
-    !startValue ||
-    !endValue ||
-    !Number.isFinite(startDate.getTime()) ||
-    !Number.isFinite(endDate.getTime())
-  ) {
-    status.textContent = 'Choose a valid start and end date.';
-    return;
-  }
-  if (endDate < startDate) {
-    status.textContent = 'The end date must be on or after the start date.';
-    return;
-  }
-
-  endDate.setDate(endDate.getDate() + 1);
-  state.timeRange = { start: startDate.getTime(), end: endDate.getTime() };
-  state.selectedTimePreset = 'custom';
-  state.customRangeValues = { start: startValue, end: endValue };
-  state.rangeAdjusted = false;
-  saveViewState();
-  status.textContent = '';
-  renderFilteredGraph();
-}
-
-document.getElementById('time-range').addEventListener('change', (event) => {
-  state.selectedTimePreset = event.target.value;
-  const customRange = document.getElementById('custom-time-range');
-  const status = document.getElementById('time-range-status');
-  status.textContent = '';
-
-  if (state.selectedTimePreset === 'custom') {
-    customRange.hidden = false;
-    return;
-  }
-
-  customRange.hidden = true;
-  state.rangeAdjusted = false;
-  state.timeRange = getPresetRange(state.selectedTimePreset, new Date());
-  if (state.timeRange && state.selectedCommit?.committerTimestamp) {
-    // Keep the selected commit in the middle of the new range.
-    const half = (state.timeRange.end - state.timeRange.start) / 2;
-    const middle = state.selectedCommit.committerTimestamp * 1000;
-    state.timeRange = { start: middle - half, end: middle + half };
-    state.rangeAdjusted = true;
-  }
-  saveViewState();
-  renderFilteredGraph();
-  if (state.rangeAdjusted) {
-    document
-      .querySelector(`[data-commit-hash="${state.selectedCommit.hash}"]`)
-      ?.scrollIntoView({ inline: 'center', block: 'nearest' });
-  }
-});
-
-document.getElementById('custom-time-range').addEventListener('submit', (event) => {
-  event.preventDefault();
-  applyCustomTimeRange();
-});
+initTimeToolbar({ renderFilteredGraph });
+initZoomControls();
 
 function renderReferenceLanes(references) {
   const laneList = document.getElementById('reference-lanes');
