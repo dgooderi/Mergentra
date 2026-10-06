@@ -7,8 +7,18 @@ export default [
   },
   js.configs.recommended,
   {
-    files: ['src/main.js', 'src/preload.js', 'tests/**/*.cjs', 'playwright.config.*'],
+    files: [
+      'src/main.js',
+      'src/preload.js',
+      'src/git-runner.js',
+      'tests/**/*.cjs',
+      'playwright.config.*'
+    ],
     languageOptions: { sourceType: 'commonjs', globals: { ...globals.node } }
+  },
+  {
+    files: ['tests/unit/**/*.test.js'],
+    languageOptions: { globals: { ...globals.node } }
   },
   {
     files: ['tests/**/*.cjs'],
