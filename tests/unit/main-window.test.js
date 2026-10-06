@@ -1,0 +1,33 @@
+import path from 'node:path';
+import { describe, expect, it, vi } from 'vitest';
+import mainWindowModule from '../../src/main-window.js';
+
+const { createMainWindow } = mainWindowModule;
+
+describe('main window creation', () => {
+  it('creates the existing secure window configuration and loads the app page', () => {
+    const window = { loadFile: vi.fn() };
+    const BrowserWindow = vi.fn(function () {
+      return window;
+    });
+    const Menu = { setApplicationMenu: vi.fn() };
+    const applicationDirectory = path.resolve('app');
+
+    expect(createMainWindow({ BrowserWindow, Menu, applicationDirectory })).toBe(window);
+    expect(Menu.setApplicationMenu).toHaveBeenCalledWith(null);
+    expect(BrowserWindow).toHaveBeenCalledWith({
+      width: 1080,
+      height: 720,
+      minWidth: 720,
+      minHeight: 520,
+      backgroundColor: '#111827',
+      webPreferences: {
+        preload: path.join(applicationDirectory, 'preload.js'),
+        contextIsolation: true,
+        nodeIntegration: false,
+        sandbox: true
+      }
+    });
+    expect(window.loadFile).toHaveBeenCalledWith(path.join(applicationDirectory, 'index.html'));
+  });
+});

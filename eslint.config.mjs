@@ -13,6 +13,8 @@ export default [
       'src/git-runner.js',
       'src/reference-order.js',
       'src/divergence-markers.js',
+      'src/ipc-handlers.js',
+      'src/main-window.js',
       'src/repository-output.js',
       'src/settings-store.js',
       'tests/**/*.cjs',

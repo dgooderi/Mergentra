@@ -12,6 +12,8 @@ const {
 const { computeDivergenceMarkers } = require('./divergence-markers');
 const { orderReferences } = require('./reference-order');
 const { createSettingsStore } = require('./settings-store');
+const { registerIpcHandlers } = require('./ipc-handlers');
+const { createMainWindow } = require('./main-window');
 const { runGit, runGitWithInput } = createGitRunner();
 let settings;
 let settingsStore;
@@ -310,26 +312,6 @@ async function fetchRemoteReferences() {
   }
 }
 
-function createWindow() {
-  Menu.setApplicationMenu(null);
-  const window = new BrowserWindow({
-    width: 1080,
-    height: 720,
-    minWidth: 720,
-    minHeight: 520,
-    backgroundColor: '#111827',
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true,
-      nodeIntegration: false,
-      sandbox: true
-    }
-  });
-
-  window.loadFile(path.join(__dirname, 'index.html'));
-  return window;
-}
-
 app.whenReady().then(() => {
   try {
     settingsStore = createSettingsStore(app.getPath('userData'));
@@ -340,79 +322,25 @@ app.whenReady().then(() => {
     return;
   }
 
-  const window = createWindow();
-
-  ipcMain.handle('repository:choose', async () => {
-    const result = await dialog.showOpenDialog(window, {
-      title: 'Open a Git repository',
-      properties: ['openDirectory']
-    });
-    return result.canceled ? null : result.filePaths[0];
+  const window = createMainWindow({
+    BrowserWindow,
+    Menu,
+    applicationDirectory: __dirname
   });
 
-  ipcMain.handle('repository:open', (_event, repositoryPath) =>
-    openAndRememberRepository(repositoryPath)
-  );
-  ipcMain.handle('repository:fetch', () => fetchRemoteReferences());
-  ipcMain.handle('app:version', () => app.getVersion());
-  ipcMain.handle('external:open-release', async (_event, releaseUrl) => {
-    if (typeof releaseUrl !== 'string') {
-      throw new Error('The GitHub release link must be a URL.');
-    }
-
-    let parsedUrl;
-    try {
-      parsedUrl = new URL(releaseUrl);
-    } catch {
-      throw new Error('The GitHub release link is invalid.');
-    }
-    if (
-      parsedUrl.origin !== 'https://github.com' ||
-      !parsedUrl.pathname.startsWith('/dgooderi/GitScope/releases/')
-    ) {
-      throw new Error('Only GitScope GitHub release links can be opened.');
-    }
-
-    await shell.openExternal(parsedUrl.href);
-  });
-  ipcMain.handle('diagnostics:copy', (_event, diagnostics) => {
-    if (typeof diagnostics !== 'string') {
-      throw new Error('Diagnostics must be text.');
-    }
-    clipboard.writeText(diagnostics);
-  });
-  ipcMain.handle('repository:open-in-explorer', async () => {
-    if (!activeRepositoryPath) {
-      throw new Error('Open a repository first.');
-    }
-    const failure = await shell.openPath(activeRepositoryPath);
-    if (failure) {
-      throw new Error(failure);
-    }
-  });
-  ipcMain.handle('repository:recent', () => settings.recentRepositories);
-  ipcMain.handle('settings:get-git-path', () => settings.gitPath);
-  ipcMain.handle('settings:save-git-path', async (_event, gitPath) => {
-    if (typeof gitPath !== 'string') {
-      throw new Error('Enter the full path to git.exe.');
-    }
-
-    if (gitPath.trim() === '') {
-      saveSettings({ ...settings, gitPath: '' });
-      return '';
-    }
-
-    const resolvedGitPath = path.resolve(gitPath.trim());
-    try {
-      await runGit(resolvedGitPath, ['--version']);
-    } catch (error) {
-      throw new Error(`Git could not be started from "${resolvedGitPath}": ${error.message}`, {
-        cause: error
-      });
-    }
-
-    saveSettings({ ...settings, gitPath: resolvedGitPath });
-    return resolvedGitPath;
+  registerIpcHandlers({
+    ipcMain,
+    app,
+    dialog,
+    shell,
+    clipboard,
+    window,
+    openAndRememberRepository,
+    fetchRemoteReferences,
+    getSettings: () => settings,
+    saveSettings,
+    getActiveRepositoryPath: () => activeRepositoryPath,
+    runGit
   });
 });
 
