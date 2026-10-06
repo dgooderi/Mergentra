@@ -24,7 +24,7 @@ npm run test:e2e
 
 - `src/main.js` wires the CommonJS Electron main process. Git execution, settings storage, Git-output parsing, reference ordering, divergence markers, IPC registration, and window creation live in separate modules under `src/`.
 - `src/preload.js` is the only bridge between the main and renderer processes; renderer calls continue to use its existing IPC channels.
-- `src/renderer.js` is the native ES module entry point. Pure graph and time calculations, SVG graph drawing, state, persistence adapters, and focused UI modules live under `src/renderer/`.
+- `src/renderer.js` is the native ES module entry point. Pure graph and time calculations, SVG graph drawing, state, persistence adapters, and focused UI modules for reference picking, the Review dock, repository controls, remote actions, time, and zoom live under `src/renderer/`.
 - `tests/unit/` covers pure logic and storage/process seams. Feature-grouped Playwright specs under `tests/` cover app-level behavior and share launch setup through `tests/e2e-helpers.cjs`.
 
 Keep Git and Electron access in the main process, persistence behind its storage module, and pure graph calculations free of DOM and process APIs.

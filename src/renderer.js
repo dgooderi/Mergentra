@@ -1,10 +1,8 @@
-import { compareReleaseVersions, parseReleaseVersion } from './renderer/release-version.js';
 import { compactOrdinaryHistory, compactSameLaneRuns } from './renderer/compaction.js';
 import { buildFilteredGraph, computeAvailableReferences } from './renderer/lanes.js';
 import { computeGraphLayout } from './renderer/layout.js';
 import {
   appendDefinitions,
-  createSvgElement,
   drawCheckedOutMarker,
   drawCommits,
   drawCutMarkers,
@@ -22,26 +20,22 @@ import {
   updateTimeNavigation
 } from './renderer/time-toolbar.js';
 import { initZoomControls, stepZoom } from './renderer/zoom.js';
+import { createReferencePicker } from './renderer/reference-picker.js';
 import { viewStorage } from './renderer/app-storage.js';
-import {
-  loadNotes,
-  refreshNoteMarkers,
-  renderSelectedBranchNotes,
-  setNote
-} from './renderer/notes-ui.js';
+import { loadNotes, refreshNoteMarkers } from './renderer/notes-ui.js';
+import { createRepositoryActions } from './renderer/repository-actions.js';
+import { createRepositoryControls } from './renderer/repository-controls.js';
 import {
   closeCompactedPopover,
   closeGraphContextMenu,
   openCompactedPopover,
   openGraphContextMenu
 } from './renderer/popovers.js';
-import { renderRecentRepositories } from './renderer/recent-repositories.js';
 import { getPresetRange } from './renderer/time-range.js';
+import { createReviewDock } from './renderer/review-dock.js';
+const reviewDock = createReviewDock({ updateTimeNavigation });
+const selectCommit = reviewDock.selectCommit;
 const picker = document.getElementById('repository-picker');
-const form = document.getElementById('repository-form');
-const pathInput = document.getElementById('repository-path');
-const gitPathInput = document.getElementById('git-executable-path');
-const statusMessage = document.getElementById('status');
 const repositoryView = document.getElementById('repository-view');
 function applyDisplayOptions() {
   const graphElement = document.getElementById('commit-graph');
@@ -62,55 +56,6 @@ function focusOnCommit(commit, position) {
     behavior: 'smooth'
   });
 }
-
-function setStatus(message) {
-  statusMessage.textContent = message;
-}
-
-async function openRepository(repositoryPath, triggerButton) {
-  const progress = document.getElementById('repository-progress');
-  const openButton = form.querySelector('button[type="submit"]');
-  const buttons = new Set([openButton, triggerButton].filter(Boolean));
-  for (const button of buttons) {
-    button.disabled = true;
-  }
-  setStatus('');
-  progress.textContent = 'Loading repository history…';
-
-  try {
-    showRepository(await window.gitScope.openRepository(repositoryPath));
-    progress.textContent = '';
-  } catch (error) {
-    progress.textContent = '';
-    setStatus(error.message);
-  } finally {
-    for (const button of buttons) {
-      button.disabled = false;
-    }
-  }
-}
-
-function setTheme(theme) {
-  document.documentElement.dataset.theme = theme;
-  const toggle = document.getElementById('theme-toggle');
-  toggle.dataset.themeTarget = theme === 'dark' ? 'light' : 'dark';
-  toggle.textContent = theme === 'dark' ? 'Light mode' : 'Dark mode';
-}
-
-async function loadPickerSettings() {
-  try {
-    const [gitPath, recentRepositories] = await Promise.all([
-      window.gitScope.getGitPath(),
-      window.gitScope.getRecentRepositories()
-    ]);
-    gitPathInput.value = gitPath;
-    renderRecentRepositories(recentRepositories, openRepository);
-  } catch (error) {
-    setStatus(error.message);
-  }
-}
-
-loadPickerSettings();
 
 function showRepository(repository) {
   state.currentRepositoryPath = repository.path;
@@ -183,9 +128,9 @@ function renderGraph(graph) {
   document.getElementById('time-range').value = state.selectedTimePreset;
   document.getElementById('custom-time-range').hidden = state.selectedTimePreset !== 'custom';
   document.getElementById('time-range-status').textContent = '';
-  document.getElementById('review-dock').hidden = true;
+  reviewDock.hide();
   renderWorktrees(graph.worktrees);
-  renderReferenceLanes(graph.references);
+  referencePicker.render(graph.references);
   renderFilteredGraph();
 }
 
@@ -204,7 +149,7 @@ function refreshRepositoryGraph(repository) {
     }
   }
   renderWorktrees(state.currentGraph.worktrees);
-  renderReferenceLanes(state.currentGraph.references);
+  referencePicker.render(state.currentGraph.references);
   renderFilteredGraph();
 }
 
@@ -214,8 +159,7 @@ function renderFilteredGraph() {
   }
   state.availableReferenceNames = computeAvailableReferences(state.currentGraph, state.timeRange);
   updateTimeNavigation();
-  updateBranchPickerSummary();
-  filterBranchPicker();
+  referencePicker.refresh();
 
   const graph = buildFilteredGraph(state.currentGraph, state.visibleReferences, state.timeRange);
   const displayGraph = compactSameLaneRuns(compactOrdinaryHistory(graph));
@@ -233,197 +177,10 @@ function renderFilteredGraph() {
 
 initTimeToolbar({ renderFilteredGraph });
 initZoomControls();
-
-function renderReferenceLanes(references) {
-  const laneList = document.getElementById('reference-lanes');
-  laneList.replaceChildren();
-
-  for (const reference of references) {
-    const lane = document.createElement('li');
-    const checkbox = document.createElement('input');
-    const marker = createSvgElement('svg', {
-      viewBox: '0 0 28 16',
-      'aria-hidden': 'true'
-    });
-    const line = createSvgElement('line', {
-      'data-testid': 'reference-lane-style',
-      x1: 1,
-      y1: 8,
-      x2: 27,
-      y2: 8,
-      stroke: reference.color,
-      'stroke-width': 3
-    });
-    const label = document.createElement('span');
-    const labelGroup = document.createElement('div');
-
-    lane.dataset.testid = 'reference-lane';
-    lane.dataset.refName = reference.name;
-    lane.dataset.remote = String(reference.remote);
-    lane.dataset.checkedOut = String(reference.checkedOut);
-    lane.dataset.color = reference.color;
-    lane.dataset.laneIndex = String(reference.lane);
-    lane.dataset.targetHash = reference.hash;
-    checkbox.type = 'checkbox';
-    checkbox.checked = state.visibleReferences.has(reference.name);
-    checkbox.setAttribute('aria-label', reference.name);
-    checkbox.dataset.testid = 'reference-filter';
-    checkbox.addEventListener('change', () => {
-      if (checkbox.checked) {
-        state.visibleReferences.add(reference.name);
-      } else {
-        state.visibleReferences.delete(reference.name);
-      }
-      saveViewState();
-      updateBranchPickerSummary();
-      renderFilteredGraph();
-    });
-    marker.append(line);
-    if (reference.remote) {
-      line.setAttribute('stroke-dasharray', '6 4');
-    }
-    label.textContent = reference.name;
-    labelGroup.className = 'reference-label';
-    labelGroup.append(label);
-    if (reference.checkedOut) {
-      const checkedOutLabel = document.createElement('small');
-      checkedOutLabel.className = 'checked-out-label';
-      checkedOutLabel.dataset.testid = 'checked-out-label';
-      checkedOutLabel.textContent = 'Checked out';
-      labelGroup.append(checkedOutLabel);
-    }
-    if (reference.worktreePath) {
-      const worktreeLocation = document.createElement('small');
-      worktreeLocation.dataset.testid = 'reference-worktree';
-      worktreeLocation.textContent = reference.worktreePath;
-      labelGroup.append(worktreeLocation);
-    }
-    const noteToggle = document.createElement('button');
-    const noteEditor = document.createElement('textarea');
-    noteToggle.type = 'button';
-    noteToggle.className = 'note-toggle secondary';
-    noteToggle.dataset.testid = 'branch-note-toggle';
-    noteToggle.setAttribute('aria-label', `Note for ${reference.name}`);
-    noteToggle.textContent = Object.hasOwn(state.notes.branches, reference.name)
-      ? 'Note ✎'
-      : 'Note';
-    noteEditor.hidden = true;
-    noteEditor.rows = 2;
-    noteEditor.className = 'note-editor';
-    noteEditor.dataset.testid = 'branch-note-input';
-    noteEditor.placeholder = 'Private note about this branch';
-    noteEditor.setAttribute('aria-label', `Note text for ${reference.name}`);
-    noteEditor.value = state.notes.branches[reference.name] || '';
-    noteToggle.addEventListener('click', () => {
-      noteEditor.hidden = !noteEditor.hidden;
-      if (!noteEditor.hidden) {
-        noteEditor.focus();
-      }
-    });
-    noteEditor.addEventListener('input', () =>
-      setNote('branches', reference.name, noteEditor.value)
-    );
-    lane.dataset.hasNote = String(Object.hasOwn(state.notes.branches, reference.name));
-    lane.append(checkbox, marker, labelGroup, noteToggle, noteEditor);
-    laneList.append(lane);
-  }
-  renderOwnerFilter();
-  filterBranchPicker();
-  updateBranchPickerSummary();
-}
-
-const ownerCache = new WeakMap();
+const referencePicker = createReferencePicker({ renderFilteredGraph });
+referencePicker.init();
 
 // Owners are computed once per loaded graph; scanning every commit per branch is far too slow on large repositories.
-function ownersForGraph() {
-  let owners = ownerCache.get(state.currentGraph);
-  if (!owners) {
-    const tips = new Set(state.currentGraph.references.map((reference) => reference.hash));
-    const authorByTip = new Map();
-    for (const commit of state.currentGraph.commits) {
-      if (tips.has(commit.hash)) {
-        authorByTip.set(commit.hash, commit.author || '');
-      }
-    }
-    owners = new Map();
-    for (const reference of state.currentGraph.references) {
-      const author = (authorByTip.get(reference.hash) || '').replace(/\s*<[^>]*>$/, '').trim();
-      // The same person often commits under several emails or capitalisations, so owners are
-      // matched by name without regard to case.
-      owners.set(reference.name, author.replace(/\s+/g, ' ').toLowerCase());
-    }
-    ownerCache.set(state.currentGraph, owners);
-  }
-  return owners;
-}
-
-function referenceOwner(reference) {
-  return ownersForGraph().get(reference.name) || '';
-}
-
-function renderOwnerFilter() {
-  const select = document.getElementById('branch-owner-filter');
-  const displayNames = new Map();
-  for (const reference of state.currentGraph.references) {
-    const owner = referenceOwner(reference);
-    if (owner !== '' && !displayNames.has(owner)) {
-      displayNames.set(
-        owner,
-        owner.replace(/(^|\s)\S/g, (match) => match.toUpperCase())
-      );
-    }
-  }
-  const owners = [...displayNames.keys()].sort((left, right) => left.localeCompare(right));
-  select.replaceChildren(new Option('All owners', ''));
-  for (const owner of owners) {
-    select.append(new Option(displayNames.get(owner), owner));
-  }
-  if (!owners.includes(state.ownerFilter)) {
-    state.ownerFilter = '';
-  }
-  select.value = state.ownerFilter;
-}
-
-document.getElementById('branch-owner-filter').addEventListener('change', (event) => {
-  const owner = event.target.value;
-  // Owner is the author of a branch's latest commit.
-  setVisibleBranches((reference) => owner === '' || referenceOwner(reference) === owner);
-  state.ownerFilter = owner;
-  event.target.value = owner;
-});
-
-function updateBranchPickerSummary() {
-  const total = state.currentGraph
-    ? state.availableReferenceNames
-      ? state.availableReferenceNames.size
-      : state.currentGraph.references.length
-    : 0;
-  const shown = state.availableReferenceNames
-    ? [...state.visibleReferences].filter((name) => state.availableReferenceNames.has(name)).length
-    : state.visibleReferences.size;
-  document.getElementById('branch-picker-summary').textContent =
-    `Branches: ${shown} of ${total} shown`;
-}
-
-function filterBranchPicker() {
-  const query = document.getElementById('branch-picker-search').value.trim().toLowerCase();
-  for (const lane of document.getElementById('reference-lanes').children) {
-    lane.hidden =
-      (query !== '' && !lane.dataset.refName.toLowerCase().includes(query)) ||
-      (state.availableReferenceNames !== null &&
-        !state.availableReferenceNames.has(lane.dataset.refName));
-  }
-}
-
-function setVisibleBranches(predicate) {
-  state.ownerFilter = '';
-  state.visibleReferences = new Set(
-    state.currentGraph.references.filter(predicate).map((reference) => reference.name)
-  );
-  saveViewState();
-  renderReferenceLanes(state.currentGraph.references);
-  renderFilteredGraph();
-}
 
 document.getElementById('commit-graph').addEventListener('click', (event) => {
   if (event.shiftKey && !event.target.closest('[data-testid="commit-node"]')) {
@@ -459,16 +216,6 @@ for (const [id, key] of [
     saveViewState();
   });
 }
-document.getElementById('branch-picker-search').addEventListener('input', filterBranchPicker);
-document
-  .getElementById('branch-picker-all')
-  .addEventListener('click', () => setVisibleBranches(() => true));
-document
-  .getElementById('branch-picker-local')
-  .addEventListener('click', () => setVisibleBranches((reference) => !reference.remote));
-document
-  .getElementById('branch-picker-none')
-  .addEventListener('click', () => setVisibleBranches(() => false));
 document.addEventListener('click', (event) => {
   const picker = document.getElementById('branch-picker');
   if (picker.open && !picker.contains(event.target)) {
@@ -586,234 +333,5 @@ function renderGraphContents(graph) {
   }
 }
 
-function selectCommit(commit) {
-  state.selectedCommit = commit;
-  updateTimeNavigation();
-  const hash = commit?.hash;
-  const dock = document.getElementById('review-dock');
-  const commitNodes = document.querySelectorAll('[data-testid="commit-node"]');
-  for (const node of commitNodes) {
-    node.setAttribute('aria-pressed', String(node.getAttribute('data-commit-hash') === hash));
-  }
-  const memberSummary = hash ? state.compactedMembership.get(hash) : null;
-  for (const summaryNode of document.querySelectorAll('[data-testid="compacted-commit-count"]')) {
-    summaryNode.setAttribute(
-      'aria-pressed',
-      String(Boolean(memberSummary) && summaryNode.dataset.summaryHash === memberSummary)
-    );
-  }
-  for (const item of document.querySelectorAll('[data-testid="compacted-commit-item"]')) {
-    item.setAttribute('aria-pressed', String(item.dataset.commitHash === hash));
-  }
-  if (!state.selectedCommit) {
-    dock.hidden = true;
-    renderSelectedBranchNotes();
-    return;
-  }
-
-  const noteInput = document.getElementById('selected-commit-note');
-  noteInput.value = state.notes.commits[state.selectedCommit.hash] || '';
-  noteInput.oninput = () => setNote('commits', state.selectedCommit.hash, noteInput.value);
-  renderSelectedBranchNotes();
-
-  document.getElementById('selected-commit-message').textContent = state.selectedCommit.subject;
-  document.getElementById('selected-commit-author').textContent = state.selectedCommit.author;
-  document.getElementById('selected-commit-author-date').textContent =
-    state.selectedCommit.authorDate;
-  document.getElementById('selected-commit-hash').textContent = state.selectedCommit.hash;
-  const parents = state.selectedCommit.originalParents || state.selectedCommit.parents;
-  document.getElementById('selected-commit-parents').textContent =
-    parents.length > 0 ? parents.join(', ') : 'None (root commit)';
-
-  const references = document.getElementById('selected-commit-references');
-  references.replaceChildren();
-  if (state.selectedCommit.references.length === 0) {
-    references.textContent = 'None';
-  } else {
-    for (const referenceName of state.selectedCommit.references) {
-      const item = document.createElement('li');
-      item.textContent = referenceName;
-      references.append(item);
-    }
-  }
-  dock.hidden = false;
-}
-
-document.getElementById('browse-button').addEventListener('click', async () => {
-  setStatus('');
-  try {
-    const selectedPath = await window.gitScope.chooseRepository();
-    if (selectedPath) {
-      pathInput.value = selectedPath;
-    }
-  } catch (error) {
-    setStatus(error.message);
-  }
-});
-
-form.addEventListener('submit', (event) => {
-  event.preventDefault();
-  openRepository(pathInput.value, event.submitter);
-});
-
-document.getElementById('git-path-form').addEventListener('submit', async (event) => {
-  event.preventDefault();
-  document.getElementById('git-path-status').textContent = '';
-  try {
-    const gitPath = await window.gitScope.saveGitPath(gitPathInput.value);
-    gitPathInput.value = gitPath;
-    document.getElementById('git-path-status').textContent = gitPath
-      ? 'Git path saved.'
-      : 'Git path cleared. GitScope will use Git on PATH.';
-  } catch (error) {
-    document.getElementById('git-path-status').textContent = error.message;
-  }
-});
-
-const settingsPanel = document.getElementById('settings-panel');
-const settingsButton = document.getElementById('open-settings');
-settingsButton.addEventListener('click', () => {
-  settingsPanel.hidden = !settingsPanel.hidden;
-  settingsButton.setAttribute('aria-expanded', String(!settingsPanel.hidden));
-  if (!settingsPanel.hidden) {
-    gitPathInput.focus();
-  }
-});
-
-document.getElementById('repository-note').addEventListener('input', (event) => {
-  viewStorage.writeRepositoryNote(state.currentRepositoryPath, event.currentTarget.value);
-});
-
-document.getElementById('open-explorer').addEventListener('click', async () => {
-  try {
-    await window.gitScope.openInExplorer();
-  } catch (error) {
-    document.getElementById('fetch-status').textContent = error.message;
-  }
-});
-
-document.getElementById('change-repository').addEventListener('click', () => {
-  repositoryView.hidden = true;
-  picker.hidden = false;
-  loadPickerSettings();
-  pathInput.focus();
-});
-
-let fetchStatusTimer;
-document.getElementById('fetch-button').addEventListener('click', async (event) => {
-  const button = event.currentTarget;
-  const fetchStatus = document.getElementById('fetch-status');
-  const diagnosticsPanel = document.getElementById('fetch-diagnostics-panel');
-  const diagnostics = document.getElementById('fetch-diagnostics');
-  button.disabled = true;
-  clearTimeout(fetchStatusTimer);
-  fetchStatus.textContent = 'Fetching remote references…';
-  diagnosticsPanel.hidden = true;
-  diagnostics.textContent = '';
-  document.getElementById('diagnostics-copy-status').textContent = '';
-
-  try {
-    const result = await window.gitScope.fetchRemoteReferences();
-    if (!result.success) {
-      fetchStatus.textContent = result.message;
-      diagnostics.textContent = result.diagnostics;
-      diagnosticsPanel.hidden = result.diagnostics === '';
-      return;
-    }
-
-    refreshRepositoryGraph(result.repository);
-    fetchStatus.textContent = 'Fetch completed. Remote-tracking references are up to date.';
-    const successMessage = fetchStatus.textContent;
-    clearTimeout(fetchStatusTimer);
-    fetchStatusTimer = setTimeout(() => {
-      if (fetchStatus.textContent === successMessage) fetchStatus.textContent = '';
-    }, 5000);
-  } catch (error) {
-    fetchStatus.textContent = `Fetch could not be completed: ${error.message}`;
-  } finally {
-    button.disabled = false;
-  }
-});
-
-document.getElementById('copy-fetch-diagnostics').addEventListener('click', async () => {
-  try {
-    await window.gitScope.copyDiagnostics(document.getElementById('fetch-diagnostics').textContent);
-    document.getElementById('diagnostics-copy-status').textContent = 'Diagnostics copied.';
-  } catch (error) {
-    document.getElementById('diagnostics-copy-status').textContent =
-      `Could not copy diagnostics: ${error.message}`;
-  }
-});
-
-document.getElementById('check-for-updates').addEventListener('click', async (event) => {
-  const button = event.currentTarget;
-  const updateStatus = document.getElementById('update-status');
-  const releaseLink = document.getElementById('update-release-link');
-  button.disabled = true;
-  updateStatus.textContent = 'Checking GitHub Releases…';
-  releaseLink.hidden = true;
-  releaseLink.removeAttribute('href');
-
-  try {
-    const [response, currentVersion] = await Promise.all([
-      fetch('https://api.github.com/repos/dgooderi/GitScope/releases/latest', {
-        headers: { Accept: 'application/vnd.github+json' },
-        cache: 'no-store',
-        credentials: 'omit',
-        signal: AbortSignal.timeout(10_000)
-      }),
-      window.gitScope.getAppVersion()
-    ]);
-    if (!response.ok) {
-      throw new Error(`GitHub release check failed with HTTP ${response.status}. Try again later.`);
-    }
-
-    const release = await response.json();
-    if (
-      typeof release?.tag_name !== 'string' ||
-      typeof release?.html_url !== 'string' ||
-      release.draft ||
-      release.prerelease
-    ) {
-      throw new Error('GitHub returned an invalid latest-release response. Try again later.');
-    }
-    const releaseUrl = new URL(release.html_url);
-    if (
-      releaseUrl.origin !== 'https://github.com' ||
-      !releaseUrl.pathname.startsWith('/dgooderi/GitScope/releases/')
-    ) {
-      throw new Error('GitHub returned an unexpected release link.');
-    }
-
-    const latestVersion = parseReleaseVersion(release.tag_name.replace(/^v/, ''));
-    const installedVersion = parseReleaseVersion(currentVersion);
-    const versionComparison = compareReleaseVersions(latestVersion, installedVersion);
-    const displayedVersion = release.tag_name.replace(/^v/, '');
-    if (versionComparison > 0) {
-      updateStatus.textContent = `GitScope ${displayedVersion} is available.`;
-      releaseLink.href = releaseUrl.href;
-      releaseLink.textContent = `View GitScope ${displayedVersion} on GitHub Releases`;
-      releaseLink.hidden = false;
-    } else {
-      updateStatus.textContent = `GitScope is up to date (${currentVersion}).`;
-    }
-  } catch (error) {
-    updateStatus.textContent = `Could not check for updates: ${error.message}`;
-  } finally {
-    button.disabled = false;
-  }
-});
-
-document.getElementById('update-release-link').addEventListener('click', async (event) => {
-  event.preventDefault();
-  const updateStatus = document.getElementById('update-status');
-  try {
-    await window.gitScope.openRelease(event.currentTarget.href);
-  } catch (error) {
-    updateStatus.textContent = `Could not open the GitHub release: ${error.message}`;
-  }
-});
-
-document
-  .getElementById('theme-toggle')
-  .addEventListener('click', (event) => setTheme(event.currentTarget.dataset.themeTarget));
+createRepositoryControls({ showRepository }).init();
+createRepositoryActions({ refreshRepositoryGraph }).init();

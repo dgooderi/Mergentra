@@ -46,6 +46,6 @@ The named branch for an empty repository before its first commit, when the branc
 
 The Electron main process owns Git execution, settings-file access, and IPC. `src/main.js` wires modules for the Git runner, settings store, Git-output parsing, reference ordering, divergence markers, IPC handlers, and window creation. The preload script remains the only bridge to the renderer; its channel names and payloads are part of the process boundary.
 
-The renderer uses native ES modules without a bundler. Its entry point wires UI modules to pure time-range, lane, layout, compaction, release-version, and time-axis calculations. Graph calculations do not depend on the DOM, Electron, or persisted storage.
+The renderer uses native ES modules without a bundler. Its entry point wires focused UI modules for reference picking, the Review dock, repository controls, remote actions, time and zoom controls, notes, and popovers to pure time-range, lane, layout, compaction, release-version, and time-axis calculations. Graph calculations do not depend on the DOM, Electron, or persisted storage.
 
 Unit tests in `tests/unit/` exercise pure calculations and storage/process seams. The feature-grouped Playwright specs in `tests/` cover behavior through the Electron app and share setup through `tests/e2e-helpers.cjs`.
