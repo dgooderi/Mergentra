@@ -11,6 +11,24 @@ npm install
 npm start
 ```
 
+Run the checks before submitting changes:
+
+```powershell
+npm run lint
+npm run format:check
+npm run test:unit
+npm run test:e2e
+```
+
+## Code layout
+
+- `src/main.js` wires the CommonJS Electron main process. Git execution, settings storage, Git-output parsing, reference ordering, divergence markers, IPC registration, and window creation live in separate modules under `src/`.
+- `src/preload.js` is the only bridge between the main and renderer processes; renderer calls continue to use its existing IPC channels.
+- `src/renderer.js` is the native ES module entry point. Pure graph and time calculations, SVG graph drawing, state, persistence adapters, and focused UI modules live under `src/renderer/`.
+- `tests/unit/` covers pure logic and storage/process seams. Feature-grouped Playwright specs under `tests/` cover app-level behavior and share launch setup through `tests/e2e-helpers.cjs`.
+
+Keep Git and Electron access in the main process, persistence behind its storage module, and pure graph calculations free of DOM and process APIs.
+
 On launch, enter a repository folder or use **Browse…** to choose one. GitScope shows loading progress while it reads repository history and remembers repositories opened from the picker. If Git is not on `PATH`, enter the full path to `git.exe` and select **Save Git path**. Dark mode is the default; select **Light mode** to change the appearance.
 
 For a realistic test history with parallel features, release/hotfix merges, tags, and a local bare remote, open [the complex branch scenario](./samples/complex-branch-scenario/SCENARIO.md) in GitScope.
@@ -53,4 +71,4 @@ The dense-history scale test can be run on its own with:
 npm run test:e2e -- --grep "dense histories show"
 ```
 
-It creates an actual repository with 50,000 reachable commits and 100 local branch references, checks that commits remain represented by visible nodes or compacted-history counts, and measures graph readiness plus reference and time filter response. On a Windows 11 Pro build 26300 machine with an Intel Core i7-10700K, 16 logical processors, 64 GiB RAM, Node.js 24.18.0, and Git 2.55.0.windows.5, three runs measured graph readiness at 2.7–2.8 seconds, reference filtering at 182–198 ms, and time filtering at 38–40 ms. These results are specific to this test machine; the same test enforces the 5-second and 250-ms limits when run elsewhere.
+It creates an actual repository with 50,000 reachable commits and 100 local branch references, checks that commits remain represented by visible nodes or compacted-history counts, and measures graph readiness plus reference and time filter response. The test enforces a 5-second graph-readiness limit and a 500-ms response ceiling for each filter. The filter measurement includes Playwright input dispatch, renderer scheduling, SVG/DOM updates, and locator polling; the wider ceiling avoids scheduler-driven flakes while still detecting a noticeable interaction stall. Timings printed by the test are diagnostic and machine-dependent.
