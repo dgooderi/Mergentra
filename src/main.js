@@ -2,6 +2,13 @@ const { app, BrowserWindow, Menu, clipboard, dialog, ipcMain, shell } = require(
 const fs = require('node:fs');
 const path = require('node:path');
 const { createGitRunner } = require('./git-runner');
+const {
+  parseCommitLog,
+  parseWorktrees,
+  parseReferences,
+  parseTags,
+  parseMissingObjectHashes
+} = require('./repository-output');
 const { createSettingsStore } = require('./settings-store');
 const { runGit, runGitWithInput } = createGitRunner();
 // The golden angle keeps consecutive hues far apart, and alternating lightness separates close neighbours further.
@@ -162,89 +169,10 @@ async function loadCommitGraph(gitPath, repositoryPath, branchName, currentWorkt
     }
   }
 
-  const worktrees = [];
-  let worktree = null;
-  function saveWorktree() {
-    if (worktree) {
-      worktrees.push(worktree);
-      worktree = null;
-    }
-  }
-
-  for (const line of worktreesResult.stdout.split(/\r?\n/)) {
-    if (line === '') {
-      saveWorktree();
-    } else if (line.startsWith('worktree ')) {
-      saveWorktree();
-      worktree = {
-        path: path.normalize(line.slice('worktree '.length)),
-        branch: null,
-        detached: false
-      };
-    } else if (worktree && line.startsWith('branch ')) {
-      worktree.branch = line.slice('branch '.length).replace(/^refs\/heads\//, '');
-    } else if (worktree && line === 'detached') {
-      worktree.detached = true;
-    }
-  }
-  saveWorktree();
-
-  const normalizedCurrentPath =
-    process.platform === 'win32'
-      ? path.resolve(currentWorktreePath).toLowerCase()
-      : path.resolve(currentWorktreePath);
-  for (const entry of worktrees) {
-    const normalizedWorktreePath =
-      process.platform === 'win32'
-        ? path.resolve(entry.path).toLowerCase()
-        : path.resolve(entry.path);
-    entry.current = normalizedWorktreePath === normalizedCurrentPath;
-  }
-
-  const worktreeByBranch = new Map(
-    worktrees.filter((entry) => entry.branch).map((entry) => [entry.branch, entry.path])
-  );
-  const references = refsResult.stdout
-    .split(/\r?\n/)
-    .filter(Boolean)
-    .map((line) => {
-      const [name, hash, symbolicTarget, fullName] = line.split('\0');
-      return {
-        name,
-        hash,
-        remote: fullName.startsWith('refs/remotes/'),
-        symbolic: symbolicTarget !== '',
-        checkedOut: !fullName.startsWith('refs/remotes/') && name === branchName,
-        worktreePath: worktreeByBranch.get(name) || null
-      };
-    })
-    .filter((reference) => !reference.symbolic && reference.name && reference.hash);
+  const worktrees = parseWorktrees(worktreesResult.stdout, currentWorktreePath, process.platform);
+  const references = parseReferences(refsResult.stdout, branchName, worktrees);
   const orderedReferences = orderReferences(references);
-  const commits = logResult.stdout
-    .split(/\r?\n/)
-    .filter(Boolean)
-    .map((line) => {
-      const [
-        hash,
-        treeHash,
-        parentList,
-        subject,
-        authorName,
-        authorEmail,
-        authorDate,
-        committerTimestamp
-      ] = line.split('\0');
-      return {
-        hash,
-        treeHash,
-        parents: parentList ? parentList.split(' ') : [],
-        subject,
-        author: `${authorName} <${authorEmail}>`,
-        authorDate,
-        committerTimestamp: Number(committerTimestamp),
-        lane: null
-      };
-    });
+  const commits = parseCommitLog(logResult.stdout);
   const commitsByHash = new Map(commits.map((commit) => [commit.hash, commit]));
   const objectHashesToCheck = new Set(commits.map((commit) => commit.treeHash));
   for (const commit of commits) {
@@ -261,12 +189,7 @@ async function loadCommitGraph(gitPath, repositoryPath, branchName, currentWorkt
       ['-C', repositoryPath, 'cat-file', '--batch-check'],
       `${[...objectHashesToCheck].join('\n')}\n`
     );
-    missingObjectHashes = new Set(
-      missingObjectsResult.stdout
-        .split(/\r?\n/)
-        .filter((line) => line.endsWith(' missing'))
-        .map((line) => line.split(' ', 1)[0])
-    );
+    missingObjectHashes = parseMissingObjectHashes(missingObjectsResult.stdout);
   }
   const missingObjectBoundaries = commits
     .filter(
@@ -275,17 +198,7 @@ async function loadCommitGraph(gitPath, repositoryPath, branchName, currentWorkt
         commit.parents.some((parentHash) => missingObjectHashes.has(parentHash))
     )
     .map((commit) => commit.hash);
-  const tagsByHash = new Map();
-  for (const line of tagsResult.stdout.split(/\r?\n/).filter(Boolean)) {
-    const [name, objectHash, peeledHash] = line.split('\0');
-    const commitHash = peeledHash || objectHash;
-    if (!commitsByHash.has(commitHash)) {
-      continue;
-    }
-    const tags = tagsByHash.get(commitHash) || [];
-    tags.push(name);
-    tagsByHash.set(commitHash, tags);
-  }
+  const tagsByHash = parseTags(tagsResult.stdout, commitsByHash);
 
   for (const reference of orderedReferences) {
     const pending = [reference.hash];
