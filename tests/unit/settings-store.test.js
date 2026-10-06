@@ -38,6 +38,23 @@ describe('settings store', () => {
     expect(store.load()).toEqual(settings);
   });
 
+  it('drops commit graphs that earlier versions stored with recent repositories', () => {
+    fs.writeFileSync(
+      path.join(temporaryDirectory, 'settings.json'),
+      JSON.stringify({
+        gitPath: '',
+        recentRepositories: [
+          { path: 'C:\\repo', name: 'repo', branch: 'main', graph: { commits: [{ hash: 'a' }] } }
+        ]
+      })
+    );
+
+    expect(createSettingsStore(temporaryDirectory).load()).toEqual({
+      gitPath: '',
+      recentRepositories: [{ path: 'C:\\repo', name: 'repo' }]
+    });
+  });
+
   it('reports invalid JSON with the parsing error as its cause', () => {
     fs.writeFileSync(path.join(temporaryDirectory, 'settings.json'), '{invalid');
     const store = createSettingsStore(temporaryDirectory);

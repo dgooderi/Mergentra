@@ -30,6 +30,43 @@ function saveSettings(nextSettings) {
 }
 
 const LOG_LIMITS = { timeout: 300_000, maxBuffer: 400 * 1024 * 1024 };
+const MAX_RECENT_REPOSITORIES = 20;
+// Measured at roughly 2.6 KB of memory per commit across the main and renderer processes.
+const MEMORY_PER_COMMIT_BYTES = 2600;
+const LARGE_REPOSITORY_COMMITS = Number(process.env.MERGENTRA_LARGE_REPOSITORY_COMMITS) || 300_000;
+
+async function confirmLargeRepository(gitPath, repositoryPath) {
+  let commitCount;
+  try {
+    const { stdout } = await runGit(
+      gitPath,
+      ['-C', repositoryPath, 'rev-list', '--count', '--branches', '--remotes'],
+      { timeout: 120_000 }
+    );
+    commitCount = Number(stdout.trim());
+  } catch {
+    return;
+  }
+  if (!(commitCount > LARGE_REPOSITORY_COMMITS)) {
+    return;
+  }
+
+  const formattedCount = commitCount.toLocaleString('en-US');
+  const estimatedGigabytes = ((commitCount * MEMORY_PER_COMMIT_BYTES) / 1e9).toFixed(1);
+  const { response } = await dialog.showMessageBox(BrowserWindow.getFocusedWindow() ?? null, {
+    type: 'warning',
+    title: 'Large repository',
+    message: `This repository has ${formattedCount} commits.`,
+    detail: `Opening it needs roughly ${estimatedGigabytes} GB of memory and may take a minute or more. On a computer with limited memory, Mergentra may become very slow or close. Close other programs first if you continue.`,
+    buttons: ['Cancel', 'Open anyway'],
+    defaultId: 0,
+    cancelId: 0,
+    noLink: true
+  });
+  if (response !== 1) {
+    throw new Error(`Opening was cancelled: the repository has ${formattedCount} commits.`);
+  }
+}
 
 function sanitizeDiagnostics(diagnostics) {
   return diagnostics.replace(/(https?:\/\/)[^/\s@]+@/gi, '$1[redacted]@').trim();
@@ -124,7 +161,7 @@ async function loadCommitGraph(gitPath, repositoryPath, branchName, currentWorkt
   if (objectHashesToCheck.size > 0) {
     const missingObjectsResult = await runGitWithInput(
       gitPath,
-      ['-C', repositoryPath, 'cat-file', '--batch-check'],
+      ['-C', repositoryPath, 'cat-file', '--batch-check=%(objecttype)'],
       `${[...objectHashesToCheck].join('\n')}\n`
     );
     missingObjectHashes = parseMissingObjectHashes(missingObjectsResult.stdout);
@@ -191,7 +228,7 @@ async function loadCommitGraph(gitPath, repositoryPath, branchName, currentWorkt
   };
 }
 
-async function openRepository(repositoryPath) {
+async function openRepository(repositoryPath, { confirmLarge = false } = {}) {
   if (typeof repositoryPath !== 'string' || repositoryPath.trim() === '') {
     throw new Error('Choose a repository folder before opening it.');
   }
@@ -249,6 +286,9 @@ async function openRepository(repositoryPath) {
   }
 
   const { stdout } = await runGit(gitPath, ['-C', resolvedPath, 'branch', '--show-current']);
+  if (confirmLarge) {
+    await confirmLargeRepository(gitPath, resolvedPath);
+  }
   const graph = await loadCommitGraph(gitPath, resolvedPath, stdout.trim(), repositoryRoot);
   return {
     path: resolvedPath,
@@ -259,16 +299,16 @@ async function openRepository(repositoryPath) {
 }
 
 async function openAndRememberRepository(repositoryPath) {
-  const repository = await openRepository(repositoryPath);
+  const repository = await openRepository(repositoryPath, { confirmLarge: true });
   const normalizedPath =
     process.platform === 'win32' ? repository.path.toLowerCase() : repository.path;
   const recentRepositories = [
-    repository,
+    { path: repository.path, name: repository.name },
     ...settings.recentRepositories.filter((recent) => {
       const recentPath = process.platform === 'win32' ? recent.path.toLowerCase() : recent.path;
       return recentPath !== normalizedPath;
     })
-  ];
+  ].slice(0, MAX_RECENT_REPOSITORIES);
   saveSettings({ ...settings, recentRepositories });
   activeRepositoryPath = repository.path;
   return repository;

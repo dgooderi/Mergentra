@@ -1,4 +1,5 @@
 import { compareReleaseVersions, parseReleaseVersion } from './release-version.js';
+import { fetchRemoteReferences } from './repository-api.js';
 
 export function createRepositoryActions({ refreshRepositoryGraph }) {
   let fetchStatusTimer;
@@ -25,7 +26,7 @@ export function createRepositoryActions({ refreshRepositoryGraph }) {
       document.getElementById('diagnostics-copy-status').textContent = '';
 
       try {
-        const result = await window.mergentra.fetchRemoteReferences();
+        const result = await fetchRemoteReferences();
         if (!result.success) {
           fetchStatus.textContent = result.message;
           diagnostics.textContent = result.diagnostics;

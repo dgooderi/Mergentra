@@ -47,6 +47,26 @@ describe('IPC handlers', () => {
     ]);
   });
 
+  it('sends repositories over IPC as JSON strings so large histories transfer quickly', async () => {
+    const { handlers, dependencies } = makeIpcDependencies();
+    const repository = { path: 'C:\\repo', graph: { commits: [{ hash: 'a' }] } };
+    dependencies.openAndRememberRepository.mockResolvedValue(repository);
+    dependencies.fetchRemoteReferences
+      .mockResolvedValueOnce({ success: true, repository })
+      .mockResolvedValueOnce({ success: false, message: 'nope', diagnostics: '' });
+
+    const opened = await handlers.get('repository:open')(null, 'C:\\repo');
+    expect(JSON.parse(opened)).toEqual(repository);
+
+    const fetched = await handlers.get('repository:fetch')();
+    expect(JSON.parse(fetched.repository)).toEqual(repository);
+    expect(await handlers.get('repository:fetch')()).toEqual({
+      success: false,
+      message: 'nope',
+      diagnostics: ''
+    });
+  });
+
   it('opens only Mergentra release URLs', async () => {
     const { handlers, dependencies } = makeIpcDependencies();
 

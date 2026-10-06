@@ -1,5 +1,6 @@
 import { viewStorage } from './app-storage.js';
 import { renderRecentRepositories } from './recent-repositories.js';
+import { openRepository as loadRepository } from './repository-api.js';
 import { state } from './state.js';
 
 export function createRepositoryControls({ showRepository }) {
@@ -24,7 +25,7 @@ export function createRepositoryControls({ showRepository }) {
     progress.textContent = 'Loading repository history…';
 
     try {
-      showRepository(await window.mergentra.openRepository(repositoryPath));
+      showRepository(await loadRepository(repositoryPath));
       progress.textContent = '';
     } catch (error) {
       progress.textContent = '';

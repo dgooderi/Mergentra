@@ -39,7 +39,16 @@ function createSettingsStore(userDataPath, fileSystem = fs) {
       );
     }
 
-    return storedSettings;
+    // Earlier versions stored the whole commit graph here; keep only what the recent list shows.
+    return {
+      ...storedSettings,
+      recentRepositories: storedSettings.recentRepositories.map(
+        ({ path: repositoryPath, name }) => ({
+          path: repositoryPath,
+          name
+        })
+      )
+    };
   }
 
   function save(settings) {

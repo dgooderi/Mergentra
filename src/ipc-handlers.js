@@ -22,10 +22,17 @@ function registerIpcHandlers({
     return result.canceled ? null : result.filePaths[0];
   });
 
-  ipcMain.handle('repository:open', (_event, repositoryPath) =>
-    openAndRememberRepository(repositoryPath)
+  // Large repositories are sent as one JSON string: Electron's object serialization takes
+  // tens of seconds past a few hundred thousand commits, while a string transfers in about a second.
+  ipcMain.handle('repository:open', async (_event, repositoryPath) =>
+    JSON.stringify(await openAndRememberRepository(repositoryPath))
   );
-  ipcMain.handle('repository:fetch', () => fetchRemoteReferences());
+  ipcMain.handle('repository:fetch', async () => {
+    const result = await fetchRemoteReferences();
+    return result.repository
+      ? { ...result, repository: JSON.stringify(result.repository) }
+      : result;
+  });
   ipcMain.handle('app:version', () => app.getVersion());
   ipcMain.handle('external:open-release', async (_event, releaseUrl) => {
     if (typeof releaseUrl !== 'string') {
