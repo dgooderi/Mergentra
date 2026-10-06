@@ -11,6 +11,7 @@ export default [
       'src/main.js',
       'src/preload.js',
       'src/git-runner.js',
+      'src/git-config-safety.js',
       'src/reference-order.js',
       'src/divergence-markers.js',
       'src/ipc-handlers.js',

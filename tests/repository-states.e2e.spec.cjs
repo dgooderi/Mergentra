@@ -135,6 +135,51 @@ test('failed explicit fetch keeps the graph and exposes copyable diagnostics', a
   }
 });
 
+test('fetch is blocked when repository configuration would run a program', async () => {
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-e2e-'));
+  const repositoryPath = path.join(testDirectory, 'untrusted-repository');
+  const markerPath = path.join(testDirectory, 'program-ran.txt');
+  const userDataPath = path.join(testDirectory, 'user-data');
+  let app;
+
+  const runGit = (cwd, args) =>
+    execFileSync('git', args, {
+      cwd,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe']
+    }).trim();
+
+  try {
+    runGit(testDirectory, ['init', '--initial-branch=main', repositoryPath]);
+    runGit(repositoryPath, ['config', 'user.name', 'Gitscope E2e']);
+    runGit(repositoryPath, ['config', 'user.email', 'gitscope-e2e@example.invalid']);
+    fs.writeFileSync(path.join(repositoryPath, 'README.txt'), 'Initial commit');
+    runGit(repositoryPath, ['add', 'README.txt']);
+    runGit(repositoryPath, ['commit', '-m', 'Initial commit']);
+    runGit(repositoryPath, ['remote', 'add', 'origin', 'ssh://git@example.invalid/repo.git']);
+    runGit(repositoryPath, [
+      'config',
+      'core.sshCommand',
+      `echo ran > "${markerPath.replaceAll('\\', '/')}"`
+    ]);
+
+    app = await launchGitScope(userDataPath);
+    const window = await app.firstWindow();
+    await window.getByLabel('Repository folder').fill(repositoryPath);
+    await window.getByRole('button', { name: 'Open repository' }).click();
+    await window.getByRole('button', { name: 'Fetch' }).click();
+
+    await expect(window.locator('#fetch-status')).toContainText('Fetch blocked');
+    await expect(window.getByLabel('Fetch diagnostics')).toContainText('core.sshcommand');
+    expect(fs.existsSync(markerPath)).toBe(false);
+  } finally {
+    if (app) {
+      await app.close();
+    }
+    fs.rmSync(testDirectory, { recursive: true, force: true });
+  }
+});
+
 test('detached HEAD is marked at its commit without inventing a branch', async () => {
   const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-e2e-'));
   const repositoryPath = path.join(testDirectory, 'detached-repository');

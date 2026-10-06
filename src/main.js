@@ -14,6 +14,7 @@ const { orderReferences } = require('./reference-order');
 const { createSettingsStore } = require('./settings-store');
 const { registerIpcHandlers } = require('./ipc-handlers');
 const { createMainWindow } = require('./main-window');
+const { UnsafeRepositoryConfigError, assertRepositoryConfigSafe } = require('./git-config-safety');
 const { runGit, runGitWithInput } = createGitRunner();
 let settings;
 let settingsStore;
@@ -282,6 +283,25 @@ async function fetchRemoteReferences() {
   }
 
   const gitPath = settings.gitPath || 'git';
+  try {
+    await assertRepositoryConfigSafe(runGit, gitPath, activeRepositoryPath);
+  } catch (error) {
+    if (error instanceof UnsafeRepositoryConfigError) {
+      return {
+        success: false,
+        message: error.message,
+        diagnostics: sanitizeDiagnostics(
+          error.findings.map(({ scope, key, value }) => `${scope}: ${key}=${value}`).join('\n')
+        )
+      };
+    }
+    return {
+      success: false,
+      message: 'Fetch failed. GitScope could not verify the repository configuration is safe.',
+      diagnostics: sanitizeDiagnostics(error.message)
+    };
+  }
+
   try {
     await runGit(gitPath, ['-C', activeRepositoryPath, 'fetch', '--all', '--prune', '--progress']);
   } catch (error) {
