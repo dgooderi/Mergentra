@@ -9,14 +9,10 @@ const {
   parseTags,
   parseMissingObjectHashes
 } = require('./repository-output');
+const { computeDivergenceMarkers } = require('./divergence-markers');
+const { orderReferences } = require('./reference-order');
 const { createSettingsStore } = require('./settings-store');
 const { runGit, runGitWithInput } = createGitRunner();
-// The golden angle keeps consecutive hues far apart, and alternating lightness separates close neighbours further.
-function graphColor(index) {
-  const hue = Math.round((index * 137.508 + 215) % 360);
-  const lightness = index % 2 === 0 ? 62 : 48;
-  return `hsl(${hue} 78% ${lightness}%)`;
-}
 let settings;
 let settingsStore;
 let activeRepositoryPath = null;
@@ -34,68 +30,6 @@ const LOG_LIMITS = { timeout: 300_000, maxBuffer: 400 * 1024 * 1024 };
 
 function sanitizeDiagnostics(diagnostics) {
   return diagnostics.replace(/(https?:\/\/)[^/\s@]+@/gi, '$1[redacted]@').trim();
-}
-
-function orderReferences(references) {
-  const localReferences = references
-    .filter((reference) => !reference.remote)
-    .sort((left, right) => left.name.localeCompare(right.name));
-  const remoteReferences = references
-    .filter((reference) => reference.remote)
-    .sort((left, right) => left.name.localeCompare(right.name));
-  const ordered = [];
-  const pairedRemotes = new Set();
-  let pairIndex = 0;
-
-  function addPair(local, remote) {
-    const color = graphColor(pairIndex++);
-    ordered.push({ ...local, color });
-    if (remote) {
-      pairedRemotes.add(remote.name);
-      ordered.push({ ...remote, color });
-    }
-  }
-
-  const main = localReferences.find((reference) => reference.name === 'main');
-  const originMain = remoteReferences.find((reference) => reference.name === 'origin/main');
-  if (main) {
-    addPair(main, originMain);
-  } else if (originMain) {
-    const color = graphColor(pairIndex++);
-    ordered.push({ ...originMain, color });
-    pairedRemotes.add(originMain.name);
-  }
-
-  for (const local of localReferences) {
-    if (local.name === 'main') {
-      continue;
-    }
-    const matchingRemote = remoteReferences.find(
-      (reference) =>
-        !pairedRemotes.has(reference.name) &&
-        reference.name.slice(reference.name.indexOf('/') + 1) === local.name
-    );
-    if (matchingRemote) {
-      addPair(local, matchingRemote);
-    }
-  }
-
-  const unpairedReferences = [
-    ...localReferences.filter(
-      (reference) =>
-        reference.name !== 'main' && !ordered.some((item) => item.name === reference.name)
-    ),
-    ...remoteReferences.filter((reference) => !pairedRemotes.has(reference.name))
-  ].sort((left, right) => left.name.localeCompare(right.name));
-
-  for (const reference of unpairedReferences) {
-    ordered.push({
-      ...reference,
-      color: graphColor(pairIndex++)
-    });
-  }
-
-  return ordered.map((reference, index) => ({ ...reference, lane: index }));
 }
 
 async function loadCommitGraph(gitPath, repositoryPath, branchName, currentWorktreePath) {
@@ -229,77 +163,7 @@ async function loadCommitGraph(gitPath, repositoryPath, branchName, currentWorkt
     }
   }
 
-  const commitIndex = new Map(commits.map((commit, index) => [commit.hash, index]));
-  function ancestorsOf(commitHash) {
-    const ancestors = new Set();
-    const pending = [commitHash];
-    while (pending.length > 0) {
-      const hash = pending.pop();
-      if (ancestors.has(hash) || !commitsByHash.has(hash)) {
-        continue;
-      }
-      ancestors.add(hash);
-      pending.push(...commitsByHash.get(hash).parents);
-    }
-    return ancestors;
-  }
-
-  function pathToAncestor(commitHash, ancestorHash) {
-    const previous = new Map([[commitHash, null]]);
-    const pending = [commitHash];
-    for (let cursor = 0; cursor < pending.length; cursor += 1) {
-      const hash = pending[cursor];
-      if (hash === ancestorHash) {
-        const path = [];
-        let currentHash = hash;
-        while (currentHash !== null) {
-          path.push(currentHash);
-          currentHash = previous.get(currentHash);
-        }
-        return path.reverse();
-      }
-
-      for (const parentHash of commitsByHash.get(hash)?.parents || []) {
-        if (!previous.has(parentHash) && commitsByHash.has(parentHash)) {
-          previous.set(parentHash, hash);
-          pending.push(parentHash);
-        }
-      }
-    }
-    return [];
-  }
-
-  const localReferences = orderedReferences.filter((reference) => !reference.remote);
-  const mainReference =
-    localReferences.find((reference) => reference.name === 'main') || localReferences[0];
-  const divergenceMarkers = [];
-
-  if (mainReference) {
-    const mainAncestors = ancestorsOf(mainReference.hash);
-    for (const reference of localReferences) {
-      if (reference.name === mainReference.name) {
-        continue;
-      }
-      const referenceAncestors = ancestorsOf(reference.hash);
-      const commonAncestors = [...referenceAncestors]
-        .filter((hash) => mainAncestors.has(hash))
-        .sort((left, right) => (commitIndex.get(right) ?? -1) - (commitIndex.get(left) ?? -1));
-
-      for (const ancestorHash of commonAncestors) {
-        const branchPath = pathToAncestor(reference.hash, ancestorHash);
-        const mainPath = pathToAncestor(mainReference.hash, ancestorHash);
-        if (branchPath.length > 1 && mainPath.length > 1) {
-          divergenceMarkers.push({
-            branchName: reference.name,
-            ancestorHash,
-            commitHash: branchPath[branchPath.length - 2],
-            inferred: true
-          });
-          break;
-        }
-      }
-    }
-  }
+  const divergenceMarkers = computeDivergenceMarkers(commits, orderedReferences);
 
   return {
     commits,

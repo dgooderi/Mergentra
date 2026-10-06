@@ -11,6 +11,8 @@ export default [
       'src/main.js',
       'src/preload.js',
       'src/git-runner.js',
+      'src/reference-order.js',
+      'src/divergence-markers.js',
       'src/repository-output.js',
       'src/settings-store.js',
       'tests/**/*.cjs',
