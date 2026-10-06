@@ -11,6 +11,7 @@ export default [
       'src/main.js',
       'src/preload.js',
       'src/git-runner.js',
+      'src/settings-store.js',
       'tests/**/*.cjs',
       'playwright.config.*'
     ],

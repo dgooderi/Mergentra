@@ -2,6 +2,7 @@ const { app, BrowserWindow, Menu, clipboard, dialog, ipcMain, shell } = require(
 const fs = require('node:fs');
 const path = require('node:path');
 const { createGitRunner } = require('./git-runner');
+const { createSettingsStore } = require('./settings-store');
 const { runGit, runGitWithInput } = createGitRunner();
 // The golden angle keeps consecutive hues far apart, and alternating lightness separates close neighbours further.
 function graphColor(index) {
@@ -10,57 +11,15 @@ function graphColor(index) {
   return `hsl(${hue} 78% ${lightness}%)`;
 }
 let settings;
+let settingsStore;
 let activeRepositoryPath = null;
 
 if (process.env.GITSCOPE_USER_DATA_DIR) {
   app.setPath('userData', path.resolve(process.env.GITSCOPE_USER_DATA_DIR));
 }
 
-function loadSettings() {
-  const settingsPath = path.join(app.getPath('userData'), 'settings.json');
-  let storedSettings;
-
-  try {
-    storedSettings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      return { gitPath: '', recentRepositories: [] };
-    }
-    if (error instanceof SyntaxError) {
-      throw new Error(`GitScope settings are not valid JSON: ${error.message}`, { cause: error });
-    }
-    throw new Error(`GitScope settings could not be read: ${error.message}`, { cause: error });
-  }
-
-  if (
-    typeof storedSettings !== 'object' ||
-    storedSettings === null ||
-    typeof storedSettings.gitPath !== 'string' ||
-    !Array.isArray(storedSettings.recentRepositories) ||
-    !storedSettings.recentRepositories.every(
-      (repository) =>
-        typeof repository === 'object' &&
-        repository !== null &&
-        typeof repository.path === 'string' &&
-        typeof repository.name === 'string'
-    )
-  ) {
-    throw new Error(
-      'GitScope settings have an unsupported format. Move settings.json out of the user data folder and restart GitScope.'
-    );
-  }
-
-  return storedSettings;
-}
-
 function saveSettings(nextSettings) {
-  const userDataPath = app.getPath('userData');
-  fs.mkdirSync(userDataPath, { recursive: true });
-  fs.writeFileSync(
-    path.join(userDataPath, 'settings.json'),
-    `${JSON.stringify(nextSettings, null, 2)}\n`,
-    'utf8'
-  );
+  settingsStore.save(nextSettings);
   settings = nextSettings;
 }
 
@@ -596,7 +555,8 @@ function createWindow() {
 
 app.whenReady().then(() => {
   try {
-    settings = loadSettings();
+    settingsStore = createSettingsStore(app.getPath('userData'));
+    settings = settingsStore.load();
   } catch (error) {
     dialog.showErrorBox('GitScope could not start', error.message);
     app.quit();
