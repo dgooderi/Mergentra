@@ -167,11 +167,22 @@ test('fetch is blocked when repository configuration would run a program', async
     const window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
+    await app.evaluate(({ dialog }) => {
+      dialog.showMessageBox = async () => ({ response: 0 });
+    });
     await window.getByRole('button', { name: 'Fetch' }).click();
 
     await expect(window.locator('#fetch-status')).toContainText('Fetch blocked');
     await expect(window.getByLabel('Fetch diagnostics')).toContainText('core.sshcommand');
     expect(fs.existsSync(markerPath)).toBe(false);
+
+    await app.evaluate(({ dialog }) => {
+      dialog.showMessageBox = async () => ({ response: 1 });
+    });
+    await window.getByRole('button', { name: 'Fetch' }).click();
+
+    await expect(window.locator('#fetch-status')).toContainText('Fetch failed');
+    await expect.poll(() => fs.existsSync(markerPath)).toBe(true);
   } finally {
     if (app) {
       await app.close();

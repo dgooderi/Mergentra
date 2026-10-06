@@ -287,19 +287,33 @@ async function fetchRemoteReferences() {
     await assertRepositoryConfigSafe(runGit, gitPath, activeRepositoryPath);
   } catch (error) {
     if (error instanceof UnsafeRepositoryConfigError) {
+      const findingLines = sanitizeDiagnostics(
+        error.findings.map(({ scope, key, value }) => `${scope}: ${key}=${value}`).join('\n')
+      );
+      const { response } = await dialog.showMessageBox(BrowserWindow.getFocusedWindow() ?? null, {
+        type: 'warning',
+        title: 'Unsafe repository configuration',
+        message: "This repository's Git configuration can run programs during a fetch.",
+        detail: `${findingLines}\n\nOnly continue if you trust this repository and understand these settings. They may run commands on this computer.`,
+        buttons: ['Cancel', 'Fetch anyway'],
+        defaultId: 0,
+        cancelId: 0,
+        noLink: true
+      });
+      if (response !== 1) {
+        return {
+          success: false,
+          message: error.message,
+          diagnostics: findingLines
+        };
+      }
+    } else {
       return {
         success: false,
-        message: error.message,
-        diagnostics: sanitizeDiagnostics(
-          error.findings.map(({ scope, key, value }) => `${scope}: ${key}=${value}`).join('\n')
-        )
+        message: 'Fetch failed. GitScope could not verify the repository configuration is safe.',
+        diagnostics: sanitizeDiagnostics(error.message)
       };
     }
-    return {
-      success: false,
-      message: 'Fetch failed. GitScope could not verify the repository configuration is safe.',
-      diagnostics: sanitizeDiagnostics(error.message)
-    };
   }
 
   try {
