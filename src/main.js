@@ -65,6 +65,7 @@ async function loadCommitGraph(gitPath, repositoryPath, branchName, currentWorkt
           '-C',
           repositoryPath,
           'log',
+          '--no-show-signature',
           ...logRoots,
           '--topo-order',
           '--reverse',
