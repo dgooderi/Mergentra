@@ -2,15 +2,7 @@ const { app, BrowserWindow, Menu, clipboard, dialog, ipcMain, shell } = require(
 const fs = require('node:fs');
 const path = require('node:path');
 const { createGitRunner } = require('./git-runner');
-const {
-  parseCommitLog,
-  parseWorktrees,
-  parseReferences,
-  parseTags,
-  parseMissingObjectHashes
-} = require('./repository-output');
-const { computeDivergenceMarkers } = require('./divergence-markers');
-const { orderReferences } = require('./reference-order');
+const { loadCommitGraph } = require('./commit-graph');
 const { createSettingsStore } = require('./settings-store');
 const { registerIpcHandlers } = require('./ipc-handlers');
 const { createMainWindow } = require('./main-window');
@@ -29,7 +21,6 @@ function saveSettings(nextSettings) {
   settings = nextSettings;
 }
 
-const LOG_LIMITS = { timeout: 300_000, maxBuffer: 400 * 1024 * 1024 };
 const MAX_RECENT_REPOSITORIES = 20;
 // Measured at roughly 2.6 KB of memory per commit across the main and renderer processes.
 const MEMORY_PER_COMMIT_BYTES = 2600;
@@ -72,160 +63,12 @@ function sanitizeDiagnostics(diagnostics) {
   return diagnostics.replace(/(https?:\/\/)[^/\s@]+@/gi, '$1[redacted]@').trim();
 }
 
-async function loadCommitGraph(gitPath, repositoryPath, branchName, currentWorktreePath) {
-  let headHash = null;
-  try {
-    const headResult = await runGit(gitPath, [
-      '-C',
-      repositoryPath,
-      'rev-parse',
-      '--verify',
-      '--quiet',
-      'HEAD'
-    ]);
-    headHash = headResult.stdout.trim() || null;
-  } catch (error) {
-    if (error.code !== 1 || !branchName) {
-      throw error;
-    }
-  }
-
-  const logRoots = ['--branches', '--remotes'];
-  if (headHash) {
-    logRoots.push('HEAD');
-  }
-  const [logResult, refsResult, tagsResult, worktreesResult, shallowPathResult] = await Promise.all(
-    [
-      runGit(
-        gitPath,
-        [
-          '-C',
-          repositoryPath,
-          'log',
-          '--no-show-signature',
-          ...logRoots,
-          '--topo-order',
-          '--reverse',
-          '--format=%H%x00%T%x00%P%x00%s%x00%an%x00%ae%x00%aI%x00%ct'
-        ],
-        LOG_LIMITS
-      ),
-      runGit(gitPath, [
-        '-C',
-        repositoryPath,
-        'for-each-ref',
-        '--format=%(refname:short)%00%(objectname)%00%(symref)%00%(refname)',
-        'refs/heads',
-        'refs/remotes'
-      ]),
-      runGit(gitPath, [
-        '-C',
-        repositoryPath,
-        'for-each-ref',
-        '--format=%(refname:short)%00%(objectname)%00%(*objectname)',
-        'refs/tags'
-      ]),
-      runGit(gitPath, ['-C', repositoryPath, 'worktree', 'list', '--porcelain']),
-      runGit(gitPath, ['-C', repositoryPath, 'rev-parse', '--git-path', 'shallow'])
-    ]
+function errorDiagnostics(error) {
+  return sanitizeDiagnostics(
+    [error.message, error.stderr, error.stdout]
+      .filter((value) => typeof value === 'string' && value.trim() !== '')
+      .join('\n')
   );
-
-  let shallowBoundaries = [];
-  try {
-    shallowBoundaries = fs
-      .readFileSync(path.resolve(repositoryPath, shallowPathResult.stdout.trim()), 'utf8')
-      .split(/\r?\n/)
-      .filter(Boolean);
-  } catch (error) {
-    if (error.code !== 'ENOENT') {
-      throw new Error(`Git shallow boundaries could not be read: ${error.message}`, {
-        cause: error
-      });
-    }
-  }
-
-  const worktrees = parseWorktrees(worktreesResult.stdout, currentWorktreePath, process.platform);
-  const references = parseReferences(refsResult.stdout, branchName, worktrees);
-  const orderedReferences = orderReferences(references);
-  const commits = parseCommitLog(logResult.stdout);
-  const commitsByHash = new Map(commits.map((commit) => [commit.hash, commit]));
-  const objectHashesToCheck = new Set(commits.map((commit) => commit.treeHash));
-  for (const commit of commits) {
-    for (const parentHash of commit.parents) {
-      if (!commitsByHash.has(parentHash)) {
-        objectHashesToCheck.add(parentHash);
-      }
-    }
-  }
-  let missingObjectHashes = new Set();
-  if (objectHashesToCheck.size > 0) {
-    const missingObjectsResult = await runGitWithInput(
-      gitPath,
-      ['-C', repositoryPath, 'cat-file', '--batch-check=%(objecttype)'],
-      `${[...objectHashesToCheck].join('\n')}\n`
-    );
-    missingObjectHashes = parseMissingObjectHashes(missingObjectsResult.stdout);
-  }
-  const missingObjectBoundaries = commits
-    .filter(
-      (commit) =>
-        missingObjectHashes.has(commit.treeHash) ||
-        commit.parents.some((parentHash) => missingObjectHashes.has(parentHash))
-    )
-    .map((commit) => commit.hash);
-  const tagsByHash = parseTags(tagsResult.stdout, commitsByHash);
-
-  for (const reference of orderedReferences) {
-    const pending = [reference.hash];
-    while (pending.length > 0) {
-      const hash = pending.pop();
-      const commit = commitsByHash.get(hash);
-      if (!commit || commit.lane !== null) {
-        continue;
-      }
-      commit.lane = reference.lane;
-      pending.push(...commit.parents);
-    }
-  }
-
-  const referenceNamesByHash = new Map();
-  for (const reference of orderedReferences) {
-    const names = referenceNamesByHash.get(reference.hash) || [];
-    names.push(reference.name);
-    referenceNamesByHash.set(reference.hash, names);
-  }
-  for (const commit of commits) {
-    commit.tags = (tagsByHash.get(commit.hash) || []).sort((left, right) =>
-      left.localeCompare(right)
-    );
-    commit.references = (referenceNamesByHash.get(commit.hash) || []).concat(commit.tags);
-    if (commit.lane === null) {
-      commit.lane = orderedReferences.length;
-    }
-  }
-
-  const divergenceMarkers = computeDivergenceMarkers(commits, orderedReferences);
-
-  return {
-    commits,
-    references: orderedReferences.map((reference) => ({
-      name: reference.name,
-      hash: reference.hash,
-      remote: reference.remote,
-      checkedOut: reference.checkedOut,
-      color: reference.color,
-      lane: reference.lane,
-      worktreePath: reference.worktreePath
-    })),
-    worktrees,
-    shallowBoundaries,
-    missingObjectBoundaries,
-    headHash,
-    headDetached: Boolean(headHash && !branchName),
-    divergenceMarkers,
-    order: 'parent-before-child',
-    laneCount: Math.max(orderedReferences.length, 1)
-  };
 }
 
 async function openRepository(repositoryPath, { confirmLarge = false } = {}) {
@@ -289,7 +132,13 @@ async function openRepository(repositoryPath, { confirmLarge = false } = {}) {
   if (confirmLarge) {
     await confirmLargeRepository(gitPath, resolvedPath);
   }
-  const graph = await loadCommitGraph(gitPath, resolvedPath, stdout.trim(), repositoryRoot);
+  const graph = await loadCommitGraph(
+    { runGit, runGitWithInput },
+    gitPath,
+    resolvedPath,
+    stdout.trim(),
+    repositoryRoot
+  );
   return {
     path: resolvedPath,
     name: path.basename(resolvedPath),
@@ -314,6 +163,23 @@ async function openAndRememberRepository(repositoryPath) {
   return repository;
 }
 
+async function confirmUnsafeFetch(error) {
+  const findingLines = sanitizeDiagnostics(
+    error.findings.map(({ scope, key, value }) => `${scope}: ${key}=${value}`).join('\n')
+  );
+  const { response } = await dialog.showMessageBox(BrowserWindow.getFocusedWindow() ?? null, {
+    type: 'warning',
+    title: 'Unsafe repository configuration',
+    message: "This repository's Git configuration can run programs during a fetch.",
+    detail: `${findingLines}\n\nOnly continue if you trust this repository and understand these settings. They may run commands on this computer.`,
+    buttons: ['Cancel', 'Fetch anyway'],
+    defaultId: 0,
+    cancelId: 0,
+    noLink: true
+  });
+  return { confirmed: response === 1, findingLines };
+}
+
 async function fetchRemoteReferences() {
   if (!activeRepositoryPath) {
     return {
@@ -328,20 +194,8 @@ async function fetchRemoteReferences() {
     await assertRepositoryConfigSafe(runGit, gitPath, activeRepositoryPath);
   } catch (error) {
     if (error instanceof UnsafeRepositoryConfigError) {
-      const findingLines = sanitizeDiagnostics(
-        error.findings.map(({ scope, key, value }) => `${scope}: ${key}=${value}`).join('\n')
-      );
-      const { response } = await dialog.showMessageBox(BrowserWindow.getFocusedWindow() ?? null, {
-        type: 'warning',
-        title: 'Unsafe repository configuration',
-        message: "This repository's Git configuration can run programs during a fetch.",
-        detail: `${findingLines}\n\nOnly continue if you trust this repository and understand these settings. They may run commands on this computer.`,
-        buttons: ['Cancel', 'Fetch anyway'],
-        defaultId: 0,
-        cancelId: 0,
-        noLink: true
-      });
-      if (response !== 1) {
+      const { confirmed, findingLines } = await confirmUnsafeFetch(error);
+      if (!confirmed) {
         return {
           success: false,
           message: error.message,
@@ -360,13 +214,10 @@ async function fetchRemoteReferences() {
   try {
     await runGit(gitPath, ['-C', activeRepositoryPath, 'fetch', '--all', '--prune', '--progress']);
   } catch (error) {
-    const details = [error.message, error.stderr, error.stdout]
-      .filter((value) => typeof value === 'string' && value.trim() !== '')
-      .join('\n');
     return {
       success: false,
       message: 'Fetch failed. Check the remote configuration and Git credentials, then try again.',
-      diagnostics: sanitizeDiagnostics(details)
+      diagnostics: errorDiagnostics(error)
     };
   }
 
@@ -376,13 +227,10 @@ async function fetchRemoteReferences() {
       repository: await openRepository(activeRepositoryPath)
     };
   } catch (error) {
-    const details = [error.message, error.stderr, error.stdout]
-      .filter((value) => typeof value === 'string' && value.trim() !== '')
-      .join('\n');
     return {
       success: false,
       message: 'Fetch succeeded, but Mergentra could not refresh the repository graph.',
-      diagnostics: sanitizeDiagnostics(details)
+      diagnostics: errorDiagnostics(error)
     };
   }
 }
