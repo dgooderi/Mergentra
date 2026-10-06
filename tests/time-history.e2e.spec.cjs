@@ -1,7 +1,7 @@
-const { execFileSync, expect, fs, launchGitScope, os, path, test } = require('./e2e-helpers.cjs');
+const { execFileSync, expect, fs, launchMergentra, os, path, test } = require('./e2e-helpers.cjs');
 
 test('time presets and custom local dates filter by committer timestamp', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
   const repositoryPath = path.join(testDirectory, 'sample-repository');
   const userDataPath = path.join(testDirectory, 'user-data');
   const frozenNow = new Date(2026, 4, 16, 12, 0, 0);
@@ -31,8 +31,8 @@ test('time presets and custom local dates filter by committer timestamp', async 
       cwd: repositoryPath,
       stdio: 'ignore'
     });
-    execFileSync('git', ['config', 'user.name', 'Gitscope E2e'], { cwd: repositoryPath });
-    execFileSync('git', ['config', 'user.email', 'gitscope-e2e@example.invalid'], {
+    execFileSync('git', ['config', 'user.name', 'Mergentra E2e'], { cwd: repositoryPath });
+    execFileSync('git', ['config', 'user.email', 'mergentra-e2e@example.invalid'], {
       cwd: repositoryPath
     });
     const oldestCommit = commitAt(
@@ -49,7 +49,7 @@ test('time presets and custom local dates filter by committer timestamp', async 
     );
     const tipCommit = commitAt('Tip commit', new Date(frozenNow.getTime() - 3 * 60 * 60 * 1000));
 
-    app = await launchGitScope(userDataPath);
+    app = await launchMergentra(userDataPath);
     const window = await app.firstWindow();
     await window.clock.install({ time: frozenNow });
     await window.clock.pauseAt(frozenNow);
@@ -110,7 +110,7 @@ test('time presets and custom local dates filter by committer timestamp', async 
 });
 
 test('ordinary commits between important commits compact into an endpoint-exclusive count', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
   const repositoryPath = path.join(testDirectory, 'sample-repository');
   const userDataPath = path.join(testDirectory, 'user-data');
   fs.mkdirSync(repositoryPath);
@@ -131,8 +131,8 @@ test('ordinary commits between important commits compact into an endpoint-exclus
 
   try {
     runGit(['-c', 'init.defaultBranch=main', 'init']);
-    runGit(['config', 'user.name', 'Gitscope E2e']);
-    runGit(['config', 'user.email', 'gitscope-e2e@example.invalid']);
+    runGit(['config', 'user.name', 'Mergentra E2e']);
+    runGit(['config', 'user.email', 'mergentra-e2e@example.invalid']);
     const taggedEndpoint = commitFile('anchor.txt', 'Tagged endpoint');
     runGit(['tag', 'v1.0.0', taggedEndpoint]);
     const hiddenCommits = [
@@ -142,7 +142,7 @@ test('ordinary commits between important commits compact into an endpoint-exclus
     ];
     const branchTip = commitFile('tip.txt', 'Branch tip endpoint');
 
-    app = await launchGitScope(userDataPath);
+    app = await launchMergentra(userDataPath);
     const window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
@@ -172,7 +172,7 @@ test('ordinary commits between important commits compact into an endpoint-exclus
 });
 
 test('calendar-month presets start at the matching local calendar period', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
   const repositoryPath = path.join(testDirectory, 'sample-repository');
   const userDataPath = path.join(testDirectory, 'user-data');
   const frozenNow = new Date(2026, 4, 31, 12, 0, 0);
@@ -202,14 +202,14 @@ test('calendar-month presets start at the matching local calendar period', async
       cwd: repositoryPath,
       stdio: 'ignore'
     });
-    execFileSync('git', ['config', 'user.name', 'Gitscope E2e'], { cwd: repositoryPath });
-    execFileSync('git', ['config', 'user.email', 'gitscope-e2e@example.invalid'], {
+    execFileSync('git', ['config', 'user.name', 'Mergentra E2e'], { cwd: repositoryPath });
+    execFileSync('git', ['config', 'user.email', 'mergentra-e2e@example.invalid'], {
       cwd: repositoryPath
     });
     const calendarBoundary = commitAt('Calendar boundary', new Date(2026, 3, 30, 12, 0, 0));
     const branchTip = commitAt('Calendar-window tip', new Date(2026, 4, 31, 10, 0, 0));
 
-    app = await launchGitScope(userDataPath);
+    app = await launchMergentra(userDataPath);
     const window = await app.firstWindow();
     await window.clock.install({ time: frozenNow });
     await window.clock.pauseAt(frozenNow);
@@ -239,7 +239,7 @@ test('calendar-month presets start at the matching local calendar period', async
 });
 
 test('custom date ranges include their start and end dates without including the next date', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
   const repositoryPath = path.join(testDirectory, 'sample-repository');
   const userDataPath = path.join(testDirectory, 'user-data');
   fs.mkdirSync(repositoryPath);
@@ -268,8 +268,8 @@ test('custom date ranges include their start and end dates without including the
       cwd: repositoryPath,
       stdio: 'ignore'
     });
-    execFileSync('git', ['config', 'user.name', 'Gitscope E2e'], { cwd: repositoryPath });
-    execFileSync('git', ['config', 'user.email', 'gitscope-e2e@example.invalid'], {
+    execFileSync('git', ['config', 'user.name', 'Mergentra E2e'], { cwd: repositoryPath });
+    execFileSync('git', ['config', 'user.email', 'mergentra-e2e@example.invalid'], {
       cwd: repositoryPath
     });
     const beforeRange = commitAt('Before range', new Date(2026, 4, 14, 23, 59, 59));
@@ -277,7 +277,7 @@ test('custom date ranges include their start and end dates without including the
     const endBoundary = commitAt('End boundary', new Date(2026, 4, 15, 23, 59, 59));
     const afterRange = commitAt('After range', new Date(2026, 4, 16, 0, 0, 0));
 
-    app = await launchGitScope(userDataPath);
+    app = await launchMergentra(userDataPath);
     const window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
@@ -308,7 +308,7 @@ test('custom date ranges include their start and end dates without including the
 });
 
 test('history-edge compacted counts include only ordinary commits inside the selected range', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
   const repositoryPath = path.join(testDirectory, 'sample-repository');
   const userDataPath = path.join(testDirectory, 'user-data');
   const frozenNow = new Date(2026, 4, 16, 12, 0, 0);
@@ -338,8 +338,8 @@ test('history-edge compacted counts include only ordinary commits inside the sel
       cwd: repositoryPath,
       stdio: 'ignore'
     });
-    execFileSync('git', ['config', 'user.name', 'Gitscope E2e'], { cwd: repositoryPath });
-    execFileSync('git', ['config', 'user.email', 'gitscope-e2e@example.invalid'], {
+    execFileSync('git', ['config', 'user.name', 'Mergentra E2e'], { cwd: repositoryPath });
+    execFileSync('git', ['config', 'user.email', 'mergentra-e2e@example.invalid'], {
       cwd: repositoryPath
     });
     const outsideCommit = commitAt(
@@ -367,7 +367,7 @@ test('history-edge compacted counts include only ordinary commits inside the sel
       new Date(frozenNow.getTime() - 2 * 60 * 60 * 1000)
     );
 
-    app = await launchGitScope(userDataPath);
+    app = await launchMergentra(userDataPath);
     const window = await app.firstWindow();
     await window.clock.install({ time: frozenNow });
     await window.clock.pauseAt(frozenNow);

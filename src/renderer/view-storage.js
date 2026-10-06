@@ -1,6 +1,6 @@
-const viewStateKeyPrefix = 'gitscope:view-state:';
-const notesKeyPrefix = 'gitscope:notes:';
-const repositoryNoteKeyPrefix = 'gitscope:repository-note:';
+const viewStateKeyPrefix = 'mergentra:view-state:';
+const notesKeyPrefix = 'mergentra:notes:';
+const repositoryNoteKeyPrefix = 'mergentra:repository-note:';
 
 // Every operation is best-effort: unavailable or full storage must never break the view.
 export function createViewStorage(storage) {

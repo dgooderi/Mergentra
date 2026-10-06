@@ -20,8 +20,8 @@ let settings;
 let settingsStore;
 let activeRepositoryPath = null;
 
-if (process.env.GITSCOPE_USER_DATA_DIR) {
-  app.setPath('userData', path.resolve(process.env.GITSCOPE_USER_DATA_DIR));
+if (process.env.MERGENTRA_USER_DATA_DIR) {
+  app.setPath('userData', path.resolve(process.env.MERGENTRA_USER_DATA_DIR));
 }
 
 function saveSettings(nextSettings) {
@@ -224,7 +224,7 @@ async function openRepository(repositoryPath) {
   } catch (error) {
     if (error.code === 'ENOENT' && !settings.gitPath) {
       throw new Error(
-        'Git was not found on PATH. Install Git for Windows, then restart GitScope.',
+        'Git was not found on PATH. Install Git for Windows, then restart Mergentra.',
         { cause: error }
       );
     }
@@ -311,7 +311,7 @@ async function fetchRemoteReferences() {
     } else {
       return {
         success: false,
-        message: 'Fetch failed. GitScope could not verify the repository configuration is safe.',
+        message: 'Fetch failed. Mergentra could not verify the repository configuration is safe.',
         diagnostics: sanitizeDiagnostics(error.message)
       };
     }
@@ -341,7 +341,7 @@ async function fetchRemoteReferences() {
       .join('\n');
     return {
       success: false,
-      message: 'Fetch succeeded, but GitScope could not refresh the repository graph.',
+      message: 'Fetch succeeded, but Mergentra could not refresh the repository graph.',
       diagnostics: sanitizeDiagnostics(details)
     };
   }
@@ -352,7 +352,7 @@ app.whenReady().then(() => {
     settingsStore = createSettingsStore(app.getPath('userData'));
     settings = settingsStore.load();
   } catch (error) {
-    dialog.showErrorBox('GitScope could not start', error.message);
+    dialog.showErrorBox('Mergentra could not start', error.message);
     app.quit();
     return;
   }

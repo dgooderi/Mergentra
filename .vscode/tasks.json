@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Run GitScope",
+      "label": "Run Mergentra",
       "type": "shell",
       "command": "npm start",
       "isBackground": true,

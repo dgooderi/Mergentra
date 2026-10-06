@@ -6,12 +6,12 @@ const os = require('node:os');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 
-function launchGitScope(userDataPathOrOptions) {
+function launchMergentra(userDataPathOrOptions) {
   const options =
     typeof userDataPathOrOptions === 'string'
       ? {
           args: [path.resolve(__dirname, '..')],
-          env: { ...process.env, GITSCOPE_USER_DATA_DIR: userDataPathOrOptions }
+          env: { ...process.env, MERGENTRA_USER_DATA_DIR: userDataPathOrOptions }
         }
       : userDataPathOrOptions;
   return electron.launch(options);
@@ -23,7 +23,7 @@ module.exports = {
   execFileSync,
   expect,
   fs,
-  launchGitScope,
+  launchMergentra,
   os,
   path,
   pathToFileURL,

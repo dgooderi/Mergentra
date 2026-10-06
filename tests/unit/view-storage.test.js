@@ -29,7 +29,7 @@ describe('createViewStorage', () => {
     const views = createViewStorage(storage);
     const notes = { commits: { abc: 'hi' }, branches: {} };
     views.saveNotes('/repo', notes);
-    expect(storage.data.has('gitscope:notes:/repo')).toBe(true);
+    expect(storage.data.has('mergentra:notes:/repo')).toBe(true);
     expect(views.loadNotes('/repo')).toEqual(notes);
   });
 
@@ -38,7 +38,7 @@ describe('createViewStorage', () => {
       commits: {},
       branches: {}
     });
-    const corrupt = memoryStorage({ 'gitscope:notes:/repo': '{not json' });
+    const corrupt = memoryStorage({ 'mergentra:notes:/repo': '{not json' });
     expect(createViewStorage(corrupt).loadNotes('/repo')).toEqual({ commits: {}, branches: {} });
   });
 
@@ -47,9 +47,9 @@ describe('createViewStorage', () => {
     const views = createViewStorage(storage);
     expect(views.loadViewState('/repo')).toBeNull();
     views.saveViewState('/repo', { preset: '1w' });
-    expect(storage.data.has('gitscope:view-state:/repo')).toBe(true);
+    expect(storage.data.has('mergentra:view-state:/repo')).toBe(true);
     expect(views.loadViewState('/repo')).toEqual({ preset: '1w' });
-    storage.setItem('gitscope:view-state:/bad', 'x');
+    storage.setItem('mergentra:view-state:/bad', 'x');
     expect(views.loadViewState('/bad')).toBeNull();
   });
 
@@ -57,7 +57,7 @@ describe('createViewStorage', () => {
     const storage = memoryStorage();
     const views = createViewStorage(storage);
     views.writeRepositoryNote('/repo', 'my note');
-    expect(storage.getItem('gitscope:repository-note:/repo')).toBe('my note');
+    expect(storage.getItem('mergentra:repository-note:/repo')).toBe('my note');
     expect(views.readRepositoryNote('/repo')).toBe('my note');
     views.writeRepositoryNote('/repo', '   ');
     expect(views.readRepositoryNote('/repo')).toBe('');

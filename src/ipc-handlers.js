@@ -40,9 +40,9 @@ function registerIpcHandlers({
     }
     if (
       parsedUrl.origin !== 'https://github.com' ||
-      !parsedUrl.pathname.startsWith('/dgooderi/GitScope/releases/')
+      !parsedUrl.pathname.startsWith('/dgooderi/Mergentra/releases/')
     ) {
-      throw new Error('Only GitScope GitHub release links can be opened.');
+      throw new Error('Only Mergentra GitHub release links can be opened.');
     }
 
     await shell.openExternal(parsedUrl.href);

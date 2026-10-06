@@ -1,7 +1,7 @@
-const { execFileSync, expect, fs, launchGitScope, os, path, test } = require('./e2e-helpers.cjs');
+const { execFileSync, expect, fs, launchMergentra, os, path, test } = require('./e2e-helpers.cjs');
 
 test('linear reference histories show their shared commit once and preserve parent order', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
   const repositoryPath = path.join(testDirectory, 'sample-repository');
   const remotePath = path.join(testDirectory, 'origin.git');
   const userDataPath = path.join(testDirectory, 'user-data');
@@ -18,8 +18,8 @@ test('linear reference histories show their shared commit once and preserve pare
   try {
     runGit(testDirectory, ['init', '--bare', remotePath]);
     runGit(repositoryPath, ['-c', 'init.defaultBranch=main', 'init']);
-    runGit(repositoryPath, ['config', 'user.name', 'Gitscope E2e']);
-    runGit(repositoryPath, ['config', 'user.email', 'gitscope-e2e@example.invalid']);
+    runGit(repositoryPath, ['config', 'user.name', 'Mergentra E2e']);
+    runGit(repositoryPath, ['config', 'user.email', 'mergentra-e2e@example.invalid']);
     fs.writeFileSync(path.join(repositoryPath, 'README.txt'), 'Base commit');
     runGit(repositoryPath, ['add', 'README.txt']);
     runGit(repositoryPath, ['commit', '-m', 'Base commit']);
@@ -39,7 +39,7 @@ test('linear reference histories show their shared commit once and preserve pare
     runGit(repositoryPath, ['push', 'origin', 'main', 'feature']);
     runGit(repositoryPath, ['fetch', 'origin']);
 
-    app = await launchGitScope(userDataPath);
+    app = await launchMergentra(userDataPath);
     const window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
@@ -102,7 +102,7 @@ test('linear reference histories show their shared commit once and preserve pare
 });
 
 test('merge commits and grouped tags are annotated in the commit graph', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
   const repositoryPath = path.join(testDirectory, 'sample-repository');
   const userDataPath = path.join(testDirectory, 'user-data');
   fs.mkdirSync(repositoryPath);
@@ -117,8 +117,8 @@ test('merge commits and grouped tags are annotated in the commit graph', async (
 
   try {
     runGit(['-c', 'init.defaultBranch=main', 'init']);
-    runGit(['config', 'user.name', 'Gitscope E2e']);
-    runGit(['config', 'user.email', 'gitscope-e2e@example.invalid']);
+    runGit(['config', 'user.name', 'Mergentra E2e']);
+    runGit(['config', 'user.email', 'mergentra-e2e@example.invalid']);
     fs.writeFileSync(path.join(repositoryPath, 'README.txt'), 'Base commit');
     runGit(['add', 'README.txt']);
     runGit(['commit', '-m', 'Base commit']);
@@ -140,7 +140,7 @@ test('merge commits and grouped tags are annotated in the commit graph', async (
     runGit(['tag', 'v1.0.0', mergeCommit]);
     runGit(['tag', 'release-candidate', mergeCommit]);
 
-    app = await launchGitScope(userDataPath);
+    app = await launchMergentra(userDataPath);
     const window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
@@ -198,7 +198,7 @@ test('merge commits and grouped tags are annotated in the commit graph', async (
 });
 
 test('divergent branches show inferred markers at their first unique commits', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
   const repositoryPath = path.join(testDirectory, 'sample-repository');
   const userDataPath = path.join(testDirectory, 'user-data');
   fs.mkdirSync(repositoryPath);
@@ -213,8 +213,8 @@ test('divergent branches show inferred markers at their first unique commits', a
 
   try {
     runGit(['-c', 'init.defaultBranch=main', 'init']);
-    runGit(['config', 'user.name', 'Gitscope E2e']);
-    runGit(['config', 'user.email', 'gitscope-e2e@example.invalid']);
+    runGit(['config', 'user.name', 'Mergentra E2e']);
+    runGit(['config', 'user.email', 'mergentra-e2e@example.invalid']);
     fs.writeFileSync(path.join(repositoryPath, 'README.txt'), 'Shared ancestor');
     runGit(['add', 'README.txt']);
     runGit(['commit', '-m', 'Shared ancestor']);
@@ -232,7 +232,7 @@ test('divergent branches show inferred markers at their first unique commits', a
     runGit(['commit', '-m', 'First main commit']);
     const mainCommit = runGit(['rev-parse', 'HEAD']);
 
-    app = await launchGitScope(userDataPath);
+    app = await launchMergentra(userDataPath);
     const window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
@@ -256,7 +256,7 @@ test('divergent branches show inferred markers at their first unique commits', a
 });
 
 test('pointer and keyboard commit selection show the same Review dock details', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
   const repositoryPath = path.join(testDirectory, 'sample-repository');
   const userDataPath = path.join(testDirectory, 'user-data');
   fs.mkdirSync(repositoryPath);
@@ -305,7 +305,7 @@ test('pointer and keyboard commit selection show the same Review dock details', 
     const childHash = runGit(['rev-parse', 'HEAD']);
     const childAuthorDate = runGit(['show', '-s', '--format=%aI', childHash]);
 
-    app = await launchGitScope(userDataPath);
+    app = await launchMergentra(userDataPath);
     const window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
@@ -356,7 +356,7 @@ test('pointer and keyboard commit selection show the same Review dock details', 
 });
 
 test('reference filters retain shared history reachable from any enabled reference', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
   const repositoryPath = path.join(testDirectory, 'sample-repository');
   const remotePath = path.join(testDirectory, 'origin.git');
   const userDataPath = path.join(testDirectory, 'user-data');
@@ -373,8 +373,8 @@ test('reference filters retain shared history reachable from any enabled referen
   try {
     runGit(testDirectory, ['init', '--bare', remotePath]);
     runGit(repositoryPath, ['-c', 'init.defaultBranch=main', 'init']);
-    runGit(repositoryPath, ['config', 'user.name', 'Gitscope E2e']);
-    runGit(repositoryPath, ['config', 'user.email', 'gitscope-e2e@example.invalid']);
+    runGit(repositoryPath, ['config', 'user.name', 'Mergentra E2e']);
+    runGit(repositoryPath, ['config', 'user.email', 'mergentra-e2e@example.invalid']);
     fs.writeFileSync(path.join(repositoryPath, 'shared.txt'), 'Shared ancestor');
     runGit(repositoryPath, ['add', 'shared.txt']);
     runGit(repositoryPath, ['commit', '-m', 'Shared ancestor']);
@@ -396,7 +396,7 @@ test('reference filters retain shared history reachable from any enabled referen
     runGit(repositoryPath, ['push', 'origin', 'main', 'feature']);
     runGit(repositoryPath, ['fetch', 'origin']);
 
-    app = await launchGitScope(userDataPath);
+    app = await launchMergentra(userDataPath);
     const window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();

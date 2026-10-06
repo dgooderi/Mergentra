@@ -47,19 +47,19 @@ describe('IPC handlers', () => {
     ]);
   });
 
-  it('opens only GitScope release URLs', async () => {
+  it('opens only Mergentra release URLs', async () => {
     const { handlers, dependencies } = makeIpcDependencies();
 
     await handlers.get('external:open-release')(
       null,
-      'https://github.com/dgooderi/GitScope/releases/tag/v1.0.0'
+      'https://github.com/dgooderi/Mergentra/releases/tag/v1.0.0'
     );
     expect(dependencies.shell.openExternal).toHaveBeenCalledWith(
-      'https://github.com/dgooderi/GitScope/releases/tag/v1.0.0'
+      'https://github.com/dgooderi/Mergentra/releases/tag/v1.0.0'
     );
     await expect(
       handlers.get('external:open-release')(null, 'https://example.com/')
-    ).rejects.toThrow('Only GitScope GitHub release links can be opened.');
+    ).rejects.toThrow('Only Mergentra GitHub release links can be opened.');
   });
 
   it('validates Git before persisting a configured executable path', async () => {

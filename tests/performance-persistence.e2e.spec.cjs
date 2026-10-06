@@ -2,7 +2,7 @@ const {
   execFileSync,
   expect,
   fs,
-  launchGitScope,
+  launchMergentra,
   os,
   path,
   spawn,
@@ -10,7 +10,7 @@ const {
 } = require('./e2e-helpers.cjs');
 
 test('the repository view expands and contracts with the application window', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-layout-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-layout-e2e-'));
   const repositoryPath = path.join(testDirectory, 'layout-repository');
   fs.mkdirSync(repositoryPath);
   let app;
@@ -20,8 +20,8 @@ test('the repository view expands and contracts with the application window', as
       cwd: repositoryPath,
       stdio: 'ignore'
     });
-    execFileSync('git', ['config', 'user.name', 'Gitscope E2e'], { cwd: repositoryPath });
-    execFileSync('git', ['config', 'user.email', 'gitscope-e2e@example.invalid'], {
+    execFileSync('git', ['config', 'user.name', 'Mergentra E2e'], { cwd: repositoryPath });
+    execFileSync('git', ['config', 'user.email', 'mergentra-e2e@example.invalid'], {
       cwd: repositoryPath
     });
     fs.writeFileSync(path.join(repositoryPath, 'README.md'), 'Responsive layout test\n');
@@ -31,7 +31,7 @@ test('the repository view expands and contracts with the application window', as
       stdio: 'ignore'
     });
 
-    app = await launchGitScope(path.join(testDirectory, 'user-data'));
+    app = await launchMergentra(path.join(testDirectory, 'user-data'));
     const window = await app.firstWindow();
     const resizeWindow = async (width, height) => {
       await app.evaluate(
@@ -73,7 +73,7 @@ test('dense histories show a useful graph and keep filters responsive at target 
   test.setTimeout(180_000);
   const commitCount = 50_000;
   const referenceCount = 100;
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-scale-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-scale-'));
   const repositoryPath = path.join(testDirectory, 'dense-repository');
   const userDataPath = path.join(testDirectory, 'user-data');
   fs.mkdirSync(repositoryPath);
@@ -87,7 +87,7 @@ test('dense histories show a useful graph and keep filters responsive at target 
     }).trim();
 
   async function createHistory() {
-    const author = 'Gitscope E2e <gitscope-e2e@example.invalid>';
+    const author = 'Mergentra E2e <mergentra-e2e@example.invalid>';
     const now = Math.floor(Date.now() / 1000);
     const firstTimestamp = now - commitCount * 3600;
     const stream = spawn('git', ['fast-import', '--quiet'], {
@@ -136,7 +136,7 @@ test('dense histories show a useful graph and keep filters responsive at target 
       runGit(['for-each-ref', '--format=%(refname)', 'refs/heads']).split(/\r?\n/)
     ).toHaveLength(referenceCount);
 
-    app = await launchGitScope(userDataPath);
+    app = await launchMergentra(userDataPath);
     const window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(repositoryPath);
     const graphStartedAt = process.hrtime.bigint();
@@ -215,7 +215,7 @@ test('dense histories show a useful graph and keep filters responsive at target 
 });
 
 test('branch selection and time range are remembered per repository', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-view-state-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-view-state-e2e-'));
   const userDataPath = path.join(testDirectory, 'user-data');
   const runGit = (cwd, args) =>
     execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
@@ -223,15 +223,15 @@ test('branch selection and time range are remembered per repository', async () =
     const repositoryPath = path.join(testDirectory, name);
     fs.mkdirSync(repositoryPath);
     runGit(repositoryPath, ['-c', 'init.defaultBranch=main', 'init']);
-    runGit(repositoryPath, ['config', 'user.name', 'Gitscope E2e']);
-    runGit(repositoryPath, ['config', 'user.email', 'gitscope-e2e@example.invalid']);
+    runGit(repositoryPath, ['config', 'user.name', 'Mergentra E2e']);
+    runGit(repositoryPath, ['config', 'user.email', 'mergentra-e2e@example.invalid']);
     runGit(repositoryPath, ['commit', '--allow-empty', '-m', 'Initial']);
     runGit(repositoryPath, ['branch', 'feature']);
     return repositoryPath;
   };
   const firstRepository = createRepository('first');
   const secondRepository = createRepository('second');
-  const launch = () => launchGitScope(userDataPath);
+  const launch = () => launchMergentra(userDataPath);
   let app;
 
   try {
@@ -246,9 +246,9 @@ test('branch selection and time range are remembered per repository', async () =
     await window.locator('#time-range').selectOption('1w');
     await expect(window.locator('#branch-owner-filter option')).toHaveText([
       'All owners',
-      'Gitscope E2e'
+      'Mergentra E2e'
     ]);
-    await window.locator('#branch-owner-filter').selectOption({ label: 'Gitscope E2e' });
+    await window.locator('#branch-owner-filter').selectOption({ label: 'Mergentra E2e' });
     await expect(window.locator('#branch-picker-summary')).toHaveText('Branches: 2 of 2 shown');
     await window.getByTestId('commit-node').first().click();
     await window.getByRole('button', { name: 'Centre on selected' }).click();
@@ -286,7 +286,7 @@ test('branch selection and time range are remembered per repository', async () =
 });
 
 test('commit and branch notes persist per repository and selection can be cleared', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-notes-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-notes-e2e-'));
   const userDataPath = path.join(testDirectory, 'user-data');
   const repositoryPath = path.join(testDirectory, 'notes-repository');
   fs.mkdirSync(repositoryPath);
@@ -297,13 +297,13 @@ test('commit and branch notes persist per repository and selection can be cleare
       stdio: ['ignore', 'pipe', 'pipe']
     }).trim();
   runGit(['-c', 'init.defaultBranch=main', 'init']);
-  runGit(['config', 'user.name', 'Gitscope E2e']);
-  runGit(['config', 'user.email', 'gitscope-e2e@example.invalid']);
+  runGit(['config', 'user.name', 'Mergentra E2e']);
+  runGit(['config', 'user.email', 'mergentra-e2e@example.invalid']);
   runGit(['commit', '--allow-empty', '-m', 'Initial']);
   runGit(['commit', '--allow-empty', '-m', 'Second']);
   runGit(['branch', 'feature']);
   const tip = runGit(['rev-parse', 'HEAD']);
-  const launch = () => launchGitScope(userDataPath);
+  const launch = () => launchMergentra(userDataPath);
   let app;
 
   try {
@@ -350,7 +350,7 @@ test('commit and branch notes persist per repository and selection can be cleare
 });
 
 test('collapsed commit groups list their commits, highlight with the selection, and labels can be toggled', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-collapsed-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-collapsed-e2e-'));
   const repositoryPath = path.join(testDirectory, 'collapsed-repository');
   fs.mkdirSync(repositoryPath);
   const runGit = (args) =>
@@ -360,8 +360,8 @@ test('collapsed commit groups list their commits, highlight with the selection, 
       stdio: ['ignore', 'pipe', 'pipe']
     }).trim();
   runGit(['-c', 'init.defaultBranch=main', 'init']);
-  runGit(['config', 'user.name', 'Gitscope E2e']);
-  runGit(['config', 'user.email', 'gitscope-e2e@example.invalid']);
+  runGit(['config', 'user.name', 'Mergentra E2e']);
+  runGit(['config', 'user.email', 'mergentra-e2e@example.invalid']);
   runGit(['commit', '--allow-empty', '-m', 'Start']);
   runGit(['tag', 'v1.0.0']);
   runGit(['tag', 'wip-marker']);
@@ -373,7 +373,7 @@ test('collapsed commit groups list their commits, highlight with the selection, 
   let app;
 
   try {
-    app = await launchGitScope(path.join(testDirectory, 'user-data'));
+    app = await launchMergentra(path.join(testDirectory, 'user-data'));
     const window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();

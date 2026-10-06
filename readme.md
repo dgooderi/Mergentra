@@ -1,10 +1,10 @@
-# GitScope
+# Mergentra
 
-GitScope is a Windows-first Electron app for exploring the history of one local Git repository at a time as a branch graph. It is read-only: it never commits, checks out, merges, or edits your repository. The only command that changes repository data is the explicit **Fetch** button, which updates remote-tracking references.
+Mergentra is a Windows-first Electron app for exploring the history of one local Git repository at a time as a branch graph. It is read-only: it never commits, checks out, merges, or edits your repository. The only command that changes repository data is the explicit **Fetch** button, which updates remote-tracking references.
 
 ## Status
 
-GitScope is **pre-1.0 (version 0.9.0)** and is being made public. Expect rough edges and changes between releases.
+Mergentra is **pre-1.0 (version 0.9.0)** and is being made public. Expect rough edges and changes between releases.
 
 - **Platform:** Windows is the supported and tested platform. The app is built with Electron, so other platforms may run it, but they are untested and no installers are produced for them.
 - **Installer:** the Windows installer is currently **unsigned**, so Windows SmartScreen may warn when you run it. Authenticode signing is planned before a stable release.
@@ -14,13 +14,13 @@ GitScope is **pre-1.0 (version 0.9.0)** and is being made public. Expect rough e
 
 ## Requirements
 
-You do not need Node.js to run GitScope; Electron bundles its own runtime. You do need [Git for Windows](https://gitforwindows.org/) installed. GitScope uses your installed Git and does not bundle it. If Git is not on `PATH`, enter the full path to `git.exe` in the app.
+You do not need Node.js to run Mergentra; Electron bundles its own runtime. You do need [Git for Windows](https://gitforwindows.org/) installed. Mergentra uses your installed Git and does not bundle it. If Git is not on `PATH`, enter the full path to `git.exe` in the app.
 
 ## Security and trust
 
-GitScope runs your installed Git against the repository you open, so a repository you do not trust deserves care.
+Mergentra runs your installed Git against the repository you open, so a repository you do not trust deserves care.
 
-- **Fetch is guarded.** Git can run programs named in a repository's own configuration. Before fetching, GitScope checks for such settings (see the Fetch description below) and shows a warning. Fetching proceeds only if you choose **Fetch anyway**.
+- **Fetch is guarded.** Git can run programs named in a repository's own configuration. Before fetching, Mergentra checks for such settings (see the Fetch description below) and shows a warning. Fetching proceeds only if you choose **Fetch anyway**.
 - **Opening is hardened.** Opening a repository reads history only and never fetches. It disables signature verification so a repository cannot make `git log` launch its configured `gpg.program`.
 - **Not covered:** Git hooks and your own global Git configuration and environment (such as `GIT_SSH_COMMAND`) are trusted and not checked. Only fetch from repositories you trust.
 - **App hardening:** the renderer is sandboxed from Node.js and Git, and only a small set of IPC calls is exposed. Update checks only contact GitHub when you select **Check for updates**.
@@ -29,7 +29,7 @@ To report a security issue, please open a GitHub issue without exploit details, 
 
 ## License
 
-GitScope is licensed under the [Reciprocal Public License 1.5 (RPL-1.5)](./LICENSE). This is a copyleft license: if you distribute GitScope or modifications of it, you must make your source available under the same terms. Read the license for the full conditions. A separate commercial license may be offered in the future for uses that the RPL does not suit.
+Mergentra is licensed under the [Reciprocal Public License 1.5 (RPL-1.5)](./LICENSE). This is a copyleft license: if you distribute Mergentra or modifications of it, you must make your source available under the same terms. Read the license for the full conditions. A separate commercial license may be offered in the future for uses that the RPL does not suit.
 
 ## Development
 
@@ -58,13 +58,13 @@ npm run test:e2e
 
 Keep Git and Electron access in the main process, persistence behind its storage module, and pure graph calculations free of DOM and process APIs.
 
-On launch, enter a repository folder or use **Browse…** to choose one. GitScope shows loading progress while it reads repository history and remembers repositories opened from the picker. If Git is not on `PATH`, enter the full path to `git.exe` and select **Save Git path**. Dark mode is the default; select **Light mode** to change the appearance.
+On launch, enter a repository folder or use **Browse…** to choose one. Mergentra shows loading progress while it reads repository history and remembers repositories opened from the picker. If Git is not on `PATH`, enter the full path to `git.exe` and select **Save Git path**. Dark mode is the default; select **Light mode** to change the appearance.
 
-For a realistic test history with parallel features, release/hotfix merges, tags, and a local bare remote, open [the complex branch scenario](./samples/complex-branch-scenario/SCENARIO.md) in GitScope.
+For a realistic test history with parallel features, release/hotfix merges, tags, and a local bare remote, open [the complex branch scenario](./samples/complex-branch-scenario/SCENARIO.md) in Mergentra.
 
-Select **Check for updates** to manually check GitHub Releases. If a newer release is available, GitScope links to its release page so you can download and run the installer yourself. GitScope does not check in the background, download installers, or install updates automatically.
+Select **Check for updates** to manually check GitHub Releases. If a newer release is available, Mergentra links to its release page so you can download and run the installer yourself. Mergentra does not check in the background, download installers, or install updates automatically.
 
-After opening a repository, GitScope displays its reachable commits once in parent-before-child order and lists local branches alongside fetched remote-tracking references. The checked-out local branch is highlighted in the References list and marked at its graph tip. Matching local and remote-tracking references share a color; remote-tracking lanes are dashed.
+After opening a repository, Mergentra displays its reachable commits once in parent-before-child order and lists local branches alongside fetched remote-tracking references. The checked-out local branch is highlighted in the References list and marked at its graph tip. Matching local and remote-tracking references share a color; remote-tracking lanes are dashed.
 
 The Worktrees list identifies the current and linked working directories; local branch references show where each branch is checked out. Detached `HEAD` is marked at its commit without adding a branch, and an unborn branch shows its name with an empty graph. Shallow history boundaries and reachable missing-object boundaries in partial clones are marked. Graph inspection disables Git lazy fetching, so it does not contact a promisor remote.
 
@@ -76,7 +76,7 @@ Use the checkboxes beside references to filter local branches and remote-trackin
 
 Use the time-range selector to choose a rolling preset, all history, or a custom local-date range. Day and week presets are elapsed durations; month and year presets roll back by calendar periods. Custom ranges include both selected local dates. Commits outside the selected window are clipped and history continuation is marked at range boundaries. Ordinary commits on a linear path between important commits are summarized by an endpoint-exclusive count.
 
-Select **Fetch** to explicitly update remote-tracking references using Git's configured credential helpers. Opening or filtering does not fetch. Fetch progress and its result are shown in the app; failures include copyable, credential-redacted diagnostics. Before fetching, GitScope inspects the repository's own Git configuration and blocks the fetch if it would run a program (for example `core.sshCommand`, `core.askPass`, `core.gitProxy`, path-based or `!` credential helpers, `remote.*.vcs`, or `ext::` URLs). A warning lists the settings; choose **Fetch anyway** to proceed once, accepting the risk, or **Cancel**.
+Select **Fetch** to explicitly update remote-tracking references using Git's configured credential helpers. Opening or filtering does not fetch. Fetch progress and its result are shown in the app; failures include copyable, credential-redacted diagnostics. Before fetching, Mergentra inspects the repository's own Git configuration and blocks the fetch if it would run a program (for example `core.sshCommand`, `core.askPass`, `core.gitProxy`, path-based or `!` credential helpers, `remote.*.vcs`, or `ext::` URLs). A warning lists the settings; choose **Fetch anyway** to proceed once, accepting the risk, or **Cancel**.
 
 Run the app-level Electron tests with:
 
@@ -92,7 +92,7 @@ Build the per-user Windows installer with:
 npm run build:win
 ```
 
-The NSIS installer is written to `dist/GitScope-<version>-Setup.exe`. It installs for the current user without requesting elevation. The installer is unsigned until Authenticode signing is set up (see Status).
+The NSIS installer is written to `dist/Mergentra-<version>-Setup.exe`. It installs for the current user without requesting elevation. The installer is unsigned until Authenticode signing is set up (see Status).
 
 The dense-history scale test can be run on its own with:
 

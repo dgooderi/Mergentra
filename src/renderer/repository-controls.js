@@ -24,7 +24,7 @@ export function createRepositoryControls({ showRepository }) {
     progress.textContent = 'Loading repository history…';
 
     try {
-      showRepository(await window.gitScope.openRepository(repositoryPath));
+      showRepository(await window.mergentra.openRepository(repositoryPath));
       progress.textContent = '';
     } catch (error) {
       progress.textContent = '';
@@ -39,8 +39,8 @@ export function createRepositoryControls({ showRepository }) {
   async function loadPickerSettings() {
     try {
       const [gitPath, recentRepositories] = await Promise.all([
-        window.gitScope.getGitPath(),
-        window.gitScope.getRecentRepositories()
+        window.mergentra.getGitPath(),
+        window.mergentra.getRecentRepositories()
       ]);
       gitPathInput.value = gitPath;
       renderRecentRepositories(recentRepositories, openRepository);
@@ -62,7 +62,7 @@ export function createRepositoryControls({ showRepository }) {
     document.getElementById('browse-button').addEventListener('click', async () => {
       setStatus('');
       try {
-        const selectedPath = await window.gitScope.chooseRepository();
+        const selectedPath = await window.mergentra.chooseRepository();
         if (selectedPath) {
           pathInput.value = selectedPath;
         }
@@ -80,11 +80,11 @@ export function createRepositoryControls({ showRepository }) {
       event.preventDefault();
       document.getElementById('git-path-status').textContent = '';
       try {
-        const gitPath = await window.gitScope.saveGitPath(gitPathInput.value);
+        const gitPath = await window.mergentra.saveGitPath(gitPathInput.value);
         gitPathInput.value = gitPath;
         document.getElementById('git-path-status').textContent = gitPath
           ? 'Git path saved.'
-          : 'Git path cleared. GitScope will use Git on PATH.';
+          : 'Git path cleared. Mergentra will use Git on PATH.';
       } catch (error) {
         document.getElementById('git-path-status').textContent = error.message;
       }

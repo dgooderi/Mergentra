@@ -6,7 +6,7 @@ export function createRepositoryActions({ refreshRepositoryGraph }) {
   function init() {
     document.getElementById('open-explorer').addEventListener('click', async () => {
       try {
-        await window.gitScope.openInExplorer();
+        await window.mergentra.openInExplorer();
       } catch (error) {
         document.getElementById('fetch-status').textContent = error.message;
       }
@@ -25,7 +25,7 @@ export function createRepositoryActions({ refreshRepositoryGraph }) {
       document.getElementById('diagnostics-copy-status').textContent = '';
 
       try {
-        const result = await window.gitScope.fetchRemoteReferences();
+        const result = await window.mergentra.fetchRemoteReferences();
         if (!result.success) {
           fetchStatus.textContent = result.message;
           diagnostics.textContent = result.diagnostics;
@@ -49,7 +49,7 @@ export function createRepositoryActions({ refreshRepositoryGraph }) {
 
     document.getElementById('copy-fetch-diagnostics').addEventListener('click', async () => {
       try {
-        await window.gitScope.copyDiagnostics(
+        await window.mergentra.copyDiagnostics(
           document.getElementById('fetch-diagnostics').textContent
         );
         document.getElementById('diagnostics-copy-status').textContent = 'Diagnostics copied.';
@@ -70,13 +70,13 @@ export function createRepositoryActions({ refreshRepositoryGraph }) {
 
       try {
         const [response, currentVersion] = await Promise.all([
-          fetch('https://api.github.com/repos/dgooderi/GitScope/releases/latest', {
+          fetch('https://api.github.com/repos/dgooderi/Mergentra/releases/latest', {
             headers: { Accept: 'application/vnd.github+json' },
             cache: 'no-store',
             credentials: 'omit',
             signal: AbortSignal.timeout(10_000)
           }),
-          window.gitScope.getAppVersion()
+          window.mergentra.getAppVersion()
         ]);
         if (!response.ok) {
           throw new Error(
@@ -96,7 +96,7 @@ export function createRepositoryActions({ refreshRepositoryGraph }) {
         const releaseUrl = new URL(release.html_url);
         if (
           releaseUrl.origin !== 'https://github.com' ||
-          !releaseUrl.pathname.startsWith('/dgooderi/GitScope/releases/')
+          !releaseUrl.pathname.startsWith('/dgooderi/Mergentra/releases/')
         ) {
           throw new Error('GitHub returned an unexpected release link.');
         }
@@ -106,12 +106,12 @@ export function createRepositoryActions({ refreshRepositoryGraph }) {
         const versionComparison = compareReleaseVersions(latestVersion, installedVersion);
         const displayedVersion = release.tag_name.replace(/^v/, '');
         if (versionComparison > 0) {
-          updateStatus.textContent = `GitScope ${displayedVersion} is available.`;
+          updateStatus.textContent = `Mergentra ${displayedVersion} is available.`;
           releaseLink.href = releaseUrl.href;
-          releaseLink.textContent = `View GitScope ${displayedVersion} on GitHub Releases`;
+          releaseLink.textContent = `View Mergentra ${displayedVersion} on GitHub Releases`;
           releaseLink.hidden = false;
         } else {
-          updateStatus.textContent = `GitScope is up to date (${currentVersion}).`;
+          updateStatus.textContent = `Mergentra is up to date (${currentVersion}).`;
         }
       } catch (error) {
         updateStatus.textContent = `Could not check for updates: ${error.message}`;
@@ -124,7 +124,7 @@ export function createRepositoryActions({ refreshRepositoryGraph }) {
       event.preventDefault();
       const updateStatus = document.getElementById('update-status');
       try {
-        await window.gitScope.openRelease(event.currentTarget.href);
+        await window.mergentra.openRelease(event.currentTarget.href);
       } catch (error) {
         updateStatus.textContent = `Could not open the GitHub release: ${error.message}`;
       }

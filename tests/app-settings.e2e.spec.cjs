@@ -1,7 +1,7 @@
-const { execFileSync, expect, fs, launchGitScope, os, path, test } = require('./e2e-helpers.cjs');
+const { execFileSync, expect, fs, launchMergentra, os, path, test } = require('./e2e-helpers.cjs');
 
 test('a developer can open a local Git repository', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
   const repositoryPath = path.join(testDirectory, 'sample-repository');
   const invalidRepositoryPath = path.join(testDirectory, 'not-a-repository');
   const userDataPath = path.join(testDirectory, 'user-data');
@@ -15,8 +15,8 @@ test('a developer can open a local Git repository', async () => {
     });
 
   runGit(['-c', 'init.defaultBranch=main', 'init']);
-  runGit(['config', 'user.name', 'Gitscope E2e']);
-  runGit(['config', 'user.email', 'gitscope-e2e@example.invalid']);
+  runGit(['config', 'user.name', 'Mergentra E2e']);
+  runGit(['config', 'user.email', 'mergentra-e2e@example.invalid']);
   fs.writeFileSync(path.join(repositoryPath, 'README.txt'), 'Test repository');
   runGit(['add', 'README.txt']);
   runGit(['commit', '-m', 'Initial commit']);
@@ -24,7 +24,7 @@ test('a developer can open a local Git repository', async () => {
   let app;
 
   try {
-    app = await launchGitScope(userDataPath);
+    app = await launchMergentra(userDataPath);
     const window = await app.firstWindow();
     await expect(window.getByRole('heading', { name: 'Open a repository' })).toBeVisible();
     await window.getByRole('button', { name: 'Settings' }).click();
@@ -51,16 +51,16 @@ test('a developer can open a local Git repository', async () => {
 });
 
 test('a manual update check links to a newer GitHub release without downloading it', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-update-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-update-e2e-'));
   const userDataPath = path.join(testDirectory, 'user-data');
   let app;
   let releaseChecks = 0;
 
   try {
-    app = await launchGitScope(userDataPath);
+    app = await launchMergentra(userDataPath);
     const window = await app.firstWindow();
     await window.route(
-      'https://api.github.com/repos/dgooderi/GitScope/releases/latest',
+      'https://api.github.com/repos/dgooderi/Mergentra/releases/latest',
       async (route) => {
         releaseChecks += 1;
         await route.fulfill({
@@ -68,7 +68,7 @@ test('a manual update check links to a newer GitHub release without downloading 
           contentType: 'application/json',
           body: JSON.stringify({
             tag_name: 'v1.0.0',
-            html_url: 'https://github.com/dgooderi/GitScope/releases/tag/v1.0.0',
+            html_url: 'https://github.com/dgooderi/Mergentra/releases/tag/v1.0.0',
             draft: false,
             prerelease: false
           })
@@ -80,13 +80,13 @@ test('a manual update check links to a newer GitHub release without downloading 
     expect(releaseChecks).toBe(0);
     await window.getByRole('button', { name: 'Settings' }).click();
     await window.getByRole('button', { name: 'Check for updates' }).click();
-    await expect(window.locator('#update-status')).toContainText('GitScope 1.0.0 is available.');
+    await expect(window.locator('#update-status')).toContainText('Mergentra 1.0.0 is available.');
     const releaseLink = window.getByRole('link', {
-      name: 'View GitScope 1.0.0 on GitHub Releases'
+      name: 'View Mergentra 1.0.0 on GitHub Releases'
     });
     await expect(releaseLink).toHaveAttribute(
       'href',
-      'https://github.com/dgooderi/GitScope/releases/tag/v1.0.0'
+      'https://github.com/dgooderi/Mergentra/releases/tag/v1.0.0'
     );
     await expect(releaseLink).toHaveAttribute('target', '_blank');
     await expect(window.getByRole('button', { name: 'Check for updates' })).toBeEnabled();
@@ -101,21 +101,21 @@ test('a manual update check links to a newer GitHub release without downloading 
 });
 
 test('a manual update check reports when the installed version is current', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-update-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-update-e2e-'));
   let app;
 
   try {
-    app = await launchGitScope(path.join(testDirectory, 'user-data'));
+    app = await launchMergentra(path.join(testDirectory, 'user-data'));
     const window = await app.firstWindow();
     await window.route(
-      'https://api.github.com/repos/dgooderi/GitScope/releases/latest',
+      'https://api.github.com/repos/dgooderi/Mergentra/releases/latest',
       async (route) => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
           body: JSON.stringify({
             tag_name: 'v0.9.0',
-            html_url: 'https://github.com/dgooderi/GitScope/releases/tag/v0.9.0',
+            html_url: 'https://github.com/dgooderi/Mergentra/releases/tag/v0.9.0',
             draft: false,
             prerelease: false
           })
@@ -124,7 +124,9 @@ test('a manual update check reports when the installed version is current', asyn
     );
     await window.getByRole('button', { name: 'Settings' }).click();
     await window.getByRole('button', { name: 'Check for updates' }).click();
-    await expect(window.locator('#update-status')).toContainText('GitScope is up to date (0.9.0).');
+    await expect(window.locator('#update-status')).toContainText(
+      'Mergentra is up to date (0.9.0).'
+    );
     await expect(window.locator('#update-release-link')).toBeHidden();
   } finally {
     if (app) {
@@ -135,14 +137,14 @@ test('a manual update check reports when the installed version is current', asyn
 });
 
 test('a failed update check explains the failure and can be retried', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-update-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-update-e2e-'));
   let app;
 
   try {
-    app = await launchGitScope(path.join(testDirectory, 'user-data'));
+    app = await launchMergentra(path.join(testDirectory, 'user-data'));
     const window = await app.firstWindow();
     await window.route(
-      'https://api.github.com/repos/dgooderi/GitScope/releases/latest',
+      'https://api.github.com/repos/dgooderi/Mergentra/releases/latest',
       async (route) => {
         await route.fulfill({ status: 503, body: 'Unavailable' });
       }
@@ -162,7 +164,7 @@ test('a failed update check explains the failure and can be retried', async () =
 });
 
 test('a developer can configure Git when it is not on PATH', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
   const repositoryPath = path.join(testDirectory, 'sample-repository');
   const userDataPath = path.join(testDirectory, 'user-data');
   fs.mkdirSync(repositoryPath);
@@ -173,8 +175,8 @@ test('a developer can configure Git when it is not on PATH', async () => {
       stdio: 'ignore'
     });
   runGit(['-c', 'init.defaultBranch=main', 'init']);
-  runGit(['config', 'user.name', 'Gitscope E2e']);
-  runGit(['config', 'user.email', 'gitscope-e2e@example.invalid']);
+  runGit(['config', 'user.name', 'Mergentra E2e']);
+  runGit(['config', 'user.email', 'mergentra-e2e@example.invalid']);
   fs.writeFileSync(path.join(repositoryPath, 'README.txt'), 'Test repository');
   runGit(['add', 'README.txt']);
   runGit(['commit', '-m', 'Initial commit']);
@@ -188,14 +190,14 @@ test('a developer can configure Git when it is not on PATH', async () => {
     args: [path.resolve(__dirname, '..')],
     env: {
       ...process.env,
-      GITSCOPE_USER_DATA_DIR: userDataPath,
+      MERGENTRA_USER_DATA_DIR: userDataPath,
       PATH: `${path.join(systemRoot, 'System32')};${systemRoot}`
     }
   };
   let app;
 
   try {
-    app = await launchGitScope(launchOptions);
+    app = await launchMergentra(launchOptions);
     let window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
@@ -207,7 +209,7 @@ test('a developer can configure Git when it is not on PATH', async () => {
     await expect(window.getByText('Git path saved.')).toBeVisible();
     await app.close();
 
-    app = await launchGitScope(launchOptions);
+    app = await launchMergentra(launchOptions);
     window = await app.firstWindow();
     await window.getByRole('button', { name: 'Settings' }).click();
     await expect(window.getByLabel('Git executable path')).toHaveValue(gitPath);
@@ -222,8 +224,8 @@ test('a developer can configure Git when it is not on PATH', async () => {
   }
 });
 
-test('a recently opened repository can be reopened after restarting GitScope', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-e2e-'));
+test('a recently opened repository can be reopened after restarting Mergentra', async () => {
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
   const repositoryPath = path.join(testDirectory, 'sample-repository');
   const userDataPath = path.join(testDirectory, 'user-data');
   fs.mkdirSync(repositoryPath);
@@ -234,20 +236,20 @@ test('a recently opened repository can be reopened after restarting GitScope', a
       stdio: 'ignore'
     });
   runGit(['-c', 'init.defaultBranch=main', 'init']);
-  runGit(['config', 'user.name', 'Gitscope E2e']);
-  runGit(['config', 'user.email', 'gitscope-e2e@example.invalid']);
+  runGit(['config', 'user.name', 'Mergentra E2e']);
+  runGit(['config', 'user.email', 'mergentra-e2e@example.invalid']);
   fs.writeFileSync(path.join(repositoryPath, 'README.txt'), 'Test repository');
   runGit(['add', 'README.txt']);
   runGit(['commit', '-m', 'Initial commit']);
 
   const launchOptions = {
     args: [path.resolve(__dirname, '..')],
-    env: { ...process.env, GITSCOPE_USER_DATA_DIR: userDataPath }
+    env: { ...process.env, MERGENTRA_USER_DATA_DIR: userDataPath }
   };
   let app;
 
   try {
-    app = await launchGitScope(launchOptions);
+    app = await launchMergentra(launchOptions);
     let window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
@@ -255,7 +257,7 @@ test('a recently opened repository can be reopened after restarting GitScope', a
     await window.getByLabel('Repository note').fill('Project X');
     await app.close();
 
-    app = await launchGitScope(launchOptions);
+    app = await launchMergentra(launchOptions);
     window = await app.firstWindow();
     const recent = window.locator('.recent-repository');
     await expect(recent).toContainText('sample-repository');
@@ -276,11 +278,11 @@ test('a recently opened repository can be reopened after restarting GitScope', a
 });
 
 test('dark mode is the default and light mode can be selected', async () => {
-  const userDataPath = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-e2e-'));
+  const userDataPath = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
   let app;
 
   try {
-    app = await launchGitScope(userDataPath);
+    app = await launchMergentra(userDataPath);
     const window = await app.firstWindow();
     const root = window.locator('html');
     await expect(root).not.toHaveAttribute('data-theme', 'light');

@@ -3,7 +3,7 @@ const {
   execFileSync,
   expect,
   fs,
-  launchGitScope,
+  launchMergentra,
   os,
   path,
   pathToFileURL,
@@ -11,7 +11,7 @@ const {
 } = require('./e2e-helpers.cjs');
 
 test('remote-tracking references refresh only after explicit Fetch', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
   const remotePath = path.join(testDirectory, 'origin.git');
   const producerPath = path.join(testDirectory, 'producer');
   const repositoryPath = path.join(testDirectory, 'sample-repository');
@@ -29,8 +29,8 @@ test('remote-tracking references refresh only after explicit Fetch', async () =>
   try {
     runGit(testDirectory, ['init', '--bare', '--initial-branch=main', remotePath]);
     runGit(producerPath, ['init', '--initial-branch=main']);
-    runGit(producerPath, ['config', 'user.name', 'Gitscope E2e']);
-    runGit(producerPath, ['config', 'user.email', 'gitscope-e2e@example.invalid']);
+    runGit(producerPath, ['config', 'user.name', 'Mergentra E2e']);
+    runGit(producerPath, ['config', 'user.email', 'mergentra-e2e@example.invalid']);
     fs.writeFileSync(path.join(producerPath, 'README.txt'), 'Initial remote commit');
     runGit(producerPath, ['add', 'README.txt']);
     runGit(producerPath, ['commit', '-m', 'Initial remote commit']);
@@ -45,7 +45,7 @@ test('remote-tracking references refresh only after explicit Fetch', async () =>
     runGit(producerPath, ['push', 'origin', 'main']);
     const updatedRemoteTip = runGit(producerPath, ['rev-parse', 'HEAD']);
 
-    app = await launchGitScope(userDataPath);
+    app = await launchMergentra(userDataPath);
     const window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
@@ -80,7 +80,7 @@ test('remote-tracking references refresh only after explicit Fetch', async () =>
 });
 
 test('failed explicit fetch keeps the graph and exposes copyable diagnostics', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
   const remotePath = path.join(testDirectory, 'origin.git');
   const producerPath = path.join(testDirectory, 'producer');
   const repositoryPath = path.join(testDirectory, 'sample-repository');
@@ -99,8 +99,8 @@ test('failed explicit fetch keeps the graph and exposes copyable diagnostics', a
   try {
     runGit(testDirectory, ['init', '--bare', '--initial-branch=main', remotePath]);
     runGit(producerPath, ['init', '--initial-branch=main']);
-    runGit(producerPath, ['config', 'user.name', 'Gitscope E2e']);
-    runGit(producerPath, ['config', 'user.email', 'gitscope-e2e@example.invalid']);
+    runGit(producerPath, ['config', 'user.name', 'Mergentra E2e']);
+    runGit(producerPath, ['config', 'user.email', 'mergentra-e2e@example.invalid']);
     fs.writeFileSync(path.join(producerPath, 'README.txt'), 'Initial commit');
     runGit(producerPath, ['add', 'README.txt']);
     runGit(producerPath, ['commit', '-m', 'Initial commit']);
@@ -110,7 +110,7 @@ test('failed explicit fetch keeps the graph and exposes copyable diagnostics', a
     runGit(repositoryPath, ['remote', 'set-url', 'origin', missingRemotePath]);
     const originalRemoteTip = runGit(repositoryPath, ['rev-parse', 'refs/remotes/origin/main']);
 
-    app = await launchGitScope(userDataPath);
+    app = await launchMergentra(userDataPath);
     const window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
@@ -136,7 +136,7 @@ test('failed explicit fetch keeps the graph and exposes copyable diagnostics', a
 });
 
 test('fetch is blocked when repository configuration would run a program', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
   const repositoryPath = path.join(testDirectory, 'untrusted-repository');
   const markerPath = path.join(testDirectory, 'program-ran.txt');
   const userDataPath = path.join(testDirectory, 'user-data');
@@ -151,8 +151,8 @@ test('fetch is blocked when repository configuration would run a program', async
 
   try {
     runGit(testDirectory, ['init', '--initial-branch=main', repositoryPath]);
-    runGit(repositoryPath, ['config', 'user.name', 'Gitscope E2e']);
-    runGit(repositoryPath, ['config', 'user.email', 'gitscope-e2e@example.invalid']);
+    runGit(repositoryPath, ['config', 'user.name', 'Mergentra E2e']);
+    runGit(repositoryPath, ['config', 'user.email', 'mergentra-e2e@example.invalid']);
     fs.writeFileSync(path.join(repositoryPath, 'README.txt'), 'Initial commit');
     runGit(repositoryPath, ['add', 'README.txt']);
     runGit(repositoryPath, ['commit', '-m', 'Initial commit']);
@@ -163,7 +163,7 @@ test('fetch is blocked when repository configuration would run a program', async
       `echo ran > "${markerPath.replaceAll('\\', '/')}"`
     ]);
 
-    app = await launchGitScope(userDataPath);
+    app = await launchMergentra(userDataPath);
     const window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
@@ -192,7 +192,7 @@ test('fetch is blocked when repository configuration would run a program', async
 });
 
 test('detached HEAD is marked at its commit without inventing a branch', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
   const repositoryPath = path.join(testDirectory, 'detached-repository');
   const userDataPath = path.join(testDirectory, 'user-data');
   fs.mkdirSync(repositoryPath);
@@ -207,15 +207,15 @@ test('detached HEAD is marked at its commit without inventing a branch', async (
 
   try {
     runGit(['-c', 'init.defaultBranch=main', 'init']);
-    runGit(['config', 'user.name', 'Gitscope E2e']);
-    runGit(['config', 'user.email', 'gitscope-e2e@example.invalid']);
+    runGit(['config', 'user.name', 'Mergentra E2e']);
+    runGit(['config', 'user.email', 'mergentra-e2e@example.invalid']);
     fs.writeFileSync(path.join(repositoryPath, 'README.txt'), 'Detached commit');
     runGit(['add', 'README.txt']);
     runGit(['commit', '-m', 'Detached commit']);
     const head = runGit(['rev-parse', 'HEAD']);
     runGit(['checkout', '--detach', head]);
 
-    app = await launchGitScope(userDataPath);
+    app = await launchMergentra(userDataPath);
     const window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
@@ -237,7 +237,7 @@ test('detached HEAD is marked at its commit without inventing a branch', async (
 });
 
 test('an unborn branch shows its name and an empty graph', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
   const repositoryPath = path.join(testDirectory, 'unborn-repository');
   const userDataPath = path.join(testDirectory, 'user-data');
   fs.mkdirSync(repositoryPath);
@@ -248,7 +248,7 @@ test('an unborn branch shows its name and an empty graph', async () => {
       cwd: repositoryPath,
       stdio: 'ignore'
     });
-    app = await launchGitScope(userDataPath);
+    app = await launchMergentra(userDataPath);
     const window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
@@ -267,7 +267,7 @@ test('an unborn branch shows its name and an empty graph', async () => {
 });
 
 test('branches identify the worktree where they are checked out', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
   const repositoryPath = path.join(testDirectory, 'main-repository');
   const linkedWorktreePath = path.join(testDirectory, 'feature-worktree');
   const userDataPath = path.join(testDirectory, 'user-data');
@@ -283,14 +283,14 @@ test('branches identify the worktree where they are checked out', async () => {
 
   try {
     runGit(['-c', 'init.defaultBranch=main', 'init']);
-    runGit(['config', 'user.name', 'Gitscope E2e']);
-    runGit(['config', 'user.email', 'gitscope-e2e@example.invalid']);
+    runGit(['config', 'user.name', 'Mergentra E2e']);
+    runGit(['config', 'user.email', 'mergentra-e2e@example.invalid']);
     fs.writeFileSync(path.join(repositoryPath, 'README.txt'), 'Main worktree');
     runGit(['add', 'README.txt']);
     runGit(['commit', '-m', 'Main worktree']);
     runGit(['worktree', 'add', '-b', 'feature', linkedWorktreePath]);
 
-    app = await launchGitScope(userDataPath);
+    app = await launchMergentra(userDataPath);
     const window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
@@ -328,7 +328,7 @@ test('branches identify the worktree where they are checked out', async () => {
 });
 
 test('shallow clones mark the visible history boundary', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
   const sourcePath = path.join(testDirectory, 'source-repository');
   const remotePath = path.join(testDirectory, 'remote.git');
   const repositoryPath = path.join(testDirectory, 'shallow-repository');
@@ -345,8 +345,8 @@ test('shallow clones mark the visible history boundary', async () => {
 
   try {
     runGit(['-c', 'init.defaultBranch=main', 'init'], sourcePath);
-    runGit(['config', 'user.name', 'Gitscope E2e'], sourcePath);
-    runGit(['config', 'user.email', 'gitscope-e2e@example.invalid'], sourcePath);
+    runGit(['config', 'user.name', 'Mergentra E2e'], sourcePath);
+    runGit(['config', 'user.email', 'mergentra-e2e@example.invalid'], sourcePath);
     for (const [index, message] of ['First commit', 'Second commit', 'Latest commit'].entries()) {
       fs.writeFileSync(path.join(sourcePath, 'history.txt'), `${index + 1}\n`);
       runGit(['add', 'history.txt'], sourcePath);
@@ -356,7 +356,7 @@ test('shallow clones mark the visible history boundary', async () => {
     runGit(['clone', '--depth=1', pathToFileURL(remotePath).href, repositoryPath], testDirectory);
     const shallowHead = runGit(['rev-parse', 'HEAD'], repositoryPath);
 
-    app = await launchGitScope(userDataPath);
+    app = await launchMergentra(userDataPath);
     const window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
@@ -377,7 +377,7 @@ test('shallow clones mark the visible history boundary', async () => {
 });
 
 test('partial clones mark missing-object boundaries without fetching', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
   const sourcePath = path.join(testDirectory, 'source-repository');
   const remotePath = path.join(testDirectory, 'remote.git');
   const repositoryPath = path.join(testDirectory, 'partial-repository');
@@ -395,8 +395,8 @@ test('partial clones mark missing-object boundaries without fetching', async () 
 
   try {
     runGit(['-c', 'init.defaultBranch=main', 'init'], sourcePath);
-    runGit(['config', 'user.name', 'Gitscope E2e'], sourcePath);
-    runGit(['config', 'user.email', 'gitscope-e2e@example.invalid'], sourcePath);
+    runGit(['config', 'user.name', 'Mergentra E2e'], sourcePath);
+    runGit(['config', 'user.email', 'mergentra-e2e@example.invalid'], sourcePath);
     fs.writeFileSync(path.join(sourcePath, 'content.txt'), 'Partial clone content');
     runGit(['add', 'content.txt'], sourcePath);
     runGit(['commit', '-m', 'Partial clone commit'], sourcePath);
@@ -423,7 +423,7 @@ test('partial clones mark missing-object boundaries without fetching', async () 
     );
     fs.rmSync(remotePath, { recursive: true, force: true });
 
-    app = await launchGitScope(userDataPath);
+    app = await launchMergentra(userDataPath);
     const window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();

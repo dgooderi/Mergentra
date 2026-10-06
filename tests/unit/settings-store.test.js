@@ -8,7 +8,7 @@ const { createSettingsStore } = settingsStoreModule;
 let temporaryDirectory;
 
 beforeEach(() => {
-  temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-settings-test-'));
+  temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-settings-test-'));
 });
 
 afterEach(() => {
@@ -44,7 +44,7 @@ describe('settings store', () => {
 
     expect(() => store.load()).toThrow(
       expect.objectContaining({
-        message: expect.stringContaining('GitScope settings are not valid JSON:'),
+        message: expect.stringContaining('Mergentra settings are not valid JSON:'),
         cause: expect.any(SyntaxError)
       })
     );
@@ -58,7 +58,7 @@ describe('settings store', () => {
     const store = createSettingsStore(temporaryDirectory);
 
     expect(() => store.load()).toThrow(
-      'GitScope settings have an unsupported format. Move settings.json out of the user data folder and restart GitScope.'
+      'Mergentra settings have an unsupported format. Move settings.json out of the user data folder and restart Mergentra.'
     );
   });
 
@@ -73,7 +73,7 @@ describe('settings store', () => {
 
     expect(() => store.load()).toThrow(
       expect.objectContaining({
-        message: 'GitScope settings could not be read: access denied',
+        message: 'Mergentra settings could not be read: access denied',
         cause: failure
       })
     );

@@ -1,7 +1,7 @@
-const { execFileSync, expect, fs, launchGitScope, os, path, test } = require('./e2e-helpers.cjs');
+const { execFileSync, expect, fs, launchMergentra, os, path, test } = require('./e2e-helpers.cjs');
 
 test('the complex branch scenario shows its merge history and fetchable bare remote', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-sample-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-sample-e2e-'));
   const repositoryPath = path.resolve(__dirname, '..', 'samples', 'complex-branch-scenario');
   const bareRemotePath = path.resolve(repositoryPath, '..', 'complex-branch-scenario-origin.git');
   let app;
@@ -9,7 +9,7 @@ test('the complex branch scenario shows its merge history and fetchable bare rem
   let remoteOnlyTip;
 
   try {
-    app = await launchGitScope(path.join(testDirectory, 'user-data'));
+    app = await launchMergentra(path.join(testDirectory, 'user-data'));
     const window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
@@ -63,7 +63,7 @@ test('the complex branch scenario shows its merge history and fetchable bare rem
 });
 
 test('the checked-out branch is highlighted in the reference list and at its graph tip', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-head-branch-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-head-branch-e2e-'));
   const repositoryPath = path.resolve(__dirname, '..', 'samples', 'complex-branch-scenario');
   let app;
 
@@ -76,7 +76,7 @@ test('the checked-out branch is highlighted in the reference list and at its gra
       cwd: repositoryPath,
       encoding: 'utf8'
     }).trim();
-    app = await launchGitScope(path.join(testDirectory, 'user-data'));
+    app = await launchMergentra(path.join(testDirectory, 'user-data'));
     const window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
@@ -103,7 +103,7 @@ test('the checked-out branch is highlighted in the reference list and at its gra
 });
 
 test('the complex scenario shows both merge directions and recent history', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'gitscope-scenario-history-e2e-'));
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-scenario-history-e2e-'));
   const repositoryPath = path.resolve(__dirname, '..', 'samples', 'complex-branch-scenario');
   let app;
 
@@ -114,7 +114,7 @@ test('the complex scenario shows both merge directions and recent history', asyn
         encoding: 'utf8'
       }).trim()
     );
-    app = await launchGitScope(path.join(testDirectory, 'user-data'));
+    app = await launchMergentra(path.join(testDirectory, 'user-data'));
     const window = await app.firstWindow();
     await window.clock.install({ time: latestSampleCommitDate });
     await window.getByLabel('Repository folder').fill(repositoryPath);

@@ -1,6 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeInMainWorld('gitScope', {
+contextBridge.exposeInMainWorld('mergentra', {
   chooseRepository: () => ipcRenderer.invoke('repository:choose'),
   getAppVersion: () => ipcRenderer.invoke('app:version'),
   openRelease: (releaseUrl) => ipcRenderer.invoke('external:open-release', releaseUrl),

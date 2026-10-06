@@ -14,11 +14,11 @@ function createSettingsStore(userDataPath, fileSystem = fs) {
         return { gitPath: '', recentRepositories: [] };
       }
       if (error instanceof SyntaxError) {
-        throw new Error(`GitScope settings are not valid JSON: ${error.message}`, {
+        throw new Error(`Mergentra settings are not valid JSON: ${error.message}`, {
           cause: error
         });
       }
-      throw new Error(`GitScope settings could not be read: ${error.message}`, { cause: error });
+      throw new Error(`Mergentra settings could not be read: ${error.message}`, { cause: error });
     }
 
     if (
@@ -35,7 +35,7 @@ function createSettingsStore(userDataPath, fileSystem = fs) {
       )
     ) {
       throw new Error(
-        'GitScope settings have an unsupported format. Move settings.json out of the user data folder and restart GitScope.'
+        'Mergentra settings have an unsupported format. Move settings.json out of the user data folder and restart Mergentra.'
       );
     }
 

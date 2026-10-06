@@ -1,6 +1,6 @@
-# GitScope
+# Mergentra
 
-GitScope helps individual developers understand the relationships among references and commits in a local Git repository.
+Mergentra helps individual developers understand the relationships among references and commits in a local Git repository.
 
 ## Git history
 
