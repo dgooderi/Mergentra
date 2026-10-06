@@ -50,6 +50,23 @@ describe('buildFilteredGraph', () => {
     expect(graph.laneCount).toBe(2);
   });
 
+  it('keeps a complete linear main history on the main lane', () => {
+    const linearCommits = [
+      commit('a3', ['a2'], 9, ['main']),
+      commit('a2', ['a1'], 8, ['feature']),
+      commit('a1', [], 7)
+    ];
+    const graph = buildFilteredGraph(
+      graphOf(linearCommits, [
+        { name: 'feature', hash: 'a2' },
+        { name: 'main', hash: 'a3' }
+      ]),
+      new Set(['feature', 'main']),
+      null
+    );
+    expect(graph.commits.map(({ lane }) => lane)).toEqual([1, 1, 1]);
+  });
+
   it('puts commits reached only through a merge second parent on a side lane', () => {
     const graph = buildFilteredGraph(graphOf(commits, references), new Set(['main']), null);
     const lane = Object.fromEntries(graph.commits.map((c) => [c.hash, c.lane]));
@@ -103,5 +120,11 @@ describe('computeAvailableReferences', () => {
   it('lists branches with a first-parent commit inside the range', () => {
     const names = computeAvailableReferences(graphOf(commits, references), range(8, 10));
     expect([...names]).toEqual(['a']);
+  });
+
+  it('recomputes available branches when the time range changes', () => {
+    const graph = graphOf(commits, references);
+    expect([...computeAvailableReferences(graph, range(8, 10))]).toEqual(['a']);
+    expect([...computeAvailableReferences(graph, range(1, 3))]).toEqual(['a', 'b']);
   });
 });
