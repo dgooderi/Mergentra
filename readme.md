@@ -27,6 +27,10 @@ GitScope runs your installed Git against the repository you open, so a repositor
 
 To report a security issue, please open a GitHub issue without exploit details, or contact the maintainer privately through their GitHub profile.
 
+## License
+
+GitScope is licensed under the [Reciprocal Public License 1.5 (RPL-1.5)](./LICENSE). This is a copyleft license: if you distribute GitScope or modifications of it, you must make your source available under the same terms. Read the license for the full conditions. A separate commercial license may be offered in the future for uses that the RPL does not suit.
+
 ## Development
 
 Requirements: Node.js, npm, and Git for Windows.
