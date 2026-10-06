@@ -1,10 +1,35 @@
 # GitScope
 
-GitScope is a Windows-first Electron app for opening one local Git repository at a time.
+GitScope is a Windows-first Electron app for exploring the history of one local Git repository at a time as a branch graph. It is read-only: it never commits, checks out, merges, or edits your repository. The only command that changes repository data is the explicit **Fetch** button, which updates remote-tracking references.
+
+## Status
+
+GitScope is **pre-1.0 (version 0.9.0)** and is being made public. Expect rough edges and changes between releases.
+
+- **Platform:** Windows is the supported and tested platform. The app is built with Electron, so other platforms may run it, but they are untested and no installers are produced for them.
+- **Installer:** the Windows installer is currently **unsigned**, so Windows SmartScreen may warn when you run it. Authenticode signing is planned before a stable release.
+- **Updates:** there is no automatic updating. Use **Check for updates** to find new releases on GitHub.
+- **Scale:** tested with a repository of 50,000 commits and 100 local branches.
+- **Tested with:** Git for Windows 2.55.
+
+## Requirements
+
+You do not need Node.js to run GitScope; Electron bundles its own runtime. You do need [Git for Windows](https://gitforwindows.org/) installed. GitScope uses your installed Git and does not bundle it. If Git is not on `PATH`, enter the full path to `git.exe` in the app.
+
+## Security and trust
+
+GitScope runs your installed Git against the repository you open, so a repository you do not trust deserves care.
+
+- **Fetch is guarded.** Git can run programs named in a repository's own configuration. Before fetching, GitScope checks for such settings (see the Fetch description below) and shows a warning. Fetching proceeds only if you choose **Fetch anyway**.
+- **Opening is hardened.** Opening a repository reads history only and never fetches. It disables signature verification so a repository cannot make `git log` launch its configured `gpg.program`.
+- **Not covered:** Git hooks and your own global Git configuration and environment (such as `GIT_SSH_COMMAND`) are trusted and not checked. Only fetch from repositories you trust.
+- **App hardening:** the renderer is sandboxed from Node.js and Git, and only a small set of IPC calls is exposed. Update checks only contact GitHub when you select **Check for updates**.
+
+To report a security issue, please open a GitHub issue without exploit details, or contact the maintainer privately through their GitHub profile.
 
 ## Development
 
-Requirements: Node.js, npm, and Git for Windows. GitScope uses the installed Git executable; it does not bundle or install Git.
+Requirements: Node.js, npm, and Git for Windows.
 
 ```powershell
 npm install
@@ -63,7 +88,7 @@ Build the per-user Windows installer with:
 npm run build:win
 ```
 
-The NSIS installer is written to `dist/GitScope-<version>-Setup.exe`. It installs for the current user without requesting elevation. This development installer is unsigned; Authenticode signing remains required before any public release.
+The NSIS installer is written to `dist/GitScope-<version>-Setup.exe`. It installs for the current user without requesting elevation. The installer is unsigned until Authenticode signing is set up (see Status).
 
 The dense-history scale test can be run on its own with:
 
