@@ -4,6 +4,14 @@
   "description": "A Windows-first desktop app for exploring local Git history.",
   "author": "Mergentra contributors",
   "license": "RPL-1.5",
+  "homepage": "https://github.com/dgooderi/Mergentra#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dgooderi/Mergentra.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dgooderi/Mergentra/issues"
+  },
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
