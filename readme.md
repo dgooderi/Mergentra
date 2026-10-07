@@ -31,6 +31,10 @@ To report a security issue, please open a GitHub issue without exploit details, 
 
 Mergentra is licensed under the [Reciprocal Public License 1.5 (RPL-1.5)](./LICENSE). This is a copyleft license: if you distribute Mergentra or modifications of it, you must make your source available under the same terms. Read the license for the full conditions. A separate commercial license may be offered in the future for uses that the RPL does not suit.
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Pull requests need a signed [CLA](CLA.md). Report security issues as described in [SECURITY.md](SECURITY.md).
+
 ## Development
 
 Requirements: Node.js, npm, and Git for Windows.
