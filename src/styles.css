@@ -1143,3 +1143,38 @@ main:not(:has(#repository-view:not([hidden]))) #open-explorer {
   fill-opacity: 0.18;
   pointer-events: none;
 }
+
+.markdown-note {
+  display: grid;
+  gap: 6px;
+}
+
+.markdown-note .note-view-toggle {
+  justify-self: start;
+  padding: 2px 10px;
+  font-size: 0.8rem;
+}
+
+.note-preview {
+  padding: 6px 10px;
+  border: 1px solid var(--border, #d1d5db);
+  border-radius: 6px;
+  overflow-wrap: anywhere;
+}
+
+.note-preview p,
+#selected-commit-branch-notes li div p {
+  margin: 0 0 6px;
+}
+
+.note-preview ul,
+.note-preview ol,
+#selected-commit-branch-notes li div ul,
+#selected-commit-branch-notes li div ol {
+  margin: 0 0 6px;
+  padding-left: 22px;
+}
+
+#selected-commit-branch-notes li > span {
+  font-weight: 600;
+}

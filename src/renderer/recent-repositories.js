@@ -1,4 +1,5 @@
 import { viewStorage } from './app-storage.js';
+import { markdownToPlainText } from './markdown.js';
 
 export function renderRecentRepositories(repositories, { onSelect, onRemove }) {
   const select = document.getElementById('recent-repositories');
@@ -15,7 +16,9 @@ export function renderRecentRepositories(repositories, { onSelect, onRemove }) {
 
   for (const repository of repositories) {
     const option = document.createElement('option');
-    const repositoryNote = viewStorage.readRepositoryNote(repository.path);
+    const repositoryNote = markdownToPlainText(
+      viewStorage.readRepositoryNote(repository.path)
+    ).replaceAll('\n', ' ');
     option.value = repository.path;
     option.title = repository.path;
     option.textContent = repositoryNote
