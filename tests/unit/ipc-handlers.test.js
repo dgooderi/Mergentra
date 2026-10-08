@@ -158,6 +158,27 @@ describe('IPC handlers', () => {
     });
   });
 
+  it('removes one repository from the recent list and returns the remaining ones', async () => {
+    const { handlers, currentSettings } = makeIpcDependencies();
+    currentSettings.recentRepositories = [
+      { path: 'C:\\repos\\a', name: 'a' },
+      { path: 'C:\\repos\\b', name: 'b' }
+    ];
+
+    const remaining = await handlers.get('repository:forget-recent')(null, 'C:\\repos\\a');
+
+    expect(remaining).toEqual([{ path: 'C:\\repos\\b', name: 'b' }]);
+    expect(currentSettings.recentRepositories).toEqual(remaining);
+  });
+
+  it('rejects a recent repository removal that is not a path', async () => {
+    const { handlers } = makeIpcDependencies();
+
+    await expect(handlers.get('repository:forget-recent')(null, 42)).rejects.toThrow(
+      'Choose a repository to remove.'
+    );
+  });
+
   it('registers the existing preload channels', () => {
     const { handlers } = makeIpcDependencies();
 
@@ -170,6 +191,7 @@ describe('IPC handlers', () => {
       'diagnostics:copy',
       'repository:open-in-explorer',
       'repository:recent',
+      'repository:forget-recent',
       'settings:get-git-path',
       'settings:save-git-path',
       'settings:get-default-directory',

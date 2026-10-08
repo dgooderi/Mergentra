@@ -1,36 +1,40 @@
 import { viewStorage } from './app-storage.js';
 
-export function renderRecentRepositories(repositories, onOpen) {
-  const list = document.getElementById('recent-repositories');
-  list.replaceChildren();
+export function renderRecentRepositories(repositories, { onSelect, onRemove }) {
+  const select = document.getElementById('recent-repositories');
+  const removeButton = document.getElementById('recent-remove');
+  select.replaceChildren();
 
-  if (repositories.length === 0) {
-    const emptyState = document.createElement('li');
-    emptyState.className = 'empty-recent';
-    emptyState.textContent = 'Repositories you open will appear here.';
-    list.append(emptyState);
-    return;
-  }
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent =
+    repositories.length === 0
+      ? 'Repositories you open will appear here'
+      : 'Choose a recent repository…';
+  select.append(placeholder);
 
   for (const repository of repositories) {
-    const item = document.createElement('li');
-    const button = document.createElement('button');
-    const name = document.createElement('span');
+    const option = document.createElement('option');
     const repositoryNote = viewStorage.readRepositoryNote(repository.path);
-    button.className = 'recent-repository';
-    button.type = 'button';
-    name.textContent = repository.name;
-    button.title = repository.path;
-    button.append(name);
-    if (repositoryNote) {
-      const note = document.createElement('small');
-      note.textContent = repositoryNote;
-      button.append(note);
-    }
-    button.addEventListener('click', () => {
-      onOpen(repository.path, button);
-    });
-    item.append(button);
-    list.append(item);
+    option.value = repository.path;
+    option.title = repository.path;
+    option.textContent = repositoryNote
+      ? `${repository.name} — ${repositoryNote}`
+      : repository.name;
+    select.append(option);
   }
+
+  select.disabled = repositories.length === 0;
+  removeButton.disabled = true;
+  select.onchange = () => {
+    removeButton.disabled = select.value === '';
+    if (select.value !== '') {
+      onSelect(select.value);
+    }
+  };
+  removeButton.onclick = () => {
+    if (select.value !== '') {
+      onRemove(select.value);
+    }
+  };
 }

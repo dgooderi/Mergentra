@@ -55,6 +55,21 @@ describe('settings store', () => {
     });
   });
 
+  it('keeps only the 10 most recent repositories from settings saved by earlier versions', () => {
+    const recentRepositories = Array.from({ length: 15 }, (_, index) => ({
+      path: `C:\\repo${index}`,
+      name: `repo${index}`
+    }));
+    fs.writeFileSync(
+      path.join(temporaryDirectory, 'settings.json'),
+      JSON.stringify({ gitPath: '', recentRepositories })
+    );
+
+    const loaded = createSettingsStore(temporaryDirectory).load();
+
+    expect(loaded.recentRepositories).toEqual(recentRepositories.slice(0, 10));
+  });
+
   it('reports invalid JSON with the parsing error as its cause', () => {
     fs.writeFileSync(path.join(temporaryDirectory, 'settings.json'), '{invalid');
     const store = createSettingsStore(temporaryDirectory);

@@ -7,6 +7,7 @@ const { createSettingsStore } = require('./settings-store');
 const { registerIpcHandlers } = require('./ipc-handlers');
 const { createMainWindow } = require('./main-window');
 const { UnsafeRepositoryConfigError, assertRepositoryConfigSafe } = require('./git-config-safety');
+const { rememberRepository } = require('./recent-repositories');
 const { runGit, runGitWithInput } = createGitRunner();
 let settings;
 let settingsStore;
@@ -21,7 +22,6 @@ function saveSettings(nextSettings) {
   settings = nextSettings;
 }
 
-const MAX_RECENT_REPOSITORIES = 20;
 // Measured at roughly 2.6 KB of memory per commit across the main and renderer processes.
 const MEMORY_PER_COMMIT_BYTES = 2600;
 const LARGE_REPOSITORY_COMMITS = Number(process.env.MERGENTRA_LARGE_REPOSITORY_COMMITS) || 300_000;
@@ -149,15 +149,9 @@ async function openRepository(repositoryPath, { confirmLarge = false } = {}) {
 
 async function openAndRememberRepository(repositoryPath) {
   const repository = await openRepository(repositoryPath, { confirmLarge: true });
-  const normalizedPath =
-    process.platform === 'win32' ? repository.path.toLowerCase() : repository.path;
-  const recentRepositories = [
-    { path: repository.path, name: repository.name },
-    ...settings.recentRepositories.filter((recent) => {
-      const recentPath = process.platform === 'win32' ? recent.path.toLowerCase() : recent.path;
-      return recentPath !== normalizedPath;
-    })
-  ].slice(0, MAX_RECENT_REPOSITORIES);
+  const recentRepositories = rememberRepository(settings.recentRepositories, repository, {
+    caseInsensitive: process.platform === 'win32'
+  });
   saveSettings({ ...settings, recentRepositories });
   activeRepositoryPath = repository.path;
   return repository;

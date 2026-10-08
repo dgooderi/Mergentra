@@ -259,16 +259,25 @@ test('a recently opened repository can be reopened after restarting Mergentra', 
 
     app = await launchMergentra(launchOptions);
     window = await app.firstWindow();
-    const recent = window.locator('.recent-repository');
-    await expect(recent).toContainText('sample-repository');
-    await expect(recent).toContainText('Project X');
-    await expect(recent).not.toContainText(repositoryPath);
-    await expect(recent).toHaveAttribute('title', repositoryPath);
+    const recent = window.getByRole('combobox', { name: 'Recent repositories' });
+    const entry = recent.locator('option', { hasText: 'sample-repository' });
+    await expect(entry).toContainText('Project X');
+    await expect(entry).not.toContainText(repositoryPath);
+    await expect(entry).toHaveAttribute('title', repositoryPath);
     await expect(window.getByRole('button', { name: 'Open in Explorer' })).toBeHidden();
-    await expect(window.getByRole('button', { name: /sample-repository/ })).toBeVisible();
-    await window.getByRole('button', { name: /sample-repository/ }).click();
+
+    await recent.selectOption({ index: 1 });
+    await expect(window.getByLabel('Repository folder')).toHaveValue(repositoryPath);
+    await window.getByRole('button', { name: 'Open repository' }).click();
     await expect(window.getByRole('heading', { name: 'sample-repository' })).toBeVisible();
     await expect(window.locator('#branch-name')).toHaveText('main');
+
+    await window.getByRole('button', { name: 'Open another repository' }).click();
+    await recent.selectOption({ index: 1 });
+    await window.getByRole('button', { name: 'Remove from recent list' }).click();
+    await expect(recent.locator('option')).toHaveCount(1);
+    await expect(window.getByRole('button', { name: 'Remove from recent list' })).toBeDisabled();
+    expect(fs.existsSync(repositoryPath)).toBe(true);
   } finally {
     if (app) {
       await app.close();

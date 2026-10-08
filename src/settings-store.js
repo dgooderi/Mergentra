@@ -1,5 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const { MAX_RECENT_REPOSITORIES } = require('./recent-repositories');
 
 function createSettingsStore(userDataPath, fileSystem = fs) {
   const settingsPath = path.join(userDataPath, 'settings.json');
@@ -42,12 +43,12 @@ function createSettingsStore(userDataPath, fileSystem = fs) {
     // Earlier versions stored the whole commit graph here; keep only what the recent list shows.
     return {
       ...storedSettings,
-      recentRepositories: storedSettings.recentRepositories.map(
-        ({ path: repositoryPath, name }) => ({
+      recentRepositories: storedSettings.recentRepositories
+        .slice(0, MAX_RECENT_REPOSITORIES)
+        .map(({ path: repositoryPath, name }) => ({
           path: repositoryPath,
           name
-        })
-      )
+        }))
     };
   }
 
