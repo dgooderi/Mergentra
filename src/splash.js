@@ -24,7 +24,6 @@ function createSplash({ BrowserWindow, applicationDirectory, enabled }) {
 function revealWhenReady({ window, splash, minimumMilliseconds = 1200 }) {
   const startedAt = Date.now();
   window.once('ready-to-show', () => {
-    console.log('READY-TO-SHOW fired');
     const reveal = () => {
       window.show();
       if (splash && !splash.isDestroyed()) {
