@@ -1,6 +1,6 @@
 const path = require('node:path');
 const fs = require('node:fs');
-const { forgetRepository } = require('./recent-repositories');
+const { forgetRepository, renameRepository } = require('./recent-repositories');
 
 function isExistingDirectory(directory) {
   try {
@@ -130,6 +130,19 @@ function registerIpcHandlers({
     const recentRepositories = forgetRepository(getSettings().recentRepositories, repositoryPath, {
       caseInsensitive: process.platform === 'win32'
     });
+    saveSettings({ ...getSettings(), recentRepositories });
+    return recentRepositories;
+  });
+  ipcMain.handle('repository:rename-recent', async (_event, repositoryPath, displayName) => {
+    if (typeof repositoryPath !== 'string' || typeof displayName !== 'string') {
+      throw new Error('Choose a repository and enter a name.');
+    }
+    const recentRepositories = renameRepository(
+      getSettings().recentRepositories,
+      repositoryPath,
+      displayName,
+      { caseInsensitive: process.platform === 'win32' }
+    );
     saveSettings({ ...getSettings(), recentRepositories });
     return recentRepositories;
   });

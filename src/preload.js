@@ -17,6 +17,8 @@ contextBridge.exposeInMainWorld('mergentra', {
   copyDiagnostics: (diagnostics) => ipcRenderer.invoke('diagnostics:copy', diagnostics),
   openInExplorer: () => ipcRenderer.invoke('repository:open-in-explorer'),
   getRecentRepositories: () => ipcRenderer.invoke('repository:recent'),
+  renameRecentRepository: (repositoryPath, displayName) =>
+    ipcRenderer.invoke('repository:rename-recent', repositoryPath, displayName),
   forgetRecentRepository: (repositoryPath) =>
     ipcRenderer.invoke('repository:forget-recent', repositoryPath),
   getGitPath: () => ipcRenderer.invoke('settings:get-git-path'),

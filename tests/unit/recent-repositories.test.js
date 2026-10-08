@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import recentModule from '../../src/recent-repositories.js';
 
-const { MAX_RECENT_REPOSITORIES, rememberRepository, forgetRepository } = recentModule;
+const { MAX_RECENT_REPOSITORIES, rememberRepository, forgetRepository, renameRepository } =
+  recentModule;
 
 const repo = (name) => ({ path: `C:\\repos\\${name}`, name });
 
@@ -45,5 +46,35 @@ describe('recent repositories', () => {
     });
 
     expect(recent.map((entry) => entry.name)).toEqual(['a', 'c']);
+  });
+
+  describe('display names', () => {
+    const options = { caseInsensitive: true };
+
+    it('stores a custom name without changing the folder name or path', () => {
+      const [renamed] = renameRepository([repo('a')], 'c:\\REPOS\\a', '  Work project ', options);
+
+      expect(renamed).toEqual({ path: 'C:\\repos\\a', name: 'a', displayName: 'Work project' });
+    });
+
+    it('resets to the folder name when the new name is blank', () => {
+      const named = [{ ...repo('a'), displayName: 'Old' }];
+
+      expect(renameRepository(named, repo('a').path, '   ', options)[0]).toEqual(repo('a'));
+    });
+
+    it('limits a name to 80 characters', () => {
+      const [renamed] = renameRepository([repo('a')], repo('a').path, 'x'.repeat(200), options);
+
+      expect(renamed.displayName).toHaveLength(80);
+    });
+
+    it('keeps the custom name when the repository is opened again', () => {
+      const named = [{ ...repo('a'), displayName: 'Work project' }, repo('b')];
+
+      const recent = rememberRepository(named, repo('a'), options);
+
+      expect(recent[0].displayName).toBe('Work project');
+    });
   });
 });

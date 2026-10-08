@@ -195,6 +195,7 @@ describe('IPC handlers', () => {
       'repository:open-in-explorer',
       'repository:recent',
       'repository:forget-recent',
+      'repository:rename-recent',
       'settings:get-git-path',
       'settings:save-git-path',
       'settings:get-default-directory',

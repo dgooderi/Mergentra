@@ -276,6 +276,7 @@ test('a recently opened repository can be reopened after restarting Mergentra', 
 
     await window.getByRole('button', { name: 'Open another repository' }).click();
     await recent.selectOption({ index: 1 });
+    window.once('dialog', (dialog) => dialog.accept());
     await window.getByRole('button', { name: 'Remove from recent list' }).click();
     await expect(recent.locator('option')).toHaveCount(1);
     await expect(window.getByRole('button', { name: 'Remove from recent list' })).toBeDisabled();
