@@ -8,6 +8,7 @@ function createMainWindow({ BrowserWindow, Menu, applicationDirectory }) {
     minWidth: 720,
     minHeight: 520,
     backgroundColor: '#111827',
+    icon: path.join(applicationDirectory, '..', 'assets', 'icons', 'mergentra-256.png'),
     webPreferences: {
       preload: path.join(applicationDirectory, 'preload.js'),
       contextIsolation: true,
