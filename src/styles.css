@@ -1402,3 +1402,12 @@ main:not(:has(#repository-view:not([hidden]))) {
   fill: var(--muted, #6b7280);
   fill-opacity: 0.18;
 }
+
+.graph-scroll {
+  cursor: grab;
+}
+
+.graph-scroll.panning {
+  cursor: grabbing;
+  user-select: none;
+}

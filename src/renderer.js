@@ -33,6 +33,7 @@ import {
   openCompactedPopover,
   openGraphContextMenu
 } from './renderer/popovers.js';
+import { attachGraphPan } from './renderer/graph-pan.js';
 import { getPresetRange, isAxisSelectionAvailable } from './renderer/time-range.js';
 import { createReviewDock } from './renderer/review-dock.js';
 const reviewDock = createReviewDock({ updateTimeNavigation });
@@ -204,6 +205,7 @@ document.getElementById('commit-graph').addEventListener('click', (event) => {
   }
 });
 document.querySelector('.graph-scroll').addEventListener('scroll', closeCompactedPopover);
+attachGraphPan(document.querySelector('.graph-scroll'));
 document.addEventListener('click', (event) => {
   if (
     !event.target.closest(
