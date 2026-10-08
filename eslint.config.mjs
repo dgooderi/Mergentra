@@ -23,6 +23,7 @@ export default [
       'src/main-line.js',
       'src/clone.js',
       'src/splash.js',
+      'src/app-state.js',
       'tests/**/*.cjs',
       'scripts/**/*.cjs',
       'playwright.config.*'

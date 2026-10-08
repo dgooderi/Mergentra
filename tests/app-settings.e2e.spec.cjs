@@ -103,6 +103,7 @@ test('a manual update check links to a newer GitHub release without downloading 
 });
 
 test('a manual update check reports when the installed version is current', async () => {
+  const { version } = require('../package.json');
   const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-update-e2e-'));
   let app;
 
@@ -116,8 +117,8 @@ test('a manual update check reports when the installed version is current', asyn
           status: 200,
           contentType: 'application/json',
           body: JSON.stringify({
-            tag_name: 'v0.9.0',
-            html_url: 'https://github.com/dgooderi/Mergentra/releases/tag/v0.9.0',
+            tag_name: `v${version}`,
+            html_url: `https://github.com/dgooderi/Mergentra/releases/tag/v${version}`,
             draft: false,
             prerelease: false
           })
@@ -127,7 +128,7 @@ test('a manual update check reports when the installed version is current', asyn
     await window.getByRole('button', { name: 'Settings' }).click();
     await window.getByRole('button', { name: 'Check for updates' }).click();
     await expect(window.locator('#update-status')).toContainText(
-      'Mergentra is up to date (0.9.0).'
+      `Mergentra is up to date (${version}).`
     );
     await expect(window.locator('#update-release-link')).toBeHidden();
   } finally {

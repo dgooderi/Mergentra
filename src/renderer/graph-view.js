@@ -374,15 +374,155 @@ function drawSummaryPill(commit, position, summaryLayer, ctx, actions) {
   summaryLayer.append(summary);
 }
 
+function commitContextMenuItems(commit, ctx, actions) {
+  const { commitPositions, commitByHash, mergeTargetsBySource, ownerReference } = ctx;
+  const items = [];
+  for (const target of mergeTargetsBySource.get(commit.hash) || []) {
+    items.push({
+      label: `Focus on destination (${target.hash.slice(0, 7)})`,
+      action: () => actions.focusOnCommit(target, commitPositions.get(target.hash))
+    });
+  }
+  for (const parentHash of commit.parents.slice(1)) {
+    const source = commitPositions.get(parentHash) && commitByHash.get(parentHash);
+    if (source) {
+      items.push({
+        label: `Focus on merged branch (${parentHash.slice(0, 7)})`,
+        action: () => actions.focusOnCommit(source, commitPositions.get(parentHash))
+      });
+    }
+  }
+  const owner = ownerReference(commit.lane);
+  if (owner) {
+    items.push(
+      {
+        label: 'Show branches from main to here',
+        action: () => actions.showBranchPath(owner.name, true)
+      },
+      {
+        label: 'Show this branch and its parent',
+        action: () => actions.showBranchPath(owner.name, false)
+      }
+    );
+  }
+  return items;
+}
+
+function attachNodeHandlers(group, commit, ctx, actions) {
+  group.addEventListener('contextmenu', (event) => {
+    const items = commitContextMenuItems(commit, ctx, actions);
+    if (items.length) actions.openGraphContextMenu(event, items);
+  });
+  group.addEventListener('click', () =>
+    actions.selectCommit(actions.getSelectedCommit()?.hash === commit.hash ? null : commit)
+  );
+  group.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      actions.selectCommit(commit);
+    }
+  });
+}
+
+function createNodeShape(commit, color) {
+  if (commit.parents.length > 1) {
+    return createSvgElement('polygon', {
+      points: '0,-11 11,0 0,11 -11,0',
+      fill: color,
+      stroke: '#111827',
+      'stroke-width': 2,
+      'data-testid': 'merge-node-shape',
+      'data-shape': 'diamond'
+    });
+  }
+  return createSvgElement('circle', { r: 8, fill: color, stroke: '#111827', 'stroke-width': 2 });
+}
+
+function createNodeBody(commit, color) {
+  const title = createSvgElement('title');
+  title.textContent = `${commit.subject} (${commit.hash.slice(0, 7)})${commit.tags.length > 0 ? ` — tags: ${commit.tags.join(', ')}` : ''}`;
+  const hitTarget = createSvgElement('rect', {
+    x: -42,
+    y: -20,
+    width: 84,
+    height: 40,
+    fill: 'transparent',
+    'pointer-events': 'all',
+    'aria-hidden': 'true'
+  });
+  const selectionRing = createSvgElement('circle', {
+    r: 17,
+    class: 'selection-ring',
+    'data-testid': 'selection-ring',
+    fill: 'none',
+    'aria-hidden': 'true'
+  });
+  const label = createSvgElement('text', {
+    x: 0,
+    y: 23,
+    'text-anchor': 'middle',
+    class: 'hash-label'
+  });
+  label.textContent = commit.hash.slice(0, 7);
+  const noteMarker = createSvgElement('text', {
+    x: -16,
+    y: -9,
+    class: 'note-marker',
+    'data-testid': 'note-marker',
+    'text-anchor': 'middle',
+    'aria-hidden': 'true'
+  });
+  noteMarker.textContent = '✎';
+  return [title, hitTarget, selectionRing, createNodeShape(commit, color), label, noteMarker];
+}
+
+function appendBranchLabels(group, commit, color, hasCutMarker) {
+  const { shortNames, hasPairedRemote } = branchLabelNames(commit);
+  for (const [nameIndex, name] of shortNames.entries()) {
+    const branchLabel = createSvgElement('text', {
+      x: 0,
+      y: 37 + (hasCutMarker ? 13 : 0) + nameIndex * 13,
+      'text-anchor': 'middle',
+      class: 'branch-label',
+      'data-testid': 'commit-branch-label',
+      fill: color
+    });
+    branchLabel.textContent =
+      truncateBranchName(name) + (hasPairedRemote && nameIndex === 0 ? ' ⇄' : '');
+    const labelTitle = createSvgElement('title');
+    labelTitle.textContent = name;
+    branchLabel.append(labelTitle);
+    group.append(branchLabel);
+  }
+}
+
+function appendTagLabels(group, commit) {
+  if (commit.tags.length === 0) return;
+  const tagGroup = createSvgElement('g', {
+    'data-testid': 'commit-tags',
+    'aria-label': `Tags: ${commit.tags.join(', ')}`
+  });
+  for (const [tagIndex, tagName] of commit.tags.entries()) {
+    const isRelease = releaseTagPattern.test(tagName);
+    const tagLabel = createSvgElement('text', {
+      x: 15,
+      y: -4 + tagIndex * 13,
+      'data-testid': 'commit-tag',
+      'data-tag-name': tagName,
+      'data-kind': isRelease ? 'release' : 'tag',
+      class: isRelease ? 'release-tag' : 'plain-tag'
+    });
+    tagLabel.textContent = tagName.length > 14 ? `${tagName.slice(0, 13)}…` : tagName;
+    const tagTitle = createSvgElement('title');
+    tagTitle.textContent = tagName;
+    tagLabel.append(tagTitle);
+    tagGroup.append(tagLabel);
+  }
+  group.append(tagGroup);
+}
+
 function drawCommitNode(commit, position, ctx, actions) {
-  const {
-    graphElement,
-    commitPositions,
-    commitByHash,
-    mergeTargetsBySource,
-    cutMarkersByHash,
-    ownerReference
-  } = ctx;
+  const color = ctx.ownerReference(commit.lane)?.color || '#9ca3af';
   const group = createSvgElement('g', {
     'data-testid': 'commit-node',
     'data-commit-hash': commit.hash,
@@ -397,139 +537,11 @@ function drawCommitNode(commit, position, ctx, actions) {
     ),
     'aria-label': `Inspect ${commit.subject} (${commit.hash.slice(0, 7)})`
   });
-  group.addEventListener('contextmenu', (event) => {
-    const items = [];
-    for (const target of mergeTargetsBySource.get(commit.hash) || []) {
-      items.push({
-        label: `Focus on destination (${target.hash.slice(0, 7)})`,
-        action: () => actions.focusOnCommit(target, commitPositions.get(target.hash))
-      });
-    }
-    for (const parentHash of commit.parents.slice(1)) {
-      const source = commitPositions.get(parentHash) && commitByHash.get(parentHash);
-      if (source) {
-        items.push({
-          label: `Focus on merged branch (${parentHash.slice(0, 7)})`,
-          action: () => actions.focusOnCommit(source, commitPositions.get(parentHash))
-        });
-      }
-    }
-    const owner = ownerReference(commit.lane);
-    if (owner) {
-      items.push(
-        {
-          label: 'Show branches from main to here',
-          action: () => actions.showBranchPath(owner.name, true)
-        },
-        {
-          label: 'Show this branch and its parent',
-          action: () => actions.showBranchPath(owner.name, false)
-        }
-      );
-    }
-    if (items.length) actions.openGraphContextMenu(event, items);
-  });
-  const title = createSvgElement('title');
-  const hitTarget = createSvgElement('rect', {
-    x: -42,
-    y: -20,
-    width: 84,
-    height: 40,
-    fill: 'transparent',
-    'pointer-events': 'all',
-    'aria-hidden': 'true'
-  });
-  const color = ownerReference(commit.lane)?.color || '#9ca3af';
-  const nodeShape =
-    commit.parents.length > 1
-      ? createSvgElement('polygon', {
-          points: '0,-11 11,0 0,11 -11,0',
-          fill: color,
-          stroke: '#111827',
-          'stroke-width': 2,
-          'data-testid': 'merge-node-shape',
-          'data-shape': 'diamond'
-        })
-      : createSvgElement('circle', {
-          r: 8,
-          fill: color,
-          stroke: '#111827',
-          'stroke-width': 2
-        });
-  const label = createSvgElement('text', {
-    x: 0,
-    y: 23,
-    'text-anchor': 'middle',
-    class: 'hash-label'
-  });
-  title.textContent = `${commit.subject} (${commit.hash.slice(0, 7)})${commit.tags.length > 0 ? ` — tags: ${commit.tags.join(', ')}` : ''}`;
-  label.textContent = commit.hash.slice(0, 7);
-  const selectionRing = createSvgElement('circle', {
-    r: 17,
-    class: 'selection-ring',
-    'data-testid': 'selection-ring',
-    fill: 'none',
-    'aria-hidden': 'true'
-  });
-  const noteMarker = createSvgElement('text', {
-    x: -16,
-    y: -9,
-    class: 'note-marker',
-    'data-testid': 'note-marker',
-    'text-anchor': 'middle',
-    'aria-hidden': 'true'
-  });
-  noteMarker.textContent = '✎';
-  group.append(title, hitTarget, selectionRing, nodeShape, label, noteMarker);
-  const { shortNames, hasPairedRemote } = branchLabelNames(commit);
-  for (const [nameIndex, name] of shortNames.entries()) {
-    const branchLabel = createSvgElement('text', {
-      x: 0,
-      y: 37 + (cutMarkersByHash.has(commit.hash) ? 13 : 0) + nameIndex * 13,
-      'text-anchor': 'middle',
-      class: 'branch-label',
-      'data-testid': 'commit-branch-label',
-      fill: color
-    });
-    branchLabel.textContent =
-      truncateBranchName(name) + (hasPairedRemote && nameIndex === 0 ? ' ⇄' : '');
-    const labelTitle = createSvgElement('title');
-    labelTitle.textContent = name;
-    branchLabel.append(labelTitle);
-    group.append(branchLabel);
-  }
-  group.addEventListener('click', () =>
-    actions.selectCommit(actions.getSelectedCommit()?.hash === commit.hash ? null : commit)
-  );
-  group.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      actions.selectCommit(commit);
-    }
-  });
-  if (commit.tags.length > 0) {
-    const tagGroup = createSvgElement('g', {
-      'data-testid': 'commit-tags',
-      'aria-label': `Tags: ${commit.tags.join(', ')}`
-    });
-    for (const [tagIndex, tagName] of commit.tags.entries()) {
-      const tagLabel = createSvgElement('text', {
-        x: 15,
-        y: -4 + tagIndex * 13,
-        'data-testid': 'commit-tag',
-        'data-tag-name': tagName,
-        'data-kind': releaseTagPattern.test(tagName) ? 'release' : 'tag',
-        class: releaseTagPattern.test(tagName) ? 'release-tag' : 'plain-tag'
-      });
-      tagLabel.textContent = tagName.length > 14 ? `${tagName.slice(0, 13)}…` : tagName;
-      const tagTitle = createSvgElement('title');
-      tagTitle.textContent = tagName;
-      tagLabel.append(tagTitle);
-      tagGroup.append(tagLabel);
-    }
-    group.append(tagGroup);
-  }
-  graphElement.append(group);
+  group.append(...createNodeBody(commit, color));
+  appendBranchLabels(group, commit, color, ctx.cutMarkersByHash.has(commit.hash));
+  attachNodeHandlers(group, commit, ctx, actions);
+  appendTagLabels(group, commit);
+  ctx.graphElement.append(group);
 }
 
 export function drawCommits(ctx, actions) {

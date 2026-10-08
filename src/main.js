@@ -4,6 +4,7 @@ const path = require('node:path');
 const { createGitRunner } = require('./git-runner');
 const { loadCommitGraph } = require('./commit-graph');
 const { createSettingsStore } = require('./settings-store');
+const { createAppState } = require('./app-state');
 const { registerIpcHandlers } = require('./ipc-handlers');
 const { createMainWindow } = require('./main-window');
 const { createSplash, revealWhenReady } = require('./splash');
@@ -11,17 +12,11 @@ const { UnsafeRepositoryConfigError, assertRepositoryConfigSafe } = require('./g
 const { rememberRepository } = require('./recent-repositories');
 const { validateCloneUrl, checkDestination, runClone } = require('./clone');
 const { runGit, runGitWithInput } = createGitRunner();
-let settings;
-let settingsStore;
-let activeRepositoryPath = null;
+// Created once the app is ready, because the settings folder is only known then.
+let state;
 
 if (process.env.MERGENTRA_USER_DATA_DIR) {
   app.setPath('userData', path.resolve(process.env.MERGENTRA_USER_DATA_DIR));
-}
-
-function saveSettings(nextSettings) {
-  settingsStore.save(nextSettings);
-  settings = nextSettings;
 }
 
 // Measured at roughly 2.6 KB of memory per commit across the main and renderer processes.
@@ -79,7 +74,8 @@ async function openRepository(repositoryPath, { confirmLarge = false } = {}) {
   }
 
   const resolvedPath = path.resolve(repositoryPath.trim());
-  const gitPath = settings.gitPath || 'git';
+  const { gitPath: configuredGitPath } = state.getSettings();
+  const gitPath = configuredGitPath || 'git';
   let repositoryStat;
   let repositoryRoot;
 
@@ -104,7 +100,7 @@ async function openRepository(repositoryPath, { confirmLarge = false } = {}) {
   try {
     await runGit(gitPath, ['--version']);
   } catch (error) {
-    if (error.code === 'ENOENT' && !settings.gitPath) {
+    if (error.code === 'ENOENT' && !state.getSettings().gitPath) {
       throw new Error(
         'Git was not found on PATH. Install Git for Windows, then restart Mergentra.',
         { cause: error }
@@ -151,11 +147,12 @@ async function openRepository(repositoryPath, { confirmLarge = false } = {}) {
 
 async function openAndRememberRepository(repositoryPath) {
   const repository = await openRepository(repositoryPath, { confirmLarge: true });
+  const settings = state.getSettings();
   const recentRepositories = rememberRepository(settings.recentRepositories, repository, {
     caseInsensitive: process.platform === 'win32'
   });
-  saveSettings({ ...settings, recentRepositories });
-  activeRepositoryPath = repository.path;
+  state.saveSettings({ ...settings, recentRepositories });
+  state.setActiveRepositoryPath(repository.path);
   return repository;
 }
 
@@ -177,7 +174,7 @@ async function confirmUnsafeFetch(error) {
 }
 
 async function fetchRemoteReferences() {
-  if (!activeRepositoryPath) {
+  if (!state.getActiveRepositoryPath()) {
     return {
       success: false,
       message: 'Open a repository before fetching.',
@@ -185,7 +182,8 @@ async function fetchRemoteReferences() {
     };
   }
 
-  const gitPath = settings.gitPath || 'git';
+  const gitPath = state.getSettings().gitPath || 'git';
+  const activeRepositoryPath = state.getActiveRepositoryPath();
   try {
     await assertRepositoryConfigSafe(runGit, gitPath, activeRepositoryPath);
   } catch (error) {
@@ -251,7 +249,7 @@ async function cloneRepository({ url, destination, historyOnly }, onProgress) {
   }
 
   const run = runClone({
-    gitPath: settings.gitPath || 'git',
+    gitPath: state.getSettings().gitPath || 'git',
     url: urlCheck.url,
     destination: destinationCheck.path,
     existed: destinationCheck.existed,
@@ -295,8 +293,7 @@ function cancelClone() {
 
 app.whenReady().then(() => {
   try {
-    settingsStore = createSettingsStore(app.getPath('userData'));
-    settings = settingsStore.load();
+    state = createAppState(createSettingsStore(app.getPath('userData')));
   } catch (error) {
     dialog.showErrorBox('Mergentra could not start', error.message);
     app.quit();
@@ -327,9 +324,9 @@ app.whenReady().then(() => {
     fetchRemoteReferences,
     cloneRepository,
     cancelClone,
-    getSettings: () => settings,
-    saveSettings,
-    getActiveRepositoryPath: () => activeRepositoryPath,
+    getSettings: state.getSettings,
+    saveSettings: state.saveSettings,
+    getActiveRepositoryPath: state.getActiveRepositoryPath,
     runGit
   });
 });
