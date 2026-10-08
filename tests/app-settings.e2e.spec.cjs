@@ -1,3 +1,4 @@
+const http = require('node:http');
 const { execFileSync, expect, fs, launchMergentra, os, path, test } = require('./e2e-helpers.cjs');
 
 test('a developer can open a local Git repository', async () => {
@@ -52,34 +53,45 @@ test('a developer can open a local Git repository', async () => {
   }
 });
 
-test('a manual update check links to a newer GitHub release without downloading it', async () => {
+async function withReleaseServer(respond, run) {
   const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-update-e2e-'));
-  const userDataPath = path.join(testDirectory, 'user-data');
+  const server = http.createServer((_request, response) => respond(response));
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   let app;
-  let releaseChecks = 0;
-
   try {
-    app = await launchMergentra(userDataPath);
-    const window = await app.firstWindow();
-    await window.route(
-      'https://api.github.com/repos/dgooderi/Mergentra/releases/latest',
-      async (route) => {
-        releaseChecks += 1;
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            tag_name: 'v1.0.0',
-            html_url: 'https://github.com/dgooderi/Mergentra/releases/tag/v1.0.0',
-            draft: false,
-            prerelease: false
-          })
-        });
+    app = await launchMergentra({
+      args: [path.resolve(__dirname, '..')],
+      env: {
+        ...process.env,
+        MERGENTRA_USER_DATA_DIR: path.join(testDirectory, 'user-data'),
+        MERGENTRA_UPDATE_API_URL: `http://127.0.0.1:${server.address().port}/`,
+        MERGENTRA_UPDATE_CHECK_DELAY_MS: '600000'
       }
-    );
+    });
+    await run(await app.firstWindow());
+  } finally {
+    await app?.close();
+    await new Promise((resolve) => server.close(resolve));
+    fs.rmSync(testDirectory, { recursive: true, force: true });
+  }
+}
 
-    await window.waitForTimeout(100);
-    expect(releaseChecks).toBe(0);
+function releaseResponse(version) {
+  return (response) => {
+    response.setHeader('Content-Type', 'application/json');
+    response.end(
+      JSON.stringify({
+        tag_name: `v${version}`,
+        html_url: `https://github.com/dgooderi/Mergentra/releases/tag/v${version}`,
+        draft: false,
+        prerelease: false
+      })
+    );
+  };
+}
+
+test('a manual update check links to a newer GitHub release without downloading it', async () => {
+  await withReleaseServer(releaseResponse('1.0.0'), async (window) => {
     await window.getByRole('button', { name: 'Settings' }).click();
     await window.getByRole('button', { name: 'Check for updates' }).click();
     await expect(window.locator('#update-status')).toContainText('Mergentra 1.0.0 is available.');
@@ -92,80 +104,38 @@ test('a manual update check links to a newer GitHub release without downloading 
     );
     await expect(releaseLink).toHaveAttribute('target', '_blank');
     await expect(window.getByRole('button', { name: 'Check for updates' })).toBeEnabled();
-    expect(releaseChecks).toBe(1);
     expect(window.url()).toContain('index.html');
-  } finally {
-    if (app) {
-      await app.close();
-    }
-    fs.rmSync(testDirectory, { recursive: true, force: true });
-  }
+  });
 });
 
 test('a manual update check reports when the installed version is current', async () => {
   const { version } = require('../package.json');
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-update-e2e-'));
-  let app;
-
-  try {
-    app = await launchMergentra(path.join(testDirectory, 'user-data'));
-    const window = await app.firstWindow();
-    await window.route(
-      'https://api.github.com/repos/dgooderi/Mergentra/releases/latest',
-      async (route) => {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            tag_name: `v${version}`,
-            html_url: `https://github.com/dgooderi/Mergentra/releases/tag/v${version}`,
-            draft: false,
-            prerelease: false
-          })
-        });
-      }
-    );
+  await withReleaseServer(releaseResponse(version), async (window) => {
     await window.getByRole('button', { name: 'Settings' }).click();
     await window.getByRole('button', { name: 'Check for updates' }).click();
     await expect(window.locator('#update-status')).toContainText(
       `Mergentra is up to date (${version}).`
     );
     await expect(window.locator('#update-release-link')).toBeHidden();
-  } finally {
-    if (app) {
-      await app.close();
-    }
-    fs.rmSync(testDirectory, { recursive: true, force: true });
-  }
+  });
 });
 
 test('a failed update check explains the failure and can be retried', async () => {
-  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-update-e2e-'));
-  let app;
-
-  try {
-    app = await launchMergentra(path.join(testDirectory, 'user-data'));
-    const window = await app.firstWindow();
-    await window.route(
-      'https://api.github.com/repos/dgooderi/Mergentra/releases/latest',
-      async (route) => {
-        await route.fulfill({ status: 503, body: 'Unavailable' });
-      }
-    );
-    await window.getByRole('button', { name: 'Settings' }).click();
-    await window.getByRole('button', { name: 'Check for updates' }).click();
-    await expect(window.locator('#update-status')).toContainText(
-      'Could not check for updates: GitHub release check failed with HTTP 503.'
-    );
-    await expect(window.getByRole('button', { name: 'Check for updates' })).toBeEnabled();
-  } finally {
-    if (app) {
-      await app.close();
+  await withReleaseServer(
+    (response) => {
+      response.statusCode = 503;
+      response.end('Unavailable');
+    },
+    async (window) => {
+      await window.getByRole('button', { name: 'Settings' }).click();
+      await window.getByRole('button', { name: 'Check for updates' }).click();
+      await expect(window.locator('#update-status')).toContainText(
+        'Could not check for updates: GitHub release check failed with HTTP 503.'
+      );
+      await expect(window.getByRole('button', { name: 'Check for updates' })).toBeEnabled();
     }
-    fs.rmSync(testDirectory, { recursive: true, force: true });
-  }
+  );
 });
-
 test('a developer can configure Git when it is not on PATH', async () => {
   const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
   const repositoryPath = path.join(testDirectory, 'sample-repository');

@@ -9,6 +9,9 @@ const { registerIpcHandlers } = require('./ipc-handlers');
 const { createMainWindow } = require('./main-window');
 const { createSplash, revealWhenReady } = require('./splash');
 const { UnsafeRepositoryConfigError, assertRepositoryConfigSafe } = require('./git-config-safety');
+const { createUpdateService } = require('./update-service');
+const { downloadAsset } = require('./update-download');
+const { detectInstallChannel } = require('./update-policy');
 const { rememberRepository } = require('./recent-repositories');
 const { validateCloneUrl, checkDestination, runClone } = require('./clone');
 const { runGit, runGitWithInput } = createGitRunner();
@@ -312,6 +315,30 @@ app.whenReady().then(() => {
     applicationDirectory: __dirname
   });
   revealWhenReady({ window, splash });
+  const installChannel = detectInstallChannel({
+    resourcesPath: process.resourcesPath,
+    env: process.env,
+    fileSystem: fs
+  });
+
+  const apiUrl = process.env.MERGENTRA_UPDATE_API_URL;
+  const updateService = createUpdateService({
+    getVersion: () => app.getVersion(),
+    getSettings: state.getSettings,
+    saveSettings: state.saveSettings,
+    channel: installChannel,
+    ...(apiUrl ? { apiUrl } : {}),
+    showMessageBox: (options) => dialog.showMessageBox(window, options),
+    showError: (title, message) => dialog.showErrorBox(title, message),
+    openExternal: (url) => shell.openExternal(url),
+    showItemInFolder: (file) => shell.showItemInFolder(file),
+    launchInstaller: (file) => shell.openPath(file),
+    quit: () => app.quit(),
+    downloadAsset,
+    downloadDirectory: () => app.getPath('downloads'),
+    setProgress: (fraction) => window.setProgressBar(fraction),
+    log: (message) => console.warn(message)
+  });
 
   registerIpcHandlers({
     ipcMain,
@@ -327,8 +354,17 @@ app.whenReady().then(() => {
     getSettings: state.getSettings,
     saveSettings: state.saveSettings,
     getActiveRepositoryPath: state.getActiveRepositoryPath,
-    runGit
+    runGit,
+    installChannel,
+    checkForUpdates: updateService.check
   });
+
+  // Wait until the window is up so the check never slows startup.
+  const delay = Number(process.env.MERGENTRA_UPDATE_CHECK_DELAY_MS) || 5000;
+  // Tests with a private user-data folder only check when pointed at a stub server.
+  if (apiUrl || !process.env.MERGENTRA_USER_DATA_DIR) {
+    setTimeout(() => void updateService.runScheduledCheck(), delay);
+  }
 });
 
 app.on('window-all-closed', () => {

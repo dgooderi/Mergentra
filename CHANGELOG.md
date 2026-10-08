@@ -4,6 +4,13 @@ All notable changes to Mergentra are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- Automatic weekly update check with an update dialog (download and install, download, release notes, skip this version), a Settings toggle, and checksum-verified downloads. Off by default for MSI installs (#62).
+- MSI build target: `npm run build:win:msi` produces a per-machine x64 `Mergentra-<version>-x64.msi` that upgrades in place and carries an `install-channel` marker (#63).
+
 ## [0.10.0]
 
 ### Added
@@ -42,7 +49,7 @@ All notable changes to Mergentra are recorded here. The format follows
 ### Project
 
 - Added CONTRIBUTING.md, a CLA and a CLA bot workflow.
-- The README documents manual testing on the VS Code repository, includes a screenshot, and mentions the pending SignPath code signing application.
+- The README documents manual testing on the VS Code repository, and includes a screenshot.
 
 ## [0.9.0]
 
