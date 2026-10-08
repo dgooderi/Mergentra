@@ -1,8 +1,14 @@
 import { state } from './state.js';
 import { renderSelectedBranchNotes, setNote } from './notes-ui.js';
+import { inferBranchContext } from './branch-context.js';
+import { enhanceNoteField } from './note-field.js';
 
 export function createReviewDock({ updateTimeNavigation }) {
   const dock = document.getElementById('review-dock');
+  const commitNoteField = enhanceNoteField(document.getElementById('selected-commit-note'), {
+    label: 'commit',
+    previewTestId: 'selected-commit-note-preview'
+  });
 
   function selectCommit(commit) {
     state.selectedCommit = commit;
@@ -30,6 +36,7 @@ export function createReviewDock({ updateTimeNavigation }) {
 
     const noteInput = document.getElementById('selected-commit-note');
     noteInput.value = state.notes.commits[state.selectedCommit.hash] || '';
+    commitNoteField.showEditor();
     noteInput.oninput = () => setNote('commits', state.selectedCommit.hash, noteInput.value);
     renderSelectedBranchNotes();
 
@@ -41,6 +48,27 @@ export function createReviewDock({ updateTimeNavigation }) {
     const parents = state.selectedCommit.originalParents || state.selectedCommit.parents;
     document.getElementById('selected-commit-parents').textContent =
       parents.length > 0 ? parents.join(', ') : 'None (root commit)';
+
+    const branchContext = state.currentGraph
+      ? inferBranchContext(state.selectedCommit, state.currentGraph)
+      : null;
+    const contextElement = document.getElementById('selected-commit-branch-context');
+    contextElement.hidden = !branchContext;
+    if (branchContext) {
+      const unknown = 'Could not be inferred';
+      document.getElementById('selected-commit-source-label').textContent =
+        branchContext.kind === 'divergence'
+          ? 'Diverging branch (inferred)'
+          : 'Source branch (inferred)';
+      document.getElementById('selected-commit-source').textContent =
+        branchContext.source ?? unknown;
+      document.getElementById('selected-commit-destination-label').textContent =
+        branchContext.kind === 'divergence'
+          ? 'Diverges from (inferred)'
+          : 'Destination branch (inferred)';
+      document.getElementById('selected-commit-destination').textContent =
+        branchContext.destination ?? unknown;
+    }
 
     const references = document.getElementById('selected-commit-references');
     references.replaceChildren();

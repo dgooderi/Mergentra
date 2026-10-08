@@ -51,3 +51,12 @@ export function localDateString(timestamp) {
   const pad = (value) => String(value).padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
+
+// A range chosen by dragging on the axis blocks further axis selections until the visible
+// range is zoomed out wider than it (or becomes unbounded, as with All history).
+export function isAxisSelectionAvailable(timeRange, lockedSpan) {
+  if (lockedSpan === null || !timeRange) {
+    return true;
+  }
+  return timeRange.end - timeRange.start > lockedSpan;
+}

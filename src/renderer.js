@@ -16,6 +16,7 @@ import { state } from './renderer/state.js';
 import { loadViewState, saveViewState } from './renderer/view-state.js';
 import {
   initTimeToolbar,
+  selectCustomRange,
   syncCustomInputsToRange,
   updateTimeNavigation
 } from './renderer/time-toolbar.js';
@@ -23,6 +24,7 @@ import { initZoomControls, stepZoom } from './renderer/zoom.js';
 import { createReferencePicker } from './renderer/reference-picker.js';
 import { viewStorage } from './renderer/app-storage.js';
 import { loadNotes, refreshNoteMarkers } from './renderer/notes-ui.js';
+import { enhanceNoteField } from './renderer/note-field.js';
 import { createRepositoryActions } from './renderer/repository-actions.js';
 import { createRepositoryControls } from './renderer/repository-controls.js';
 import {
@@ -31,7 +33,9 @@ import {
   openCompactedPopover,
   openGraphContextMenu
 } from './renderer/popovers.js';
-import { getPresetRange } from './renderer/time-range.js';
+import { branchPathToMain } from './renderer/branch-path.js';
+import { attachGraphPan } from './renderer/graph-pan.js';
+import { getPresetRange, isAxisSelectionAvailable } from './renderer/time-range.js';
 import { createReviewDock } from './renderer/review-dock.js';
 const reviewDock = createReviewDock({ updateTimeNavigation });
 const selectCommit = reviewDock.selectCommit;
@@ -57,6 +61,11 @@ function focusOnCommit(commit, position) {
   });
 }
 
+const repositoryNoteField = enhanceNoteField(document.getElementById('repository-note'), {
+  label: 'repository',
+  previewTestId: 'repository-note-preview'
+});
+
 function showRepository(repository) {
   state.currentRepositoryPath = repository.path;
   loadNotes();
@@ -66,6 +75,7 @@ function showRepository(repository) {
   document.getElementById('repository-note').value = viewStorage.readRepositoryNote(
     repository.path
   );
+  repositoryNoteField.showEditor();
   renderGraph(repository.graph);
   picker.hidden = true;
   repositoryView.hidden = false;
@@ -196,6 +206,7 @@ document.getElementById('commit-graph').addEventListener('click', (event) => {
   }
 });
 document.querySelector('.graph-scroll').addEventListener('scroll', closeCompactedPopover);
+attachGraphPan(document.querySelector('.graph-scroll'));
 document.addEventListener('click', (event) => {
   if (
     !event.target.closest(
@@ -274,6 +285,10 @@ const graphActions = {
   getSelectedCommit: () => state.selectedCommit,
   selectCommit: (commit) => selectCommit(commit),
   focusOnCommit,
+  showBranchPath: (referenceName, ancestors) => {
+    const path = branchPathToMain(state.currentGraph, referenceName);
+    referencePicker.showOnly(ancestors ? path : path.slice(0, 2));
+  },
   openGraphContextMenu,
   openCompactedPopover: (summary, anchor) => openCompactedPopover(summary, anchor, selectCommit),
   registerCompactedMember: (hash, summaryHash) => state.compactedMembership.set(hash, summaryHash)
@@ -308,7 +323,19 @@ function renderGraphContents(graph) {
     cutMarkersByHash,
     ownerReference
   };
-  renderTimeAxis(graphElement, graph.commits, commitPositions, width, axisHeight);
+  const axisSelectionAvailable = isAxisSelectionAvailable(state.timeRange, state.axisSelectedSpan);
+  if (axisSelectionAvailable) {
+    state.axisSelectedSpan = null;
+  }
+  renderTimeAxis(
+    graphElement,
+    graph.commits,
+    commitPositions,
+    width,
+    axisHeight,
+    selectCustomRange,
+    axisSelectionAvailable
+  );
   drawEdges(ctx, graphActions);
   drawCommits(ctx, graphActions);
   drawCheckedOutMarker(ctx);

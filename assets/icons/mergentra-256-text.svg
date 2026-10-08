@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+  <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e6edf6"/>
+  </linearGradient>
+  <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#b7c6da"/>
+  </linearGradient>
+  <linearGradient id="flow" x1="0" y1="1" x2="1" y2="0">
+    <stop offset="0" stop-color="#14b8b0"/><stop offset="0.5" stop-color="#2f7fd3"/><stop offset="1" stop-color="#1b3f94"/>
+  </linearGradient>
+  <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+    <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#1e3a5f" flood-opacity="0.28"/>
+  </filter>
+  <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+    <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#0f2a55" flood-opacity="0.35"/>
+  </filter></defs>
+  <rect x="5.12" y="5.12" width="245.76" height="245.76" rx="54.0672" fill="url(#tile)" stroke="url(#rim)" stroke-width="3.072" filter="url(#shadow)"/>
+  <g transform="translate(51.8144 22.323200000000003) scale(0.761856)">
+  <path d="M100 192 L100 150" fill="none" stroke="#1f55b3" stroke-width="12" stroke-linecap="round" filter="url(#soft)"/>
+  <path d="M100 160 C100 128 66 122 30 100" fill="none" stroke="#2b86d9" stroke-width="10" stroke-linecap="round" filter="url(#soft)"/>
+  <path d="M100 164 C100 116 62 112 60 64" fill="none" stroke="#18aeb0" stroke-width="10" stroke-linecap="round" filter="url(#soft)"/>
+  <path d="M100 152 L100 56" fill="none" stroke="#7fb8e6" stroke-width="8" stroke-linecap="round" filter="url(#soft)"/>
+  <path d="M102 168 C104 112 132 92 144 66" fill="none" stroke="#1a9cb8" stroke-width="9" stroke-linecap="round" filter="url(#soft)"/>
+  <path d="M104 178 C106 144 148 138 168 114" fill="none" stroke="#1f4aa8" stroke-width="10" stroke-linecap="round" filter="url(#soft)"/>
+  <polygon points="100.0,30.5 111.3,50.0 88.8,50.0" fill="#7fb8e6"/>
+  <polygon points="156.0,38.9 158.2,62.8 136.4,52.8" fill="#1a9cb8"/>
+  <polygon points="185.7,94.2 181.6,119.3 161.8,103.2" fill="#1f4aa8"/>
+  <circle cx="28" cy="100" r="15" fill="#8cc6f2" stroke="#ffffff" stroke-width="4.2" filter="url(#soft)"/><circle cx="24.25" cy="95.5" r="4.5" fill="#ffffff" fill-opacity="0.55"/>
+  <circle cx="60" cy="56" r="15" fill="#16b0ae" stroke="#ffffff" stroke-width="4.2" filter="url(#soft)"/><circle cx="56.25" cy="51.5" r="4.5" fill="#ffffff" fill-opacity="0.55"/>
+  <circle cx="100" cy="28" r="15" fill="#a9d5f5" stroke="#ffffff" stroke-width="4.2" filter="url(#soft)"/><circle cx="96.25" cy="23.5" r="4.5" fill="#ffffff" fill-opacity="0.55"/>
+  <circle cx="158" cy="40" r="17" fill="#12748f" stroke="#ffffff" stroke-width="4.760000000000001" filter="url(#soft)"/><circle cx="153.75" cy="34.9" r="5.1" fill="#ffffff" fill-opacity="0.55"/>
+  <circle cx="184" cy="94" r="16" fill="#1f4aa8" stroke="#ffffff" stroke-width="4.48" filter="url(#soft)"/><circle cx="180" cy="89.2" r="4.8" fill="#ffffff" fill-opacity="0.55"/></g>
+  <text x="128" y="230.4" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-weight="800" font-size="29.44" letter-spacing="1.024"><tspan fill="#2b86d9">MERGEN</tspan><tspan fill="#1f4aa8">TRA</tspan></text>
+</svg>

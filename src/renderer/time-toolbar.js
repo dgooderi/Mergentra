@@ -84,6 +84,17 @@ function applyCustomTimeRange() {
   renderFilteredGraph();
 }
 
+export function selectCustomRange({ start, end }) {
+  document.getElementById('time-range').value = 'custom';
+  document.getElementById('custom-time-range').hidden = false;
+  document.getElementById('time-range-start').value = start;
+  document.getElementById('time-range-end').value = end;
+  const lastDay = new Date(`T00:00:00`);
+  lastDay.setDate(lastDay.getDate() + 1);
+  state.axisSelectedSpan = lastDay.getTime() - new Date(`T00:00:00`).getTime();
+  applyCustomTimeRange();
+}
+
 export function initTimeToolbar(handlers) {
   renderFilteredGraph = handlers.renderFilteredGraph;
   document.getElementById('time-earlier').addEventListener('click', () => shiftTimeRange(-1));

@@ -6,7 +6,7 @@ const { createMainWindow } = mainWindowModule;
 
 describe('main window creation', () => {
   it('creates the existing secure window configuration and loads the app page', () => {
-    const window = { loadFile: vi.fn() };
+    const window = { loadFile: vi.fn(), maximize: vi.fn() };
     const BrowserWindow = vi.fn(function () {
       return window;
     });
@@ -21,6 +21,8 @@ describe('main window creation', () => {
       minWidth: 720,
       minHeight: 520,
       backgroundColor: '#111827',
+      show: false,
+      icon: path.join(applicationDirectory, '..', 'assets', 'icons', 'mergentra-256.png'),
       webPreferences: {
         preload: path.join(applicationDirectory, 'preload.js'),
         contextIsolation: true,
@@ -29,5 +31,21 @@ describe('main window creation', () => {
       }
     });
     expect(window.loadFile).toHaveBeenCalledWith(path.join(applicationDirectory, 'index.html'));
+  });
+
+  it('maximises the window before it is first shown', () => {
+    const window = { loadFile: vi.fn(), maximize: vi.fn() };
+    const BrowserWindow = vi.fn(function () {
+      return window;
+    });
+
+    createMainWindow({
+      BrowserWindow,
+      Menu: { setApplicationMenu: vi.fn() },
+      applicationDirectory: path.resolve('app')
+    });
+
+    expect(window.maximize).toHaveBeenCalledTimes(1);
+    expect(BrowserWindow.mock.calls[0][0].show).toBe(false);
   });
 });

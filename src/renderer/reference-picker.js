@@ -1,6 +1,7 @@
 import { state } from './state.js';
 import { saveViewState } from './view-state.js';
 import { setNote } from './notes-ui.js';
+import { enhanceNoteField } from './note-field.js';
 import { createSvgElement } from './graph-view.js';
 
 export function createReferencePicker({ renderFilteredGraph }) {
@@ -161,16 +162,22 @@ export function createReferencePicker({ renderFilteredGraph }) {
       noteToggle.textContent = Object.hasOwn(state.notes.branches, reference.name)
         ? 'Note ✎'
         : 'Note';
-      noteEditor.hidden = true;
       noteEditor.rows = 2;
+
       noteEditor.className = 'note-editor';
       noteEditor.dataset.testid = 'branch-note-input';
       noteEditor.placeholder = 'Private note about this branch';
       noteEditor.setAttribute('aria-label', `Note text for ${reference.name}`);
       noteEditor.value = state.notes.branches[reference.name] || '';
+      const noteField = enhanceNoteField(noteEditor, {
+        label: `${reference.name} branch`,
+        previewTestId: 'branch-note-preview'
+      });
+      noteField.element.hidden = true;
       noteToggle.addEventListener('click', () => {
-        noteEditor.hidden = !noteEditor.hidden;
-        if (!noteEditor.hidden) {
+        noteField.element.hidden = !noteField.element.hidden;
+        if (!noteField.element.hidden) {
+          noteField.showEditor();
           noteEditor.focus();
         }
       });
@@ -178,7 +185,7 @@ export function createReferencePicker({ renderFilteredGraph }) {
         setNote('branches', reference.name, noteEditor.value)
       );
       lane.dataset.hasNote = String(Object.hasOwn(state.notes.branches, reference.name));
-      lane.append(checkbox, marker, labelGroup, noteToggle, noteEditor);
+      lane.append(checkbox, marker, labelGroup, noteToggle, noteField.element);
       laneList.append(lane);
     }
     renderOwnerFilter();
@@ -207,6 +214,7 @@ export function createReferencePicker({ renderFilteredGraph }) {
 
   return {
     init,
+    showOnly: (names) => setVisibleBranches((reference) => names.includes(reference.name)),
     render: renderReferenceLanes,
     refresh() {
       filter();

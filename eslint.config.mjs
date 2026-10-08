@@ -19,7 +19,12 @@ export default [
       'src/main-window.js',
       'src/repository-output.js',
       'src/settings-store.js',
+      'src/recent-repositories.js',
+      'src/main-line.js',
+      'src/clone.js',
+      'src/splash.js',
       'tests/**/*.cjs',
+      'scripts/**/*.cjs',
       'playwright.config.*'
     ],
     languageOptions: { sourceType: 'commonjs', globals: { ...globals.node } }

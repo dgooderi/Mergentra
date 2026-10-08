@@ -109,9 +109,13 @@ section {
   color: var(--text);
 }
 
-.fetch-controls button:disabled {
+.fetch-controls #fetch-button:disabled {
   cursor: wait;
-  opacity: 0.7;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .fetch-diagnostics-panel {
@@ -481,37 +485,19 @@ h2 {
   font-size: 15px;
 }
 
-#recent-repositories {
-  display: grid;
-  max-height: 180px;
-  gap: 8px;
-  overflow-y: auto;
-  margin: 0;
+#recent-repositories,
+#recent-name {
+  min-width: 0;
+  flex: 1;
+}
+
+.icon-button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
   padding: 0;
-  list-style: none;
-}
-
-.recent-repository {
-  display: grid;
-  width: 100%;
-  gap: 4px;
-  padding: 10px 12px;
-  border-color: var(--border);
-  background: var(--field-background);
-  color: var(--text);
-  text-align: left;
-}
-
-.recent-repository small,
-.empty-recent {
-  overflow-wrap: anywhere;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.empty-recent {
-  padding: 8px 0;
-  list-style: none;
 }
 
 .eyebrow {
@@ -712,6 +698,11 @@ button:focus-visible {
   margin-top: 0;
 }
 .fetch-controls .branch-picker > summary {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 0 16px;
   min-width: 180px;
 }
 
@@ -956,6 +947,11 @@ main:has(#repository-view:not([hidden])) {
   margin: 0;
 }
 
+.repository-header > div > .repository-path,
+.repository-header > div > .branch-label {
+  width: 100%;
+}
+
 .repository-view .graph-layout {
   padding-top: 12px;
 }
@@ -1034,34 +1030,6 @@ main:not(:has(#repository-view:not([hidden]))) #change-repository {
   white-space: nowrap;
 }
 
-#recent-repositories {
-  display: flex;
-  max-height: 96px;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-#recent-repositories > li {
-  max-width: 100%;
-}
-
-.recent-repository {
-  display: flex;
-  width: auto;
-  min-height: 0;
-  align-items: baseline;
-  gap: 8px;
-  padding: 6px 12px;
-  font-size: 13px;
-}
-
-.recent-repository small {
-  max-width: 220px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .recent-section {
   margin: 0 0 20px;
 }
@@ -1111,6 +1079,7 @@ main:not(:has(#repository-view:not([hidden]))) #open-explorer {
 
 .graph-heading {
   display: flex;
+  margin-bottom: 12px;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -1125,7 +1094,7 @@ main:not(:has(#repository-view:not([hidden]))) #open-explorer {
 
 .time-navigation {
   display: flex;
-  gap: 6px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 .owner-filter {
@@ -1135,4 +1104,320 @@ main:not(:has(#repository-view:not([hidden]))) #open-explorer {
 }
 .owner-filter select {
   flex: 1;
+}
+
+.zoom-level {
+  position: relative;
+  display: flex;
+  gap: 4px;
+}
+
+.zoom-level input {
+  width: 72px;
+  min-height: 42px;
+  text-align: center;
+}
+
+#zoom-options {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 140px;
+  margin: 0;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--field-background);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 30%);
+  list-style: none;
+}
+
+#zoom-options li {
+  padding: 7px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#zoom-options li:first-child {
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+}
+
+#zoom-options li:hover {
+  background: rgb(96 165 250 / 22%);
+}
+
+#commit-graph .time-axis-drag-area {
+  fill: transparent;
+  cursor: col-resize;
+}
+
+#commit-graph .time-axis-selection {
+  fill: var(--accent, #2563eb);
+  fill-opacity: 0.18;
+  pointer-events: none;
+}
+
+.markdown-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.markdown-note > textarea,
+.markdown-note > .note-preview {
+  box-sizing: border-box;
+  flex: 0 1 420px;
+  min-width: 0;
+  height: 92px;
+  overflow: auto;
+}
+
+.markdown-note .note-view-toggle {
+  flex: 0 0 auto;
+  padding: 2px 10px;
+  font-size: 0.8rem;
+}
+
+.note-preview {
+  padding: 6px 10px;
+  border: 1px solid var(--border, #d1d5db);
+  border-radius: 6px;
+  overflow-wrap: anywhere;
+}
+
+.note-preview p,
+#selected-commit-branch-notes li div p {
+  margin: 0 0 6px;
+}
+
+.note-preview ul,
+.note-preview ol,
+#selected-commit-branch-notes li div ul,
+#selected-commit-branch-notes li div ol {
+  margin: 0 0 6px;
+  padding-left: 22px;
+}
+
+#selected-commit-branch-notes li > span {
+  font-weight: 600;
+}
+
+.clone-section {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.clone-section h2 {
+  margin: 0;
+}
+
+.clone-section .checkbox-label input {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+}
+
+.clone-section .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#clone-diagnostics {
+  max-height: 160px;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
+#open-settings {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  padding: 0;
+}
+
+#open-settings svg {
+  display: block;
+  width: 28px;
+  height: 28px;
+}
+
+.mode-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.mode-tab {
+  padding: 10px 22px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mode-tab[aria-selected='true'] {
+  border-bottom-color: #3b82f6;
+  color: var(--text, inherit);
+}
+
+#clone-form {
+  display: grid;
+  gap: 12px;
+}
+
+#clone-form > input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#clone-form .checkbox-label,
+#clone-form .path-controls > .primary {
+  margin: 0;
+}
+
+/* Both panels share one grid cell, so the taller one sets the height for both. */
+.tab-panels {
+  display: grid;
+}
+
+.tab-panels > [role='tabpanel'] {
+  grid-area: 1 / 1;
+}
+
+.tab-panels > [role='tabpanel'][hidden] {
+  display: block !important;
+  visibility: hidden;
+}
+
+.clone-section p:empty {
+  display: none;
+}
+
+.brand-logo {
+  display: block;
+}
+
+.brand-logo-large {
+  margin: 0 0 8px;
+}
+
+.repository-header > div > .brand-logo-small {
+  margin: 0 4px 0 0;
+}
+
+/* Open and Clone fill the same panel, so their controls line up and the Open button sits level with Clone. */
+#panel-open {
+  display: flex;
+  flex-direction: column;
+}
+
+#panel-open > #repository-form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+#panel-open > #repository-form > .primary {
+  margin-top: auto;
+}
+
+/* Compact picker so both tabs fit the default window without scrolling. */
+#repository-picker {
+  padding: 24px 48px 32px;
+}
+
+#repository-picker .brand-logo-large {
+  width: 64px;
+  height: 64px;
+  margin: 0 0 4px;
+}
+
+#repository-picker .eyebrow {
+  margin-bottom: 4px;
+}
+
+#repository-picker h1 {
+  margin: 0;
+}
+
+#repository-picker .intro {
+  margin: 8px 0 16px;
+}
+
+#repository-picker .mode-tabs {
+  margin-bottom: 12px;
+}
+
+#clone-form {
+  gap: 6px;
+}
+
+#clone-form label,
+#repository-form label,
+.recent-section h2 {
+  margin-bottom: 4px;
+}
+
+.recent-section {
+  margin: 0 0 12px;
+}
+
+#repository-picker p:empty {
+  display: none;
+}
+
+main:not(:has(#repository-view:not([hidden]))) {
+  padding-bottom: 16px;
+}
+
+.repository-header > div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(260px, 1fr);
+  align-items: start;
+  gap: 2px 16px;
+}
+
+.repository-header > div > * {
+  grid-column: 2;
+}
+
+.repository-header > div > .brand-logo-small {
+  grid-column: 1;
+  grid-row: 1 / span 4;
+  margin: 0;
+}
+
+.repository-header > div > .markdown-note {
+  grid-column: 3;
+  grid-row: 1 / span 4;
+}
+
+#commit-graph .time-axis-drag-area.disabled {
+  cursor: not-allowed;
+  fill: var(--muted, #6b7280);
+  fill-opacity: 0.18;
+}
+
+.graph-scroll {
+  cursor: grab;
+}
+
+.graph-scroll.panning {
+  cursor: grabbing;
+  user-select: none;
 }

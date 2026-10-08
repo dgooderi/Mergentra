@@ -8,6 +8,8 @@ function createMainWindow({ BrowserWindow, Menu, applicationDirectory }) {
     minWidth: 720,
     minHeight: 520,
     backgroundColor: '#111827',
+    show: false,
+    icon: path.join(applicationDirectory, '..', 'assets', 'icons', 'mergentra-256.png'),
     webPreferences: {
       preload: path.join(applicationDirectory, 'preload.js'),
       contextIsolation: true,
@@ -16,6 +18,7 @@ function createMainWindow({ BrowserWindow, Menu, applicationDirectory }) {
     }
   });
 
+  window.maximize();
   window.loadFile(path.join(applicationDirectory, 'index.html'));
   return window;
 }

@@ -1,0 +1,183 @@
+const { execFileSync, expect, fs, launchMergentra, os, path, test } = require('./e2e-helpers.cjs');
+
+function createRepository(testDirectory) {
+  const repositoryPath = path.join(testDirectory, 'sample-repository');
+  fs.mkdirSync(repositoryPath);
+  const git = (args, date) =>
+    execFileSync('git', args, {
+      cwd: repositoryPath,
+      stdio: 'ignore',
+      env: date ? { ...process.env, GIT_AUTHOR_DATE: date, GIT_COMMITTER_DATE: date } : process.env
+    });
+  git(['-c', 'init.defaultBranch=main', 'init']);
+  git(['config', 'user.name', 'Mergentra E2e']);
+  git(['config', 'user.email', 'mergentra-e2e@example.invalid']);
+  fs.writeFileSync(path.join(repositoryPath, 'January.txt'), 'January');
+  git(['add', '.']);
+  git(['commit', '-m', 'January'], '2023-01-10T12:00:00');
+  git(['checkout', '-b', 'feature']);
+  fs.writeFileSync(path.join(repositoryPath, 'March.txt'), 'March');
+  git(['add', '.']);
+  git(['commit', '-m', 'March'], '2023-03-05T12:00:00');
+  git(['checkout', 'main']);
+  fs.writeFileSync(path.join(repositoryPath, 'June.txt'), 'June');
+  git(['add', '.']);
+  git(['commit', '-m', 'June'], '2023-06-20T12:00:00');
+  return repositoryPath;
+}
+
+async function labelCentre(window, isoDate) {
+  const timestamp = String(new Date(`${isoDate}T12:00:00`).getTime() / 1000);
+  const label = window.locator(`[data-testid="time-axis-label"][data-timestamp="${timestamp}"]`);
+  await label.scrollIntoViewIfNeeded();
+  const box = await label.boundingBox();
+  return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+}
+
+test.describe('dragging across the time axis', () => {
+  let testDirectory;
+  let app;
+  let window;
+
+  test.beforeEach(async () => {
+    testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
+    const repositoryPath = createRepository(testDirectory);
+    app = await launchMergentra(path.join(testDirectory, 'user-data'));
+    window = await app.firstWindow();
+    await window.getByLabel('Repository folder').fill(repositoryPath);
+    await window.getByRole('button', { name: 'Open repository' }).click();
+    await window.locator('#time-range').selectOption('all');
+    await expect(window.getByTestId('commit-node')).toHaveCount(3);
+  });
+
+  test.afterEach(async () => {
+    await app.close();
+    fs.rmSync(testDirectory, { recursive: true, force: true });
+  });
+
+  test('selects a custom date range and zooms the graph to it', async () => {
+    const first = await labelCentre(window, '2023-01-10');
+    const second = await labelCentre(window, '2023-03-05');
+    await window.mouse.move(first.x - 6, first.y);
+    await window.mouse.down();
+    await window.mouse.move((first.x + second.x) / 2, first.y, { steps: 5 });
+    await expect(window.getByTestId('time-axis-selection')).toBeVisible();
+    await window.mouse.move(second.x + 6, first.y, { steps: 5 });
+    await window.mouse.up();
+
+    await expect(window.locator('#time-range')).toHaveValue('custom');
+    await expect(window.locator('#time-range-start')).toHaveValue('2023-01-10');
+    await expect(window.locator('#time-range-end')).toHaveValue('2023-03-05');
+    await expect(window.getByTestId('commit-node')).toHaveCount(2);
+    await expect(window.getByTestId('time-axis-selection')).toHaveCount(0);
+  });
+
+  test('Escape cancels the selection and a plain click changes nothing', async () => {
+    const first = await labelCentre(window, '2023-01-10');
+    const second = await labelCentre(window, '2023-03-05');
+    await window.mouse.move(first.x - 6, first.y);
+    await window.mouse.down();
+    await window.mouse.move(second.x + 6, first.y, { steps: 5 });
+    await window.keyboard.press('Escape');
+    await window.mouse.up();
+    await expect(window.locator('#time-range')).toHaveValue('all');
+    await expect(window.getByTestId('time-axis-selection')).toHaveCount(0);
+
+    await window.mouse.click(first.x, first.y);
+    await expect(window.locator('#time-range')).toHaveValue('all');
+    await expect(window.getByTestId('commit-node')).toHaveCount(3);
+  });
+
+  test('selecting a range again is disabled until the span is widened', async () => {
+    const first = await labelCentre(window, '2023-01-10');
+    const second = await labelCentre(window, '2023-03-05');
+    await window.mouse.move(first.x - 6, first.y);
+    await window.mouse.down();
+    await window.mouse.move(second.x + 6, first.y, { steps: 5 });
+    await window.mouse.up();
+    await expect(window.getByTestId('commit-node')).toHaveCount(2);
+
+    const area = window.getByTestId('time-axis-drag-area');
+    await expect(area).toHaveAttribute('aria-disabled', 'true');
+    await expect(area).toHaveAttribute('data-disabled', 'true');
+    const again = await labelCentre(window, '2023-01-10');
+    await window.mouse.move(again.x - 6, again.y);
+    await window.mouse.down();
+    await window.mouse.move(again.x + 20, again.y, { steps: 3 });
+    await expect(window.getByTestId('time-axis-selection')).toHaveCount(0);
+    await window.mouse.up();
+    await expect(window.locator('#time-range-start')).toHaveValue('2023-01-10');
+    await expect(window.locator('#time-range-end')).toHaveValue('2023-03-05');
+
+    await window.locator('#time-range').selectOption('all');
+    await expect(window.getByTestId('commit-node')).toHaveCount(3);
+    await expect(window.getByTestId('time-axis-drag-area')).not.toHaveAttribute(
+      'aria-disabled',
+      'true'
+    );
+  });
+});
+
+test.describe('dragging the graph to pan', () => {
+  let testDirectory;
+  let app;
+  let window;
+
+  test.beforeEach(async () => {
+    testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
+    const repositoryPath = createRepository(testDirectory);
+    app = await launchMergentra(path.join(testDirectory, 'user-data'));
+    window = await app.firstWindow();
+    await window.getByLabel('Repository folder').fill(repositoryPath);
+    await window.getByRole('button', { name: 'Open repository' }).click();
+    await window.locator('#time-range').selectOption('all');
+    await expect(window.getByTestId('commit-node')).toHaveCount(3);
+    // The window starts maximised, so restore a small size to leave the graph something to scroll.
+    await app.evaluate(({ BrowserWindow }) => {
+      const target = BrowserWindow.getAllWindows()[0];
+      target.unmaximize();
+      target.setSize(1000, 720);
+    });
+    for (let step = 0; step < 4; step += 1) {
+      await window.locator('#zoom-in').click();
+    }
+  });
+
+  test.afterEach(async () => {
+    await app.close();
+    fs.rmSync(testDirectory, { recursive: true, force: true });
+  });
+
+  test('the graph follows the pointer when dragged left or right', async () => {
+    const scroller = window.locator('.graph-scroll');
+    await scroller.evaluate((element) => {
+      element.scrollLeft = 300;
+    });
+    const blankPoint = () =>
+      scroller.evaluate((element) => {
+        const bounds = element.getBoundingClientRect();
+        const blocked = '[data-testid="time-axis-drag-area"], [data-testid="commit-node"]';
+        for (let y = bounds.bottom - 20; y > bounds.top; y -= 6) {
+          for (let x = bounds.left + 20; x < bounds.left + element.clientWidth - 20; x += 6) {
+            if (!document.elementFromPoint(x, y).closest(blocked)) {
+              return { x, y };
+            }
+          }
+        }
+        return null;
+      });
+    let { x: startX, y } = await blankPoint();
+    await window.mouse.move(startX, y);
+    await window.mouse.down();
+    await window.mouse.move(startX + 120, y, { steps: 6 });
+    await window.mouse.up();
+    // Dragging right pulls the content right, so the scroll position goes down.
+    expect(await scroller.evaluate((element) => element.scrollLeft)).toBe(180);
+    ({ x: startX, y } = await blankPoint());
+    await window.mouse.move(startX, y);
+    await window.mouse.down();
+    await window.mouse.move(startX - 50, y, { steps: 5 });
+    await window.mouse.up();
+    expect(await scroller.evaluate((element) => element.scrollLeft)).toBe(230);
+  });
+});

@@ -6,7 +6,10 @@ const { loadCommitGraph } = require('./commit-graph');
 const { createSettingsStore } = require('./settings-store');
 const { registerIpcHandlers } = require('./ipc-handlers');
 const { createMainWindow } = require('./main-window');
+const { createSplash, revealWhenReady } = require('./splash');
 const { UnsafeRepositoryConfigError, assertRepositoryConfigSafe } = require('./git-config-safety');
+const { rememberRepository } = require('./recent-repositories');
+const { validateCloneUrl, checkDestination, runClone } = require('./clone');
 const { runGit, runGitWithInput } = createGitRunner();
 let settings;
 let settingsStore;
@@ -21,7 +24,6 @@ function saveSettings(nextSettings) {
   settings = nextSettings;
 }
 
-const MAX_RECENT_REPOSITORIES = 20;
 // Measured at roughly 2.6 KB of memory per commit across the main and renderer processes.
 const MEMORY_PER_COMMIT_BYTES = 2600;
 const LARGE_REPOSITORY_COMMITS = Number(process.env.MERGENTRA_LARGE_REPOSITORY_COMMITS) || 300_000;
@@ -149,15 +151,9 @@ async function openRepository(repositoryPath, { confirmLarge = false } = {}) {
 
 async function openAndRememberRepository(repositoryPath) {
   const repository = await openRepository(repositoryPath, { confirmLarge: true });
-  const normalizedPath =
-    process.platform === 'win32' ? repository.path.toLowerCase() : repository.path;
-  const recentRepositories = [
-    { path: repository.path, name: repository.name },
-    ...settings.recentRepositories.filter((recent) => {
-      const recentPath = process.platform === 'win32' ? recent.path.toLowerCase() : recent.path;
-      return recentPath !== normalizedPath;
-    })
-  ].slice(0, MAX_RECENT_REPOSITORIES);
+  const recentRepositories = rememberRepository(settings.recentRepositories, repository, {
+    caseInsensitive: process.platform === 'win32'
+  });
   saveSettings({ ...settings, recentRepositories });
   activeRepositoryPath = repository.path;
   return repository;
@@ -235,6 +231,68 @@ async function fetchRemoteReferences() {
   }
 }
 
+const AUTHENTICATION_FAILURE =
+  /authentication failed|could not read (username|password)|terminal prompts disabled|permission denied|publickey/i;
+// Only the end-to-end tests clone from a local bare repository, which normal use rejects.
+const allowLocalClone = process.env.MERGENTRA_ALLOW_LOCAL_CLONE === '1';
+let activeClone = null;
+
+async function cloneRepository({ url, destination, historyOnly }, onProgress) {
+  if (activeClone) {
+    return { success: false, message: 'A clone is already running.', diagnostics: '' };
+  }
+  const urlCheck = validateCloneUrl(url, { allowLocal: allowLocalClone });
+  if (!urlCheck.valid) {
+    return { success: false, message: urlCheck.message, diagnostics: '' };
+  }
+  const destinationCheck = checkDestination(destination);
+  if (!destinationCheck.valid) {
+    return { success: false, message: destinationCheck.message, diagnostics: '' };
+  }
+
+  const run = runClone({
+    gitPath: settings.gitPath || 'git',
+    url: urlCheck.url,
+    destination: destinationCheck.path,
+    existed: destinationCheck.existed,
+    historyOnly: Boolean(historyOnly),
+    allowLocal: allowLocalClone,
+    onProgress
+  });
+  activeClone = run;
+  try {
+    const result = await run.promise;
+    if (result.cancelled) {
+      return { success: false, cancelled: true, message: 'Clone cancelled.', diagnostics: '' };
+    }
+  } catch (error) {
+    const diagnostics = errorDiagnostics(error);
+    return {
+      success: false,
+      message: AUTHENTICATION_FAILURE.test(diagnostics)
+        ? 'Clone failed: authentication is required. Mergentra cannot prompt for passwords, so set up a Git credential helper or an SSH agent and try again.'
+        : 'Clone failed. Check the URL and your network connection, then try again.',
+      diagnostics
+    };
+  } finally {
+    activeClone = null;
+  }
+
+  try {
+    return { success: true, repository: await openAndRememberRepository(destinationCheck.path) };
+  } catch (error) {
+    return {
+      success: false,
+      message: 'The repository was cloned, but Mergentra could not open it.',
+      diagnostics: errorDiagnostics(error)
+    };
+  }
+}
+
+function cancelClone() {
+  activeClone?.cancel();
+}
+
 app.whenReady().then(() => {
   try {
     settingsStore = createSettingsStore(app.getPath('userData'));
@@ -245,11 +303,18 @@ app.whenReady().then(() => {
     return;
   }
 
+  // Automated tests set a private user-data directory and look for the first window, so they skip the splash.
+  const splash = createSplash({
+    BrowserWindow,
+    applicationDirectory: __dirname,
+    enabled: !process.env.MERGENTRA_USER_DATA_DIR
+  });
   const window = createMainWindow({
     BrowserWindow,
     Menu,
     applicationDirectory: __dirname
   });
+  revealWhenReady({ window, splash });
 
   registerIpcHandlers({
     ipcMain,
@@ -260,6 +325,8 @@ app.whenReady().then(() => {
     window,
     openAndRememberRepository,
     fetchRemoteReferences,
+    cloneRepository,
+    cancelClone,
     getSettings: () => settings,
     saveSettings,
     getActiveRepositoryPath: () => activeRepositoryPath,

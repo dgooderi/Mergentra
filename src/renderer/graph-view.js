@@ -1,7 +1,9 @@
 // SVG drawing for the commit graph. Each function appends one kind of element to the graph and
 // receives everything it needs explicitly: a layout context and an object of actions.
-import { computeTimeAxisTicks } from './time-axis.js';
+import { computeTimeAxisTicks, dateRangeFromAxisDrag } from './time-axis.js';
 import { branchLabelNames, truncateBranchName } from './layout.js';
+import { findMainReference } from './lanes.js';
+import { markdownToPlainText } from './markdown.js';
 
 const releaseTagPattern = /^v?\d+(\.\d+)+([-+.].*)?$/;
 // Merge lines longer than this leave their branch with a visible curve instead of running along its row.
@@ -16,7 +18,15 @@ export function createSvgElement(name, attributes = {}) {
 }
 
 // Each visible commit gets a tick; see computeTimeAxisTicks for how its label is chosen.
-export function renderTimeAxis(graphElement, commits, commitPositions, width, axisHeight) {
+export function renderTimeAxis(
+  graphElement,
+  commits,
+  commitPositions,
+  width,
+  axisHeight,
+  onRangeSelected,
+  selectionAvailable = true
+) {
   const { showTime, ticks } = computeTimeAxisTicks(commits, commitPositions);
   if (ticks.length === 0) {
     return;
@@ -64,6 +74,88 @@ export function renderTimeAxis(graphElement, commits, commitPositions, width, ax
     }
   }
   graphElement.append(axis);
+  attachAxisDrag(graphElement, ticks, width, axisHeight, onRangeSelected, selectionAvailable);
+}
+
+// Dragging across the axis selects the dates between the ticks it covers. Escape cancels.
+function attachAxisDrag(
+  graphElement,
+  ticks,
+  width,
+  axisHeight,
+  onRangeSelected,
+  selectionAvailable
+) {
+  if (!onRangeSelected) {
+    return;
+  }
+  const hitArea = createSvgElement('rect', {
+    class: 'time-axis-drag-area',
+    'data-testid': 'time-axis-drag-area',
+    x: 0,
+    y: 0,
+    width,
+    height: axisHeight
+  });
+  graphElement.append(hitArea);
+  if (!selectionAvailable) {
+    hitArea.classList.add('disabled');
+    hitArea.setAttribute('aria-disabled', 'true');
+    hitArea.setAttribute('data-disabled', 'true');
+    const title = createSvgElement('title');
+    title.textContent = 'Zoom out to select a new date range';
+    hitArea.append(title);
+    return;
+  }
+
+  const toGraphX = (event) => {
+    const point = new DOMPoint(event.clientX, event.clientY);
+    return point.matrixTransform(graphElement.getScreenCTM().inverse()).x;
+  };
+
+  hitArea.addEventListener('pointerdown', (event) => {
+    if (event.button !== 0) {
+      return;
+    }
+    event.preventDefault();
+    const startX = toGraphX(event);
+    const selection = createSvgElement('rect', {
+      class: 'time-axis-selection',
+      'data-testid': 'time-axis-selection',
+      x: startX,
+      y: 0,
+      width: 0,
+      height: axisHeight
+    });
+    graphElement.append(selection);
+
+    const finish = () => {
+      selection.remove();
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('keydown', onKey);
+    };
+    const onMove = (moveEvent) => {
+      const currentX = toGraphX(moveEvent);
+      selection.setAttribute('x', String(Math.min(startX, currentX)));
+      selection.setAttribute('width', String(Math.abs(currentX - startX)));
+    };
+    const onUp = (upEvent) => {
+      const range = dateRangeFromAxisDrag(ticks, startX, toGraphX(upEvent));
+      finish();
+      if (range) {
+        onRangeSelected(range);
+      }
+    };
+    const onKey = (keyEvent) => {
+      if (keyEvent.key === 'Escape') {
+        finish();
+      }
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('keydown', onKey);
+  });
 }
 
 export function appendDefinitions(graphElement) {
@@ -146,13 +238,33 @@ export function drawEdges(ctx, actions) {
         definitions.append(gradient);
         stroke = `url(#${gradientId})`;
       }
+      const checkedOutReference = graph.references.find((reference) => reference.checkedOut);
+      if (checkedOutReference && checkedOutReference.lane === edgeLane) {
+        // A wide translucent copy under the line gives the whole lane a slight glow without a costly SVG filter.
+        graphElement.append(
+          createSvgElement('path', {
+            d: pathData,
+            fill: 'none',
+            stroke: checkedOutReference.color,
+            'stroke-width': 9,
+            'stroke-opacity': 0.28,
+            'stroke-linecap': 'round',
+            'pointer-events': 'none',
+            'aria-hidden': 'true',
+            'data-testid': 'checked-out-lane-glow',
+            'data-parent-hash': parentHash,
+            'data-child-hash': commit.hash
+          })
+        );
+      }
       graphElement.append(
         createSvgElement('path', {
           d: pathData,
           fill: 'none',
           stroke,
           'stroke-width':
-            graph.references[commit.lane]?.name === 'main' && parentCommit?.lane === commit.lane
+            graph.references[commit.lane]?.name === findMainReference(graph.references)?.name &&
+            parentCommit?.lane === commit.lane
               ? 5
               : 2,
           'marker-end': 'url(#commit-arrowhead)',
@@ -180,7 +292,9 @@ export function drawEdges(ctx, actions) {
         hit.append(title);
         hit.addEventListener('pointerenter', () => {
           const note = actions.getNotes().branches[hoverReference.name];
-          title.textContent = note ? `${hoverReference.name}\n${note}` : hoverReference.name;
+          title.textContent = note
+            ? `${hoverReference.name}\n${markdownToPlainText(note)}`
+            : hoverReference.name;
         });
         if (isMergeIn) {
           hit.addEventListener('contextmenu', (event) =>
@@ -299,6 +413,19 @@ function drawCommitNode(commit, position, ctx, actions) {
           action: () => actions.focusOnCommit(source, commitPositions.get(parentHash))
         });
       }
+    }
+    const owner = ownerReference(commit.lane);
+    if (owner) {
+      items.push(
+        {
+          label: 'Show branches from main to here',
+          action: () => actions.showBranchPath(owner.name, true)
+        },
+        {
+          label: 'Show this branch and its parent',
+          action: () => actions.showBranchPath(owner.name, false)
+        }
+      );
     }
     if (items.length) actions.openGraphContextMenu(event, items);
   });

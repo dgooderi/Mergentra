@@ -1,3 +1,5 @@
+const { mainLineName } = require('./main-line');
+
 function computeDivergenceMarkers(commits, orderedReferences) {
   const commitsByHash = new Map(commits.map((commit) => [commit.hash, commit]));
   const commitIndex = new Map(commits.map((commit, index) => [commit.hash, index]));
@@ -42,8 +44,9 @@ function computeDivergenceMarkers(commits, orderedReferences) {
   }
 
   const localReferences = orderedReferences.filter((reference) => !reference.remote);
+  const mainName = mainLineName(localReferences.map((reference) => reference.name));
   const mainReference =
-    localReferences.find((reference) => reference.name === 'main') || localReferences[0];
+    localReferences.find((reference) => reference.name === mainName) || localReferences[0];
   const divergenceMarkers = [];
 
   if (mainReference) {

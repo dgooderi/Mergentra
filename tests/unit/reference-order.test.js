@@ -42,4 +42,23 @@ describe('reference ordering', () => {
 
     expect(ordered.map(({ name }) => name)).toEqual(['origin/main', 'feature', 'origin/feature']);
   });
+
+  it('treats master as the main line when there is no main', () => {
+    const ordered = orderReferences([
+      { name: 'alpha', hash: 'o', remote: false },
+      { name: 'master', hash: 'm', remote: false },
+      { name: 'zeta', hash: 'z', remote: false }
+    ]);
+
+    expect(ordered.map(({ name }) => name)).toEqual(['master', 'alpha', 'zeta']);
+  });
+
+  it('puts main ahead of master when both exist', () => {
+    const ordered = orderReferences([
+      { name: 'master', hash: 'm', remote: false },
+      { name: 'main', hash: 'n', remote: false }
+    ]);
+
+    expect(ordered.map(({ name }) => name)).toEqual(['main', 'master']);
+  });
 });

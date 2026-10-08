@@ -8,6 +8,7 @@ export const state = {
   currentRepositoryPath: null,
   customRangeValues: null,
   rangeAdjusted: false,
+  axisSelectedSpan: null,
   ownerFilter: '',
   notes: { commits: {}, branches: {} },
   zoomLevel: 1,

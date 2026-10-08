@@ -40,6 +40,8 @@ test('a developer can open a local Git repository', async () => {
 
     await expect(window.getByRole('heading', { name: 'sample-repository' })).toBeVisible();
     await expect(window.locator('#repository-path-value')).toHaveText(repositoryPath);
+    await expect(window.locator('.repository-header')).toContainText(`Path: ${repositoryPath}`);
+    await expect(window.locator('.repository-header')).toContainText('Current Branch: main');
     await expect(window.locator('#branch-name')).toHaveText('main');
     await expect(window.getByRole('button', { name: 'Check for updates' })).toBeVisible();
   } finally {
@@ -259,16 +261,26 @@ test('a recently opened repository can be reopened after restarting Mergentra', 
 
     app = await launchMergentra(launchOptions);
     window = await app.firstWindow();
-    const recent = window.locator('.recent-repository');
-    await expect(recent).toContainText('sample-repository');
-    await expect(recent).toContainText('Project X');
-    await expect(recent).not.toContainText(repositoryPath);
-    await expect(recent).toHaveAttribute('title', repositoryPath);
+    const recent = window.getByRole('combobox', { name: 'Recent repositories' });
+    const entry = recent.locator('option', { hasText: 'sample-repository' });
+    await expect(entry).toContainText('Project X');
+    await expect(entry).not.toContainText(repositoryPath);
+    await expect(entry).toHaveAttribute('title', repositoryPath);
     await expect(window.getByRole('button', { name: 'Open in Explorer' })).toBeHidden();
-    await expect(window.getByRole('button', { name: /sample-repository/ })).toBeVisible();
-    await window.getByRole('button', { name: /sample-repository/ }).click();
+
+    await recent.selectOption({ index: 1 });
+    await expect(window.getByLabel('Repository folder')).toHaveValue(repositoryPath);
+    await window.getByRole('button', { name: 'Open repository' }).click();
     await expect(window.getByRole('heading', { name: 'sample-repository' })).toBeVisible();
     await expect(window.locator('#branch-name')).toHaveText('main');
+
+    await window.getByRole('button', { name: 'Open another repository' }).click();
+    await recent.selectOption({ index: 1 });
+    window.once('dialog', (dialog) => dialog.accept());
+    await window.getByRole('button', { name: 'Remove from recent list' }).click();
+    await expect(recent.locator('option')).toHaveCount(1);
+    await expect(window.getByRole('button', { name: 'Remove from recent list' })).toBeDisabled();
+    expect(fs.existsSync(repositoryPath)).toBe(true);
   } finally {
     if (app) {
       await app.close();
@@ -286,12 +298,82 @@ test('dark mode is the default and light mode can be selected', async () => {
     const window = await app.firstWindow();
     const root = window.locator('html');
     await expect(root).not.toHaveAttribute('data-theme', 'light');
+    await expect(window.getByRole('button', { name: 'Light mode' })).toBeHidden();
 
+    await window.getByRole('button', { name: 'Settings' }).click();
     await window.getByRole('button', { name: 'Light mode' }).click();
     await expect(root).toHaveAttribute('data-theme', 'light');
 
     await window.getByRole('button', { name: 'Dark mode' }).click();
     await expect(root).toHaveAttribute('data-theme', 'dark');
+  } finally {
+    if (app) {
+      await app.close();
+    }
+    fs.rmSync(userDataPath, { recursive: true, force: true });
+  }
+});
+
+test('the default directory setting is saved, survives a restart and flags a missing folder', async () => {
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-default-dir-e2e-'));
+  const userDataPath = path.join(testDirectory, 'user-data');
+  const repositoriesFolder = path.join(testDirectory, 'repositories');
+  fs.mkdirSync(repositoriesFolder);
+  let app;
+
+  try {
+    app = await launchMergentra(userDataPath);
+    let window = await app.firstWindow();
+    await window.getByRole('button', { name: 'Settings' }).click();
+    await window.getByLabel('Default directory').fill(path.join(testDirectory, 'missing'));
+    await window.getByRole('button', { name: 'Save default directory' }).click();
+    await expect(window.locator('#default-directory-status')).toContainText(
+      'That folder does not exist.'
+    );
+
+    await window.getByLabel('Default directory').fill(repositoriesFolder);
+    await window.getByRole('button', { name: 'Save default directory' }).click();
+    await expect(window.locator('#default-directory-status')).toHaveText(
+      'Default directory saved.'
+    );
+    await app.close();
+
+    app = await launchMergentra(userDataPath);
+    window = await app.firstWindow();
+    await window.getByRole('button', { name: 'Settings' }).click();
+    await expect(window.getByLabel('Default directory')).toHaveValue(repositoriesFolder);
+    await app.close();
+
+    fs.rmSync(repositoriesFolder, { recursive: true });
+    app = await launchMergentra(userDataPath);
+    window = await app.firstWindow();
+    await window.getByRole('button', { name: 'Settings' }).click();
+    await expect(window.locator('#default-directory-status')).toContainText('no longer exists');
+
+    await window.getByLabel('Default directory').fill('');
+    await window.getByRole('button', { name: 'Save default directory' }).click();
+    await expect(window.locator('#default-directory-status')).toHaveText(
+      'Default directory cleared.'
+    );
+  } finally {
+    if (app) {
+      await app.close().catch(() => {});
+    }
+    fs.rmSync(testDirectory, { recursive: true, force: true });
+  }
+});
+
+test('settings is a cog icon button with an accessible name', async () => {
+  const userDataPath = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
+  let app;
+
+  try {
+    app = await launchMergentra(userDataPath);
+    const window = await app.firstWindow();
+    const settings = window.getByRole('button', { name: 'Settings' });
+    await expect(settings).toHaveText('');
+    await expect(settings.locator('svg')).toHaveCount(1);
+    await expect(settings).toHaveAttribute('title', 'Settings');
   } finally {
     if (app) {
       await app.close();
