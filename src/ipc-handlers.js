@@ -1,5 +1,6 @@
 const path = require('node:path');
 const fs = require('node:fs');
+const { forgetRepository } = require('./recent-repositories');
 
 function isExistingDirectory(directory) {
   try {
@@ -95,6 +96,16 @@ function registerIpcHandlers({
     }
   });
   ipcMain.handle('repository:recent', () => getSettings().recentRepositories);
+  ipcMain.handle('repository:forget-recent', async (_event, repositoryPath) => {
+    if (typeof repositoryPath !== 'string') {
+      throw new Error('Choose a repository to remove.');
+    }
+    const recentRepositories = forgetRepository(getSettings().recentRepositories, repositoryPath, {
+      caseInsensitive: process.platform === 'win32'
+    });
+    saveSettings({ ...getSettings(), recentRepositories });
+    return recentRepositories;
+  });
   ipcMain.handle('settings:get-git-path', () => getSettings().gitPath);
   ipcMain.handle('settings:save-git-path', async (_event, gitPath) => {
     if (typeof gitPath !== 'string') {

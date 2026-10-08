@@ -23,7 +23,7 @@ export function createRepositoryControls({ showRepository }) {
       button.disabled = true;
     }
     setStatus('');
-    progress.textContent = 'Loading repository history…';
+    progress.textContent = 'Loading repository historyÃ¢â‚¬Â¦';
 
     try {
       showRepository(await loadRepository(repositoryPath));
@@ -51,6 +51,21 @@ export function createRepositoryControls({ showRepository }) {
     }
   }
 
+  function showRecentRepositories(recentRepositories) {
+    renderRecentRepositories(recentRepositories, {
+      onSelect: (selectedPath) => {
+        pathInput.value = selectedPath;
+      },
+      onRemove: async (removedPath) => {
+        try {
+          showRecentRepositories(await window.mergentra.forgetRecentRepository(removedPath));
+        } catch (error) {
+          setStatus(error.message);
+        }
+      }
+    });
+  }
+
   async function loadPickerSettings() {
     try {
       const [gitPath, recentRepositories] = await Promise.all([
@@ -58,7 +73,7 @@ export function createRepositoryControls({ showRepository }) {
         window.mergentra.getRecentRepositories()
       ]);
       gitPathInput.value = gitPath;
-      renderRecentRepositories(recentRepositories, openRepository);
+      showRecentRepositories(recentRepositories);
     } catch (error) {
       setStatus(error.message);
     }

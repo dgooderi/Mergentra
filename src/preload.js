@@ -10,6 +10,8 @@ contextBridge.exposeInMainWorld('mergentra', {
   copyDiagnostics: (diagnostics) => ipcRenderer.invoke('diagnostics:copy', diagnostics),
   openInExplorer: () => ipcRenderer.invoke('repository:open-in-explorer'),
   getRecentRepositories: () => ipcRenderer.invoke('repository:recent'),
+  forgetRecentRepository: (repositoryPath) =>
+    ipcRenderer.invoke('repository:forget-recent', repositoryPath),
   getGitPath: () => ipcRenderer.invoke('settings:get-git-path'),
   saveGitPath: (gitPath) => ipcRenderer.invoke('settings:save-git-path', gitPath),
   getDefaultDirectory: () => ipcRenderer.invoke('settings:get-default-directory'),

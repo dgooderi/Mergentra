@@ -75,7 +75,12 @@
         <p class="intro">Choose a local Git repository to explore its history.</p>
         <section class="recent-section" aria-labelledby="recent-heading">
           <h2 id="recent-heading">Recent repositories</h2>
-          <ul id="recent-repositories"></ul>
+          <div class="path-controls">
+            <select id="recent-repositories" aria-label="Recent repositories"></select>
+            <button id="recent-remove" class="secondary" type="button" disabled>
+              Remove from recent list
+            </button>
+          </div>
         </section>
         <form id="repository-form">
           <label for="repository-path">Repository folder</label>
