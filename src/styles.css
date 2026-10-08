@@ -1150,12 +1150,22 @@ main:not(:has(#repository-view:not([hidden]))) #open-explorer {
 }
 
 .markdown-note {
-  display: grid;
-  gap: 6px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.markdown-note > textarea,
+.markdown-note > .note-preview {
+  box-sizing: border-box;
+  flex: 0 1 420px;
+  min-width: 0;
+  height: 92px;
+  overflow: auto;
 }
 
 .markdown-note .note-view-toggle {
-  justify-self: start;
+  flex: 0 0 auto;
   padding: 2px 10px;
   font-size: 0.8rem;
 }

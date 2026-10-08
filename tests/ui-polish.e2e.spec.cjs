@@ -39,3 +39,27 @@ test('Current Branch sits directly under Path, left aligned', async () => {
     expect(Math.abs(branch.x - path.x)).toBeLessThan(1);
   });
 });
+
+test('note Preview button sits to the right of the note', async () => {
+  await withApp(async (window) => {
+    const note = await window.locator('#repository-note').boundingBox();
+    const toggle = await window
+      .locator('.repository-header .markdown-note .note-view-toggle')
+      .boundingBox();
+    expect(toggle.x).toBeGreaterThanOrEqual(note.x + note.width - 1);
+  });
+});
+
+test('note is at least three lines tall in edit and preview modes', async () => {
+  await withApp(async (window) => {
+    const lineHeight = await window
+      .locator('#repository-note')
+      .evaluate((element) => parseFloat(getComputedStyle(element).lineHeight) || 16);
+    const editor = await window.locator('#repository-note').boundingBox();
+    expect(editor.height).toBeGreaterThanOrEqual(lineHeight * 3);
+    await window.locator('.repository-header .markdown-note .note-view-toggle').click();
+    const preview = await window.locator('.repository-header .note-preview').boundingBox();
+    expect(preview.height).toBeGreaterThanOrEqual(lineHeight * 3);
+    expect(Math.abs(preview.height - editor.height)).toBeLessThan(4);
+  });
+});
