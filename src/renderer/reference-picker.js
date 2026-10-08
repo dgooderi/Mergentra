@@ -214,6 +214,7 @@ export function createReferencePicker({ renderFilteredGraph }) {
 
   return {
     init,
+    showOnly: (names) => setVisibleBranches((reference) => names.includes(reference.name)),
     render: renderReferenceLanes,
     refresh() {
       filter();
