@@ -1,6 +1,6 @@
 import { viewStorage } from './app-storage.js';
 import { renderRecentRepositories } from './recent-repositories.js';
-import { openRepository as loadRepository } from './repository-api.js';
+import { cloneRepository, openRepository as loadRepository } from './repository-api.js';
 import { state } from './state.js';
 
 export function createRepositoryControls({ showRepository }) {
@@ -80,6 +80,83 @@ export function createRepositoryControls({ showRepository }) {
     await loadDefaultDirectory();
   }
 
+  function initClone() {
+    const cloneForm = document.getElementById('clone-form');
+    const urlInput = document.getElementById('clone-url');
+    const destinationInput = document.getElementById('clone-destination');
+    const startButton = document.getElementById('clone-start');
+    const cancelButton = document.getElementById('clone-cancel');
+    const progress = document.getElementById('clone-progress');
+    const cloneStatus = document.getElementById('clone-status');
+    const diagnosticsPanel = document.getElementById('clone-diagnostics-panel');
+    const diagnostics = document.getElementById('clone-diagnostics');
+
+    function setCloning(cloning) {
+      startButton.disabled = cloning;
+      cancelButton.hidden = !cloning;
+      cancelButton.disabled = false;
+    }
+
+    document.getElementById('clone-browse').addEventListener('click', async () => {
+      try {
+        const selected = await window.mergentra.chooseCloneDestination();
+        if (selected) {
+          destinationInput.value = selected;
+        }
+      } catch (error) {
+        cloneStatus.textContent = error.message;
+      }
+    });
+
+    cancelButton.addEventListener('click', () => {
+      cancelButton.disabled = true;
+      progress.textContent = 'Cancelling…';
+      window.mergentra.cancelClone();
+    });
+
+    document.getElementById('copy-clone-diagnostics').addEventListener('click', async () => {
+      try {
+        await window.mergentra.copyDiagnostics(diagnostics.textContent);
+        cloneStatus.textContent = 'Clone diagnostics copied.';
+      } catch (error) {
+        cloneStatus.textContent = error.message;
+      }
+    });
+
+    cloneForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      cloneStatus.textContent = '';
+      diagnosticsPanel.hidden = true;
+      diagnostics.textContent = '';
+      setCloning(true);
+      progress.textContent = 'Starting clone…';
+      window.mergentra.onCloneProgress((line) => {
+        progress.textContent = line;
+      });
+      try {
+        const result = await cloneRepository({
+          url: urlInput.value,
+          destination: destinationInput.value,
+          historyOnly: document.getElementById('clone-history-only').checked
+        });
+        if (result.success) {
+          showRepository(result.repository);
+        } else {
+          cloneStatus.textContent = result.message;
+          if (result.diagnostics) {
+            diagnostics.textContent = result.diagnostics;
+            diagnosticsPanel.hidden = false;
+          }
+        }
+      } catch (error) {
+        cloneStatus.textContent = error.message;
+      } finally {
+        progress.textContent = '';
+        setCloning(false);
+      }
+    });
+  }
+
   function setTheme(theme) {
     document.documentElement.dataset.theme = theme;
     const toggle = document.getElementById('theme-toggle');
@@ -89,6 +166,7 @@ export function createRepositoryControls({ showRepository }) {
 
   function init() {
     loadPickerSettings();
+    initClone();
 
     document.getElementById('browse-button').addEventListener('click', async () => {
       setStatus('');

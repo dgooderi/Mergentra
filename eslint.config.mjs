@@ -21,6 +21,7 @@ export default [
       'src/settings-store.js',
       'src/recent-repositories.js',
       'src/main-line.js',
+      'src/clone.js',
       'tests/**/*.cjs',
       'playwright.config.*'
     ],

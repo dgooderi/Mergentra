@@ -19,6 +19,8 @@ function registerIpcHandlers({
   window,
   openAndRememberRepository,
   fetchRemoteReferences,
+  cloneRepository,
+  cancelClone,
   getSettings,
   saveSettings,
   getActiveRepositoryPath,
@@ -58,6 +60,31 @@ function registerIpcHandlers({
       ? { ...result, repository: JSON.stringify(result.repository) }
       : result;
   });
+  ipcMain.handle('clone:choose-destination', async () => {
+    const result = await dialog.showOpenDialog(window, {
+      title: 'Choose an empty folder for the clone',
+      properties: ['openDirectory', 'createDirectory'],
+      defaultPath: browseStartDirectory()
+    });
+    return result.canceled ? null : result.filePaths[0];
+  });
+  ipcMain.handle('clone:start', async (_event, request) => {
+    if (typeof request?.url !== 'string' || typeof request?.destination !== 'string') {
+      throw new Error('Enter a repository URL and a destination folder.');
+    }
+    const result = await cloneRepository(
+      {
+        url: request.url,
+        destination: request.destination,
+        historyOnly: request.historyOnly === true
+      },
+      (line) => window.webContents.send('clone:progress', line)
+    );
+    return result.repository
+      ? { ...result, repository: JSON.stringify(result.repository) }
+      : result;
+  });
+  ipcMain.handle('clone:cancel', () => cancelClone());
   ipcMain.handle('app:version', () => app.getVersion());
   ipcMain.handle('external:open-release', async (_event, releaseUrl) => {
     if (typeof releaseUrl !== 'string') {

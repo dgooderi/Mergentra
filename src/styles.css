@@ -1178,3 +1178,28 @@ main:not(:has(#repository-view:not([hidden]))) #open-explorer {
 #selected-commit-branch-notes li > span {
   font-weight: 600;
 }
+
+.clone-section {
+  display: grid;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.clone-section .checkbox-label input {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+}
+
+.clone-section .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#clone-diagnostics {
+  max-height: 160px;
+  overflow: auto;
+  white-space: pre-wrap;
+}
