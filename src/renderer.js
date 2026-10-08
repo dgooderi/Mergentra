@@ -33,7 +33,8 @@ import {
   openCompactedPopover,
   openGraphContextMenu
 } from './renderer/popovers.js';
-import { getPresetRange } from './renderer/time-range.js';
+import { attachGraphPan } from './renderer/graph-pan.js';
+import { getPresetRange, isAxisSelectionAvailable } from './renderer/time-range.js';
 import { createReviewDock } from './renderer/review-dock.js';
 const reviewDock = createReviewDock({ updateTimeNavigation });
 const selectCommit = reviewDock.selectCommit;
@@ -204,6 +205,7 @@ document.getElementById('commit-graph').addEventListener('click', (event) => {
   }
 });
 document.querySelector('.graph-scroll').addEventListener('scroll', closeCompactedPopover);
+attachGraphPan(document.querySelector('.graph-scroll'));
 document.addEventListener('click', (event) => {
   if (
     !event.target.closest(
@@ -316,13 +318,18 @@ function renderGraphContents(graph) {
     cutMarkersByHash,
     ownerReference
   };
+  const axisSelectionAvailable = isAxisSelectionAvailable(state.timeRange, state.axisSelectedSpan);
+  if (axisSelectionAvailable) {
+    state.axisSelectedSpan = null;
+  }
   renderTimeAxis(
     graphElement,
     graph.commits,
     commitPositions,
     width,
     axisHeight,
-    selectCustomRange
+    selectCustomRange,
+    axisSelectionAvailable
   );
   drawEdges(ctx, graphActions);
   drawCommits(ctx, graphActions);

@@ -48,11 +48,6 @@ test.describe('dragging across the time axis', () => {
     await window.getByRole('button', { name: 'Open repository' }).click();
     await window.locator('#time-range').selectOption('all');
     await expect(window.getByTestId('commit-node')).toHaveCount(3);
-    console.log(
-      'DBG',
-      await window.getByTestId('commit-node').count(),
-      await window.getByTestId('time-axis-label').allTextContents()
-    );
   });
 
   test.afterEach(async () => {
@@ -91,5 +86,92 @@ test.describe('dragging across the time axis', () => {
     await window.mouse.click(first.x, first.y);
     await expect(window.locator('#time-range')).toHaveValue('all');
     await expect(window.getByTestId('commit-node')).toHaveCount(3);
+  });
+
+  test('selecting a range again is disabled until the span is widened', async () => {
+    const first = await labelCentre(window, '2023-01-10');
+    const second = await labelCentre(window, '2023-03-05');
+    await window.mouse.move(first.x - 6, first.y);
+    await window.mouse.down();
+    await window.mouse.move(second.x + 6, first.y, { steps: 5 });
+    await window.mouse.up();
+    await expect(window.getByTestId('commit-node')).toHaveCount(2);
+
+    const area = window.getByTestId('time-axis-drag-area');
+    await expect(area).toHaveAttribute('aria-disabled', 'true');
+    await expect(area).toHaveAttribute('data-disabled', 'true');
+    const again = await labelCentre(window, '2023-01-10');
+    await window.mouse.move(again.x - 6, again.y);
+    await window.mouse.down();
+    await window.mouse.move(again.x + 20, again.y, { steps: 3 });
+    await expect(window.getByTestId('time-axis-selection')).toHaveCount(0);
+    await window.mouse.up();
+    await expect(window.locator('#time-range-start')).toHaveValue('2023-01-10');
+    await expect(window.locator('#time-range-end')).toHaveValue('2023-03-05');
+
+    await window.locator('#time-range').selectOption('all');
+    await expect(window.getByTestId('commit-node')).toHaveCount(3);
+    await expect(window.getByTestId('time-axis-drag-area')).not.toHaveAttribute(
+      'aria-disabled',
+      'true'
+    );
+  });
+});
+
+test.describe('dragging the graph to pan', () => {
+  let testDirectory;
+  let app;
+  let window;
+
+  test.beforeEach(async () => {
+    testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
+    const repositoryPath = createRepository(testDirectory);
+    app = await launchMergentra(path.join(testDirectory, 'user-data'));
+    window = await app.firstWindow();
+    await window.getByLabel('Repository folder').fill(repositoryPath);
+    await window.getByRole('button', { name: 'Open repository' }).click();
+    await window.locator('#time-range').selectOption('all');
+    await expect(window.getByTestId('commit-node')).toHaveCount(3);
+    for (let step = 0; step < 4; step += 1) {
+      await window.locator('#zoom-in').click();
+    }
+  });
+
+  test.afterEach(async () => {
+    await app.close();
+    fs.rmSync(testDirectory, { recursive: true, force: true });
+  });
+
+  test('the graph follows the pointer when dragged left or right', async () => {
+    const scroller = window.locator('.graph-scroll');
+    await scroller.evaluate((element) => {
+      element.scrollLeft = 300;
+    });
+    const blankPoint = () =>
+      scroller.evaluate((element) => {
+        const bounds = element.getBoundingClientRect();
+        const blocked = '[data-testid="time-axis-drag-area"], [data-testid="commit-node"]';
+        for (let y = bounds.bottom - 20; y > bounds.top; y -= 6) {
+          for (let x = bounds.left + 20; x < bounds.left + element.clientWidth - 20; x += 6) {
+            if (!document.elementFromPoint(x, y).closest(blocked)) {
+              return { x, y };
+            }
+          }
+        }
+        return null;
+      });
+    let { x: startX, y } = await blankPoint();
+    await window.mouse.move(startX, y);
+    await window.mouse.down();
+    await window.mouse.move(startX + 120, y, { steps: 6 });
+    await window.mouse.up();
+    // Dragging right pulls the content right, so the scroll position goes down.
+    expect(await scroller.evaluate((element) => element.scrollLeft)).toBe(180);
+    ({ x: startX, y } = await blankPoint());
+    await window.mouse.move(startX, y);
+    await window.mouse.down();
+    await window.mouse.move(startX - 50, y, { steps: 5 });
+    await window.mouse.up();
+    expect(await scroller.evaluate((element) => element.scrollLeft)).toBe(230);
   });
 });
