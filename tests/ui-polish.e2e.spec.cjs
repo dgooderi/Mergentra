@@ -63,3 +63,15 @@ test('note is at least three lines tall in edit and preview modes', async () => 
     expect(Math.abs(preview.height - editor.height)).toBeLessThan(4);
   });
 });
+
+test('settings cog is centred in its button and large, on both screens', async () => {
+  const check = async (window) => {
+    const button = await window.locator('#open-settings').boundingBox();
+    const icon = await window.locator('#open-settings svg').boundingBox();
+    expect(Math.abs(icon.x + icon.width / 2 - (button.x + button.width / 2))).toBeLessThan(1);
+    expect(Math.abs(icon.y + icon.height / 2 - (button.y + button.height / 2))).toBeLessThan(1);
+    expect(icon.width).toBeGreaterThanOrEqual(24);
+  };
+  await withApp(check, { openRepository: false });
+  await withApp(check);
+});
