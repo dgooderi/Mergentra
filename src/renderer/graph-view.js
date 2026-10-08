@@ -1,6 +1,6 @@
 // SVG drawing for the commit graph. Each function appends one kind of element to the graph and
 // receives everything it needs explicitly: a layout context and an object of actions.
-import { computeTimeAxisTicks } from './time-axis.js';
+import { computeTimeAxisTicks, dateRangeFromAxisDrag } from './time-axis.js';
 import { branchLabelNames, truncateBranchName } from './layout.js';
 import { findMainReference } from './lanes.js';
 
@@ -17,7 +17,14 @@ export function createSvgElement(name, attributes = {}) {
 }
 
 // Each visible commit gets a tick; see computeTimeAxisTicks for how its label is chosen.
-export function renderTimeAxis(graphElement, commits, commitPositions, width, axisHeight) {
+export function renderTimeAxis(
+  graphElement,
+  commits,
+  commitPositions,
+  width,
+  axisHeight,
+  onRangeSelected
+) {
   const { showTime, ticks } = computeTimeAxisTicks(commits, commitPositions);
   if (ticks.length === 0) {
     return;
@@ -65,6 +72,72 @@ export function renderTimeAxis(graphElement, commits, commitPositions, width, ax
     }
   }
   graphElement.append(axis);
+  attachAxisDrag(graphElement, ticks, width, axisHeight, onRangeSelected);
+}
+
+// Dragging across the axis selects the dates between the ticks it covers. Escape cancels.
+function attachAxisDrag(graphElement, ticks, width, axisHeight, onRangeSelected) {
+  if (!onRangeSelected) {
+    return;
+  }
+  const hitArea = createSvgElement('rect', {
+    class: 'time-axis-drag-area',
+    'data-testid': 'time-axis-drag-area',
+    x: 0,
+    y: 0,
+    width,
+    height: axisHeight
+  });
+  graphElement.append(hitArea);
+
+  const toGraphX = (event) => {
+    const point = new DOMPoint(event.clientX, event.clientY);
+    return point.matrixTransform(graphElement.getScreenCTM().inverse()).x;
+  };
+
+  hitArea.addEventListener('pointerdown', (event) => {
+    if (event.button !== 0) {
+      return;
+    }
+    event.preventDefault();
+    const startX = toGraphX(event);
+    const selection = createSvgElement('rect', {
+      class: 'time-axis-selection',
+      'data-testid': 'time-axis-selection',
+      x: startX,
+      y: 0,
+      width: 0,
+      height: axisHeight
+    });
+    graphElement.append(selection);
+
+    const finish = () => {
+      selection.remove();
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('keydown', onKey);
+    };
+    const onMove = (moveEvent) => {
+      const currentX = toGraphX(moveEvent);
+      selection.setAttribute('x', String(Math.min(startX, currentX)));
+      selection.setAttribute('width', String(Math.abs(currentX - startX)));
+    };
+    const onUp = (upEvent) => {
+      const range = dateRangeFromAxisDrag(ticks, startX, toGraphX(upEvent));
+      finish();
+      if (range) {
+        onRangeSelected(range);
+      }
+    };
+    const onKey = (keyEvent) => {
+      if (keyEvent.key === 'Escape') {
+        finish();
+      }
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('keydown', onKey);
+  });
 }
 
 export function appendDefinitions(graphElement) {

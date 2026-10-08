@@ -16,6 +16,7 @@ import { state } from './renderer/state.js';
 import { loadViewState, saveViewState } from './renderer/view-state.js';
 import {
   initTimeToolbar,
+  selectCustomRange,
   syncCustomInputsToRange,
   updateTimeNavigation
 } from './renderer/time-toolbar.js';
@@ -308,7 +309,14 @@ function renderGraphContents(graph) {
     cutMarkersByHash,
     ownerReference
   };
-  renderTimeAxis(graphElement, graph.commits, commitPositions, width, axisHeight);
+  renderTimeAxis(
+    graphElement,
+    graph.commits,
+    commitPositions,
+    width,
+    axisHeight,
+    selectCustomRange
+  );
   drawEdges(ctx, graphActions);
   drawCommits(ctx, graphActions);
   drawCheckedOutMarker(ctx);
