@@ -33,6 +33,7 @@ import {
   openCompactedPopover,
   openGraphContextMenu
 } from './renderer/popovers.js';
+import { branchPathToMain } from './renderer/branch-path.js';
 import { attachGraphPan } from './renderer/graph-pan.js';
 import { getPresetRange, isAxisSelectionAvailable } from './renderer/time-range.js';
 import { createReviewDock } from './renderer/review-dock.js';
@@ -284,6 +285,10 @@ const graphActions = {
   getSelectedCommit: () => state.selectedCommit,
   selectCommit: (commit) => selectCommit(commit),
   focusOnCommit,
+  showBranchPath: (referenceName, ancestors) => {
+    const path = branchPathToMain(state.currentGraph, referenceName);
+    referencePicker.showOnly(ancestors ? path : path.slice(0, 2));
+  },
   openGraphContextMenu,
   openCompactedPopover: (summary, anchor) => openCompactedPopover(summary, anchor, selectCommit),
   registerCompactedMember: (hash, summaryHash) => state.compactedMembership.set(hash, summaryHash)

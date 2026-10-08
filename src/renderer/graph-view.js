@@ -414,6 +414,19 @@ function drawCommitNode(commit, position, ctx, actions) {
         });
       }
     }
+    const owner = ownerReference(commit.lane);
+    if (owner) {
+      items.push(
+        {
+          label: 'Show branches from main to here',
+          action: () => actions.showBranchPath(owner.name, true)
+        },
+        {
+          label: 'Show this branch and its parent',
+          action: () => actions.showBranchPath(owner.name, false)
+        }
+      );
+    }
     if (items.length) actions.openGraphContextMenu(event, items);
   });
   const title = createSvgElement('title');
