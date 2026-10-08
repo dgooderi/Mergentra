@@ -83,10 +83,10 @@ function graphMark(extraDetail) {
 }
 
 function tile(size, content, { withText = false } = {}) {
-  const margin = size * 0.04;
+  const margin = size * 0.02;
   const inner = size - margin * 2;
   const radius = inner * 0.22;
-  const markBox = withText ? inner * 0.62 : inner * 0.72;
+  const markBox = withText ? inner * 0.62 : inner * 0.9;
   const markX = margin + (inner - markBox) / 2;
   const markY = withText ? margin + inner * 0.07 : margin + (inner - markBox) / 2;
   const text = withText

@@ -15,8 +15,8 @@
   <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
     <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#0f2a55" flood-opacity="0.35"/>
   </filter></defs>
-  <rect x="1.28" y="1.28" width="29.44" height="29.44" rx="6.4768" fill="url(#tile)" stroke="url(#rim)" stroke-width="1" filter="url(#shadow)"/>
-  <g transform="translate(5.401600000000001 5.401600000000001) scale(0.105984)">
+  <rect x="0.64" y="0.64" width="30.72" height="30.72" rx="6.7584" fill="url(#tile)" stroke="url(#rim)" stroke-width="1" filter="url(#shadow)"/>
+  <g transform="translate(2.1759999999999997 2.1759999999999997) scale(0.13824)">
   <path d="M22 100 L178 100" fill="none" stroke="url(#flow)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
   <path d="M58 100 C84 100 78 52 108 52 L178 52" fill="none" stroke="url(#flow)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
   <path d="M58 100 C84 100 78 148 108 148 L178 148" fill="none" stroke="url(#flow)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
