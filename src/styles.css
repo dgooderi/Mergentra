@@ -1287,3 +1287,15 @@ main:not(:has(#repository-view:not([hidden]))) #open-explorer {
 .clone-section p:empty {
   display: none;
 }
+
+.brand-logo {
+  display: block;
+}
+
+.brand-logo-large {
+  margin: 0 0 8px;
+}
+
+.repository-header > div > .brand-logo-small {
+  margin: 0 4px 0 0;
+}

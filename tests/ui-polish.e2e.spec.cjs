@@ -142,3 +142,25 @@ test('Open and Clone panels are the same height and the tab bar does not move', 
     { openRepository: false }
   );
 });
+
+test('logo is shown on the picker screen and in the repository header', async () => {
+  await withApp(
+    async (window) => {
+      const pickerLogo = window.locator('#repository-picker img.brand-logo');
+      await expect(pickerLogo).toBeVisible();
+      await expect(pickerLogo).toHaveAttribute('alt', 'Mergentra');
+      expect(await pickerLogo.evaluate((image) => image.naturalWidth)).toBeGreaterThan(0);
+      await window.getByLabel('Repository folder').fill(process.env.TEMP);
+    },
+    { openRepository: false }
+  );
+  await withApp(async (window) => {
+    const headerLogo = window.locator('.repository-header img.brand-logo');
+    await expect(headerLogo).toBeVisible();
+    expect(await headerLogo.evaluate((image) => image.naturalWidth)).toBeGreaterThan(0);
+    const scrolls = await window.evaluate(
+      () => document.scrollingElement.scrollHeight > document.scrollingElement.clientHeight
+    );
+    expect(scrolls).toBe(false);
+  });
+});
