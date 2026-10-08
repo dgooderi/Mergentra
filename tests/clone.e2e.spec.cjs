@@ -46,6 +46,7 @@ test.describe('clone repository', () => {
       }
     });
     window = await app.firstWindow();
+    await window.getByRole('tab', { name: 'Clone' }).click();
   });
 
   test.afterEach(async () => {

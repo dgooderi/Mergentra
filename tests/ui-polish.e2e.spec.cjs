@@ -75,3 +75,32 @@ test('settings cog is centred in its button and large, on both screens', async (
   await withApp(check, { openRepository: false });
   await withApp(check);
 });
+
+test('picker screen shows only the Open or the Clone form and keeps typed values', async () => {
+  await withApp(
+    async (window) => {
+      const openTab = window.getByRole('tab', { name: 'Open' });
+      const cloneTab = window.getByRole('tab', { name: 'Clone' });
+      await expect(openTab).toHaveAttribute('aria-selected', 'true');
+      await expect(window.locator('#repository-form')).toBeVisible();
+      await expect(window.locator('#clone-form')).toBeHidden();
+
+      await window.getByLabel('Repository folder').fill('C:\\typed\\path');
+      await cloneTab.click();
+      await expect(cloneTab).toHaveAttribute('aria-selected', 'true');
+      await expect(window.locator('#clone-form')).toBeVisible();
+      await expect(window.locator('#repository-form')).toBeHidden();
+      await window.getByLabel('Repository URL').fill('https://example.invalid/r.git');
+
+      await cloneTab.press('ArrowLeft');
+      await expect(openTab).toBeFocused();
+      await expect(window.locator('#repository-form')).toBeVisible();
+      await expect(window.getByLabel('Repository folder')).toHaveValue('C:\\typed\\path');
+      await openTab.press('ArrowRight');
+      await expect(window.getByLabel('Repository URL')).toHaveValue(
+        'https://example.invalid/r.git'
+      );
+    },
+    { openRepository: false }
+  );
+});

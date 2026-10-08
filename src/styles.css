@@ -1231,3 +1231,26 @@ main:not(:has(#repository-view:not([hidden]))) #open-explorer {
   width: 28px;
   height: 28px;
 }
+
+.mode-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.mode-tab {
+  padding: 10px 22px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mode-tab[aria-selected='true'] {
+  border-bottom-color: #3b82f6;
+  color: var(--text, inherit);
+}
