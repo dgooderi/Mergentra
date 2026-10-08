@@ -937,6 +937,11 @@ main:has(#repository-view:not([hidden])) {
   margin: 0;
 }
 
+.repository-header > div > .repository-path,
+.repository-header > div > .branch-label {
+  width: 100%;
+}
+
 .repository-view .graph-layout {
   padding-top: 12px;
 }
