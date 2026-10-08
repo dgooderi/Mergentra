@@ -1,4 +1,4 @@
-const { execFileSync, expect, fs, launchMergentra, os, path, test } = require('./e2e-helpers.cjs');
+﻿const { execFileSync, expect, fs, launchMergentra, os, path, test } = require('./e2e-helpers.cjs');
 
 test('a developer can open a local Git repository', async () => {
   const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
@@ -297,5 +297,54 @@ test('dark mode is the default and light mode can be selected', async () => {
       await app.close();
     }
     fs.rmSync(userDataPath, { recursive: true, force: true });
+  }
+});
+
+test('the default directory setting is saved, survives a restart and flags a missing folder', async () => {
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-default-dir-e2e-'));
+  const userDataPath = path.join(testDirectory, 'user-data');
+  const repositoriesFolder = path.join(testDirectory, 'repositories');
+  fs.mkdirSync(repositoriesFolder);
+  let app;
+
+  try {
+    app = await launchMergentra(userDataPath);
+    let window = await app.firstWindow();
+    await window.getByRole('button', { name: 'Settings' }).click();
+    await window.getByLabel('Default directory').fill(path.join(testDirectory, 'missing'));
+    await window.getByRole('button', { name: 'Save default directory' }).click();
+    await expect(window.locator('#default-directory-status')).toContainText(
+      'That folder does not exist.'
+    );
+
+    await window.getByLabel('Default directory').fill(repositoriesFolder);
+    await window.getByRole('button', { name: 'Save default directory' }).click();
+    await expect(window.locator('#default-directory-status')).toHaveText(
+      'Default directory saved.'
+    );
+    await app.close();
+
+    app = await launchMergentra(userDataPath);
+    window = await app.firstWindow();
+    await window.getByRole('button', { name: 'Settings' }).click();
+    await expect(window.getByLabel('Default directory')).toHaveValue(repositoriesFolder);
+    await app.close();
+
+    fs.rmSync(repositoriesFolder, { recursive: true });
+    app = await launchMergentra(userDataPath);
+    window = await app.firstWindow();
+    await window.getByRole('button', { name: 'Settings' }).click();
+    await expect(window.locator('#default-directory-status')).toContainText('no longer exists');
+
+    await window.getByLabel('Default directory').fill('');
+    await window.getByRole('button', { name: 'Save default directory' }).click();
+    await expect(window.locator('#default-directory-status')).toHaveText(
+      'Default directory cleared.'
+    );
+  } finally {
+    if (app) {
+      await app.close().catch(() => {});
+    }
+    fs.rmSync(testDirectory, { recursive: true, force: true });
   }
 });

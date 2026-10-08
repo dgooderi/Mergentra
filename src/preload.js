@@ -11,5 +11,9 @@ contextBridge.exposeInMainWorld('mergentra', {
   openInExplorer: () => ipcRenderer.invoke('repository:open-in-explorer'),
   getRecentRepositories: () => ipcRenderer.invoke('repository:recent'),
   getGitPath: () => ipcRenderer.invoke('settings:get-git-path'),
-  saveGitPath: (gitPath) => ipcRenderer.invoke('settings:save-git-path', gitPath)
+  saveGitPath: (gitPath) => ipcRenderer.invoke('settings:save-git-path', gitPath),
+  getDefaultDirectory: () => ipcRenderer.invoke('settings:get-default-directory'),
+  saveDefaultDirectory: (directory) =>
+    ipcRenderer.invoke('settings:save-default-directory', directory),
+  chooseDefaultDirectory: () => ipcRenderer.invoke('settings:choose-default-directory')
 });

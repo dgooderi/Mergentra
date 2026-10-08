@@ -30,6 +30,134 @@ function makeIpcDependencies(overrides = {}) {
 }
 
 describe('IPC handlers', () => {
+  describe('Browse starting folder', () => {
+    function choose(overrides, settings = {}) {
+      const made = makeIpcDependencies({ directoryExists: () => true, ...overrides });
+      Object.assign(made.currentSettings, settings);
+      return made;
+    }
+
+    it('starts in the default directory when no folder has been used yet', async () => {
+      const { handlers, dependencies } = choose({}, { defaultDirectory: 'C:\\repos' });
+
+      await handlers.get('repository:choose')();
+
+      expect(dependencies.dialog.showOpenDialog).toHaveBeenCalledWith(
+        dependencies.window,
+        expect.objectContaining({ defaultPath: 'C:\\repos' })
+      );
+    });
+
+    it('prefers the last used folder over the default directory', async () => {
+      const { handlers, dependencies } = choose(
+        {},
+        { defaultDirectory: 'C:\\repos', lastBrowsedDirectory: 'D:\\work' }
+      );
+
+      await handlers.get('repository:choose')();
+
+      expect(dependencies.dialog.showOpenDialog).toHaveBeenCalledWith(
+        dependencies.window,
+        expect.objectContaining({ defaultPath: 'D:\\work' })
+      );
+    });
+
+    it('remembers the folder containing the chosen repository for next time', async () => {
+      const { handlers, dependencies, currentSettings } = choose({}, {});
+      dependencies.dialog.showOpenDialog.mockResolvedValueOnce({
+        canceled: false,
+        filePaths: ['E:\\code\\project']
+      });
+
+      await handlers.get('repository:choose')();
+
+      expect(currentSettings.lastBrowsedDirectory).toBe('E:\\code');
+    });
+
+    it('falls back to the normal dialog when the saved folders no longer exist', async () => {
+      const { handlers, dependencies } = choose(
+        { directoryExists: () => false },
+        { defaultDirectory: 'C:\\gone', lastBrowsedDirectory: 'D:\\gone' }
+      );
+
+      await handlers.get('repository:choose')();
+
+      const options = dependencies.dialog.showOpenDialog.mock.calls[0][1];
+      expect(options.defaultPath).toBeUndefined();
+    });
+  });
+
+  describe('default directory setting', () => {
+    it('reports the saved default directory and whether it still exists', async () => {
+      const { handlers, currentSettings } = makeIpcDependencies({
+        directoryExists: (directory) => directory === 'C:\\repos'
+      });
+
+      expect(await handlers.get('settings:get-default-directory')()).toEqual({
+        path: '',
+        missing: false
+      });
+
+      currentSettings.defaultDirectory = 'C:\\repos';
+      expect(await handlers.get('settings:get-default-directory')()).toEqual({
+        path: 'C:\\repos',
+        missing: false
+      });
+
+      currentSettings.defaultDirectory = 'C:\\gone';
+      expect(await handlers.get('settings:get-default-directory')()).toEqual({
+        path: 'C:\\gone',
+        missing: true
+      });
+    });
+
+    it('saves an existing folder as the default directory', async () => {
+      const { handlers, currentSettings } = makeIpcDependencies({ directoryExists: () => true });
+      const folder = path.resolve('repos');
+
+      await expect(handlers.get('settings:save-default-directory')(null, 'repos')).resolves.toBe(
+        folder
+      );
+      expect(currentSettings.defaultDirectory).toBe(folder);
+    });
+
+    it('refuses a folder that does not exist and keeps the previous setting', async () => {
+      const { handlers, currentSettings } = makeIpcDependencies({ directoryExists: () => false });
+      currentSettings.defaultDirectory = 'C:\\repos';
+
+      await expect(handlers.get('settings:save-default-directory')(null, 'nope')).rejects.toThrow(
+        'That folder does not exist.'
+      );
+      expect(currentSettings.defaultDirectory).toBe('C:\\repos');
+    });
+
+    it('clears the default directory when given a blank value', async () => {
+      const { handlers, currentSettings } = makeIpcDependencies({ directoryExists: () => false });
+      currentSettings.defaultDirectory = 'C:\\repos';
+
+      await expect(handlers.get('settings:save-default-directory')(null, '  ')).resolves.toBe('');
+      expect(currentSettings.defaultDirectory).toBe('');
+    });
+
+    it('lets the user pick the default directory starting from the current one', async () => {
+      const { handlers, dependencies, currentSettings } = makeIpcDependencies({
+        directoryExists: () => true
+      });
+      currentSettings.defaultDirectory = 'C:\\repos';
+      dependencies.dialog.showOpenDialog.mockResolvedValueOnce({
+        canceled: false,
+        filePaths: ['D:\\code']
+      });
+
+      await expect(handlers.get('settings:choose-default-directory')()).resolves.toBe('D:\\code');
+      expect(dependencies.dialog.showOpenDialog).toHaveBeenCalledWith(
+        dependencies.window,
+        expect.objectContaining({ defaultPath: 'C:\\repos', properties: ['openDirectory'] })
+      );
+      expect(currentSettings.defaultDirectory).toBe('C:\\repos');
+    });
+  });
+
   it('registers the existing preload channels', () => {
     const { handlers } = makeIpcDependencies();
 
@@ -43,7 +171,10 @@ describe('IPC handlers', () => {
       'repository:open-in-explorer',
       'repository:recent',
       'settings:get-git-path',
-      'settings:save-git-path'
+      'settings:save-git-path',
+      'settings:get-default-directory',
+      'settings:save-default-directory',
+      'settings:choose-default-directory'
     ]);
   });
 

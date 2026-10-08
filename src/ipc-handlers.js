@@ -1,4 +1,13 @@
 const path = require('node:path');
+const fs = require('node:fs');
+
+function isExistingDirectory(directory) {
+  try {
+    return fs.statSync(directory).isDirectory();
+  } catch {
+    return false;
+  }
+}
 
 function registerIpcHandlers({
   ipcMain,
@@ -12,14 +21,29 @@ function registerIpcHandlers({
   getSettings,
   saveSettings,
   getActiveRepositoryPath,
-  runGit
+  runGit,
+  directoryExists = isExistingDirectory
 }) {
+  // The last folder used wins; the default directory only applies when there is none.
+  function browseStartDirectory() {
+    const { lastBrowsedDirectory, defaultDirectory } = getSettings();
+    return [lastBrowsedDirectory, defaultDirectory].find(
+      (directory) => directory && directoryExists(directory)
+    );
+  }
+
   ipcMain.handle('repository:choose', async () => {
     const result = await dialog.showOpenDialog(window, {
       title: 'Open a Git repository',
-      properties: ['openDirectory']
+      properties: ['openDirectory'],
+      defaultPath: browseStartDirectory()
     });
-    return result.canceled ? null : result.filePaths[0];
+    if (result.canceled) {
+      return null;
+    }
+    const chosenPath = result.filePaths[0];
+    saveSettings({ ...getSettings(), lastBrowsedDirectory: path.dirname(chosenPath) });
+    return chosenPath;
   });
 
   // Large repositories are sent as one JSON string: Electron's object serialization takes
@@ -93,6 +117,38 @@ function registerIpcHandlers({
 
     saveSettings({ ...getSettings(), gitPath: resolvedGitPath });
     return resolvedGitPath;
+  });
+  ipcMain.handle('settings:get-default-directory', () => {
+    const defaultDirectory = getSettings().defaultDirectory || '';
+    return {
+      path: defaultDirectory,
+      missing: defaultDirectory !== '' && !directoryExists(defaultDirectory)
+    };
+  });
+  ipcMain.handle('settings:save-default-directory', async (_event, directory) => {
+    if (typeof directory !== 'string') {
+      throw new Error('Enter a folder path.');
+    }
+    if (directory.trim() === '') {
+      saveSettings({ ...getSettings(), defaultDirectory: '' });
+      return '';
+    }
+    const resolvedDirectory = path.resolve(directory.trim());
+    if (!directoryExists(resolvedDirectory)) {
+      throw new Error('That folder does not exist.');
+    }
+    saveSettings({ ...getSettings(), defaultDirectory: resolvedDirectory });
+    return resolvedDirectory;
+  });
+  ipcMain.handle('settings:choose-default-directory', async () => {
+    const { defaultDirectory } = getSettings();
+    const result = await dialog.showOpenDialog(window, {
+      title: 'Choose the default folder for repositories',
+      properties: ['openDirectory'],
+      defaultPath:
+        defaultDirectory && directoryExists(defaultDirectory) ? defaultDirectory : undefined
+    });
+    return result.canceled ? null : result.filePaths[0];
   });
 }
 

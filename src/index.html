@@ -48,6 +48,21 @@
           </div>
           <p id="git-path-status" role="status" aria-live="polite"></p>
         </form>
+        <form id="default-directory-form" class="git-path-form">
+          <label for="default-directory">Default directory</label>
+          <div class="path-controls">
+            <input
+              id="default-directory"
+              name="default-directory"
+              type="text"
+              autocomplete="off"
+              placeholder="Folder where Browse starts when no folder was used yet"
+            />
+            <button id="default-directory-browse" class="secondary" type="button">Browse…</button>
+            <button class="secondary" type="submit">Save default directory</button>
+          </div>
+          <p id="default-directory-status" role="status" aria-live="polite"></p>
+        </form>
         <div class="update-control">
           <button id="check-for-updates" class="secondary" type="button">Check for updates</button>
           <p id="update-status" role="status" aria-live="polite"></p>
