@@ -56,6 +56,15 @@ export function createRepositoryControls({ showRepository }) {
       onSelect: (selectedPath) => {
         pathInput.value = selectedPath;
       },
+      onRename: async (renamedPath, displayName) => {
+        try {
+          showRecentRepositories(
+            await window.mergentra.renameRecentRepository(renamedPath, displayName)
+          );
+        } catch (error) {
+          setStatus(error.message);
+        }
+      },
       onRemove: async (removedPath) => {
         try {
           showRecentRepositories(await window.mergentra.forgetRecentRepository(removedPath));

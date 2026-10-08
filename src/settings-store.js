@@ -45,9 +45,10 @@ function createSettingsStore(userDataPath, fileSystem = fs) {
       ...storedSettings,
       recentRepositories: storedSettings.recentRepositories
         .slice(0, MAX_RECENT_REPOSITORIES)
-        .map(({ path: repositoryPath, name }) => ({
+        .map(({ path: repositoryPath, name, displayName }) => ({
           path: repositoryPath,
-          name
+          name,
+          ...(typeof displayName === 'string' && displayName ? { displayName } : {})
         }))
     };
   }
