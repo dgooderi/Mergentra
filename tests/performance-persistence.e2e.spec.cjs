@@ -36,7 +36,9 @@ test('the repository view expands and contracts with the application window', as
     const resizeWindow = async (width, height) => {
       await app.evaluate(
         ({ BrowserWindow }, size) => {
-          BrowserWindow.getAllWindows()[0].setSize(size.width, size.height);
+          const target = BrowserWindow.getAllWindows()[0];
+          target.unmaximize();
+          target.setSize(size.width, size.height);
         },
         { width, height }
       );

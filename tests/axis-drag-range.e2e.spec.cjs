@@ -132,6 +132,12 @@ test.describe('dragging the graph to pan', () => {
     await window.getByRole('button', { name: 'Open repository' }).click();
     await window.locator('#time-range').selectOption('all');
     await expect(window.getByTestId('commit-node')).toHaveCount(3);
+    // The window starts maximised, so restore a small size to leave the graph something to scroll.
+    await app.evaluate(({ BrowserWindow }) => {
+      const target = BrowserWindow.getAllWindows()[0];
+      target.unmaximize();
+      target.setSize(1000, 720);
+    });
     for (let step = 0; step < 4; step += 1) {
       await window.locator('#zoom-in').click();
     }
