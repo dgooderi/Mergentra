@@ -1254,3 +1254,18 @@ main:not(:has(#repository-view:not([hidden]))) #open-explorer {
   border-bottom-color: #3b82f6;
   color: var(--text, inherit);
 }
+
+#clone-form {
+  display: grid;
+  gap: 12px;
+}
+
+#clone-form > input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#clone-form .checkbox-label,
+#clone-form .path-controls > .primary {
+  margin: 0;
+}
