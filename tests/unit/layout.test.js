@@ -82,4 +82,19 @@ describe('computeGraphLayout', () => {
     expect(layout.width).toBe(232);
     expect(layout.height).toBeGreaterThan(106);
   });
+
+  it('keeps master on the top row whichever branch is checked out', () => {
+    const layout = computeGraphLayout(
+      graphOf(
+        [commit('o1', ['m1'], 0), commit('m2', ['m1'], 1), commit('m1', [], 1)],
+        [
+          { name: 'oams', lane: 0 },
+          { name: 'master', lane: 1 }
+        ]
+      )
+    );
+    const y = (hash) => layout.commitPositions.get(hash).y;
+    expect(y('m1')).toBe(y('m2'));
+    expect(y('o1')).toBeGreaterThan(y('m2'));
+  });
 });

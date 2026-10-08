@@ -2,6 +2,7 @@
 // receives everything it needs explicitly: a layout context and an object of actions.
 import { computeTimeAxisTicks } from './time-axis.js';
 import { branchLabelNames, truncateBranchName } from './layout.js';
+import { findMainReference } from './lanes.js';
 
 const releaseTagPattern = /^v?\d+(\.\d+)+([-+.].*)?$/;
 // Merge lines longer than this leave their branch with a visible curve instead of running along its row.
@@ -152,7 +153,8 @@ export function drawEdges(ctx, actions) {
           fill: 'none',
           stroke,
           'stroke-width':
-            graph.references[commit.lane]?.name === 'main' && parentCommit?.lane === commit.lane
+            graph.references[commit.lane]?.name === findMainReference(graph.references)?.name &&
+            parentCommit?.lane === commit.lane
               ? 5
               : 2,
           'marker-end': 'url(#commit-arrowhead)',
