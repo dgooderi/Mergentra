@@ -1,16 +1,16 @@
 import { state } from './state.js';
+import { MAX_ZOOM, MIN_ZOOM, ZOOM_STEPS, parseZoomInput } from './zoom-input.js';
 
-const ZOOM_STEPS = [0.25, 0.4, 0.5, 0.67, 0.8, 1, 1.25, 1.5, 2, 3];
+const formatZoom = (level) => `${Math.round(level * 100)}%`;
 
 export function setZoom(level, anchor) {
   const graphElement = document.getElementById('commit-graph');
   const scroller = graphElement.parentElement;
   const previous = state.zoomLevel;
-  state.zoomLevel = Math.min(Math.max(level, ZOOM_STEPS[0]), ZOOM_STEPS[ZOOM_STEPS.length - 1]);
-  document.getElementById('zoom-reset').textContent = `${Math.round(state.zoomLevel * 100)}%`;
-  document.getElementById('zoom-in').disabled =
-    state.zoomLevel >= ZOOM_STEPS[ZOOM_STEPS.length - 1];
-  document.getElementById('zoom-out').disabled = state.zoomLevel <= ZOOM_STEPS[0];
+  state.zoomLevel = Math.min(Math.max(level, MIN_ZOOM), MAX_ZOOM);
+  document.getElementById('zoom-level').value = formatZoom(state.zoomLevel);
+  document.getElementById('zoom-in').disabled = state.zoomLevel >= MAX_ZOOM;
+  document.getElementById('zoom-out').disabled = state.zoomLevel <= MIN_ZOOM;
   const baseWidth = Number(graphElement.dataset.baseWidth);
   if (!baseWidth || previous === state.zoomLevel) {
     return;
@@ -37,7 +37,57 @@ export function stepZoom(direction, anchor) {
 }
 
 export function initZoomControls() {
+  const input = document.getElementById('zoom-level');
+  const list = document.getElementById('zoom-options');
+  const toggle = document.getElementById('zoom-options-toggle');
+
+  function setOpen(open) {
+    list.hidden = !open;
+    input.setAttribute('aria-expanded', String(open));
+  }
+
+  function applyTypedValue() {
+    const level = parseZoomInput(input.value);
+    if (level === null) {
+      input.value = formatZoom(state.zoomLevel);
+    } else {
+      setZoom(level);
+    }
+  }
+
+  const choices = [
+    { label: 'Reset to 100%', level: 1 },
+    ...ZOOM_STEPS.map((step) => ({ label: formatZoom(step), level: step }))
+  ];
+  for (const choice of choices) {
+    const option = document.createElement('li');
+    option.setAttribute('role', 'option');
+    option.textContent = choice.label;
+    option.addEventListener('mousedown', (event) => event.preventDefault());
+    option.addEventListener('click', () => {
+      setZoom(choice.level);
+      setOpen(false);
+    });
+    list.append(option);
+  }
+
+  toggle.addEventListener('click', () => setOpen(list.hidden));
+  input.addEventListener('focus', () => input.select());
+  input.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      applyTypedValue();
+      setOpen(false);
+    } else if (event.key === 'Escape') {
+      input.value = formatZoom(state.zoomLevel);
+      setOpen(false);
+    }
+  });
+  input.addEventListener('blur', applyTypedValue);
+  document.addEventListener('click', (event) => {
+    if (!event.target.closest('.zoom-level')) {
+      setOpen(false);
+    }
+  });
   document.getElementById('zoom-in').addEventListener('click', () => stepZoom(1));
   document.getElementById('zoom-out').addEventListener('click', () => stepZoom(-1));
-  document.getElementById('zoom-reset').addEventListener('click', () => setZoom(1));
 }

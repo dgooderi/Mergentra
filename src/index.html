@@ -259,15 +259,30 @@
                 >
                   &minus;
                 </button>
-                <button
-                  id="zoom-reset"
-                  class="secondary"
-                  type="button"
-                  aria-label="Reset zoom"
-                  title="Reset zoom"
-                >
-                  100%
-                </button>
+                <div class="zoom-level">
+                  <input
+                    id="zoom-level"
+                    type="text"
+                    role="combobox"
+                    aria-label="Zoom percentage"
+                    aria-controls="zoom-options"
+                    aria-expanded="false"
+                    autocomplete="off"
+                    inputmode="numeric"
+                    value="100%"
+                  />
+                  <button
+                    id="zoom-options-toggle"
+                    class="secondary"
+                    type="button"
+                    aria-label="Show zoom levels"
+                    aria-haspopup="listbox"
+                    aria-controls="zoom-options"
+                  >
+                    &#9662;
+                  </button>
+                  <ul id="zoom-options" role="listbox" aria-label="Zoom levels" hidden></ul>
+                </div>
                 <button
                   id="zoom-in"
                   class="secondary"
