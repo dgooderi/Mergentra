@@ -164,3 +164,25 @@ test('logo is shown on the picker screen and in the repository header', async ()
     expect(scrolls).toBe(false);
   });
 });
+
+test('Clone form has no extra card layer and fits tightly', async () => {
+  await withApp(async (window) => {
+    await window.getByRole('tab', { name: 'Clone' }).click();
+    const section = window.locator('.clone-section');
+    const style = await section.evaluate((element) => {
+      const computed = getComputedStyle(element);
+      return {
+        border: computed.borderTopWidth,
+        padding: computed.paddingTop + computed.paddingLeft,
+        shadow: computed.boxShadow
+      };
+    });
+    expect(style.border).toBe('0px');
+    expect(style.padding).toBe('0px0px');
+    expect(style.shadow).toBe('none');
+    const panel = await window.locator('#panel-clone').boundingBox();
+    const sectionBox = await section.boundingBox();
+    expect(panel.height - sectionBox.height).toBeLessThan(2);
+    expect(sectionBox.height).toBeLessThan(330);
+  }, { openRepository: false });
+});

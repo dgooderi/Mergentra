@@ -1197,7 +1197,17 @@ main:not(:has(#repository-view:not([hidden]))) #open-explorer {
 .clone-section {
   display: grid;
   gap: 8px;
-  margin-top: 20px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.clone-section h2 {
+  margin: 0;
 }
 
 .clone-section .checkbox-label input {
