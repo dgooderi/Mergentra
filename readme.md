@@ -11,7 +11,7 @@ Mergentra is a Windows-first Electron app for exploring the history of one local
 Mergentra is **pre-1.0 (version 0.9.0)** and is being made public. Expect rough edges and changes between releases.
 
 - **Platform:** Windows is the supported and tested platform. The app is built with Electron, so other platforms may run it, but they are untested and no installers are produced for them.
-- **Installer:** the Windows installer is currently **unsigned**, so Windows SmartScreen may warn when you run it. Authenticode signing is planned before a stable release.
+- **Installer:** the Windows installer is currently **unsigned**, so Windows SmartScreen may warn when you run it. Authenticode signing is planned before a stable release, and an application for free code signing from [SignPath Foundation](https://signpath.org/) (via [SignPath.io](https://signpath.io/)) is pending.
 - **Updates:** there is no automatic updating. Use **Check for updates** to find new releases on GitHub.
 - **Scale:** manually tested against a clone of the [Visual Studio Code repository](https://github.com/microsoft/vscode): about 190,000 commits across all branches (about 20,000 of them merges), 5,400 remote-tracking branches and 394 tags, with history from November 2015 to October 2026. Automated tests cover a repository of 50,000 commits and 100 local branches. Synthetic linear histories of up to 1,000,000 commits loaded in about 19 seconds, using roughly 2.6 GB of memory in total. Real repositories vary. Above 300,000 commits Mergentra asks for confirmation before opening; set `MERGENTRA_LARGE_REPOSITORY_COMMITS` to change the threshold.
 - **Tested with:** Git for Windows 2.55.
