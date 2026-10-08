@@ -8,6 +8,7 @@ export function createRepositoryControls({ showRepository }) {
   const form = document.getElementById('repository-form');
   const pathInput = document.getElementById('repository-path');
   const gitPathInput = document.getElementById('git-executable-path');
+  const defaultDirectoryInput = document.getElementById('default-directory');
   const statusMessage = document.getElementById('status');
 
   function setStatus(message) {
@@ -37,6 +38,19 @@ export function createRepositoryControls({ showRepository }) {
     }
   }
 
+  async function loadDefaultDirectory() {
+    const status = document.getElementById('default-directory-status');
+    try {
+      const { path: directory, missing } = await window.mergentra.getDefaultDirectory();
+      defaultDirectoryInput.value = directory;
+      status.textContent = missing
+        ? 'This folder no longer exists, so Browse uses its normal starting folder.'
+        : '';
+    } catch (error) {
+      status.textContent = error.message;
+    }
+  }
+
   async function loadPickerSettings() {
     try {
       const [gitPath, recentRepositories] = await Promise.all([
@@ -48,6 +62,7 @@ export function createRepositoryControls({ showRepository }) {
     } catch (error) {
       setStatus(error.message);
     }
+    await loadDefaultDirectory();
   }
 
   function setTheme(theme) {
@@ -88,6 +103,30 @@ export function createRepositoryControls({ showRepository }) {
           : 'Git path cleared. Mergentra will use Git on PATH.';
       } catch (error) {
         document.getElementById('git-path-status').textContent = error.message;
+      }
+    });
+
+    document.getElementById('default-directory-browse').addEventListener('click', async () => {
+      try {
+        const selected = await window.mergentra.chooseDefaultDirectory();
+        if (selected) {
+          defaultDirectoryInput.value = selected;
+        }
+      } catch (error) {
+        document.getElementById('default-directory-status').textContent = error.message;
+      }
+    });
+
+    document.getElementById('default-directory-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const status = document.getElementById('default-directory-status');
+      status.textContent = '';
+      try {
+        const directory = await window.mergentra.saveDefaultDirectory(defaultDirectoryInput.value);
+        defaultDirectoryInput.value = directory;
+        status.textContent = directory ? 'Default directory saved.' : 'Default directory cleared.';
+      } catch (error) {
+        status.textContent = error.message;
       }
     });
 
