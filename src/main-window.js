@@ -18,6 +18,7 @@ function createMainWindow({ BrowserWindow, Menu, applicationDirectory }) {
     }
   });
 
+  window.maximize();
   window.loadFile(path.join(applicationDirectory, 'index.html'));
   return window;
 }

@@ -1387,24 +1387,24 @@ main:not(:has(#repository-view:not([hidden]))) {
 
 .repository-header > div {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr) minmax(260px, 1fr);
   align-items: start;
   gap: 2px 16px;
 }
 
 .repository-header > div > * {
-  grid-column: 1 / -1;
+  grid-column: 2;
 }
 
 .repository-header > div > .brand-logo-small {
   grid-column: 1;
-  grid-row: 1 / span 2;
+  grid-row: 1 / span 4;
   margin: 0;
 }
 
 .repository-header > div > .markdown-note {
-  grid-column: 2;
-  grid-row: 1 / span 2;
+  grid-column: 3;
+  grid-row: 1 / span 4;
 }
 
 #commit-graph .time-axis-drag-area.disabled {

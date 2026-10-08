@@ -21,7 +21,7 @@ async function withApp(callback, { openRepository = true } = {}) {
       await window.getByRole('button', { name: 'Open repository' }).click();
       await expect(window.getByRole('heading', { name: 'sample-repository' })).toBeVisible();
     }
-    await callback(window);
+    await callback(window, app);
   } finally {
     if (app) {
       await app.close();
@@ -229,6 +229,36 @@ test('picker screen fits the default window without scrolling on both tabs', asy
     },
     { openRepository: false }
   );
+});
+
+test('repository note is to the right of the logo and all repository details', async () => {
+  await withApp(async (window) => {
+    const header = await window.locator('.repository-header').boundingBox();
+    const note = await window.locator('.repository-header .markdown-note').boundingBox();
+    let rightEdge = 0;
+    for (const selector of [
+      '.repository-header img.brand-logo',
+      '.repository-header .eyebrow',
+      '#repository-name',
+      '.repository-path',
+      'p.branch-label'
+    ]) {
+      const box = await window.locator(selector).boundingBox();
+      rightEdge = Math.max(rightEdge, box.x + box.width);
+      expect(box.y).toBeLessThan(note.y + note.height);
+    }
+    expect(note.x).toBeGreaterThanOrEqual(rightEdge - 1);
+    expect(Math.abs(note.y - header.y)).toBeLessThan(40);
+  });
+});
+
+test('the main window starts maximised', async () => {
+  await withApp(async (window, app) => {
+    const maximised = await app.evaluate(({ BrowserWindow }) =>
+      BrowserWindow.getAllWindows()[0].isMaximized()
+    );
+    expect(maximised).toBe(true);
+  });
 });
 
 test('repository note is level with the logo and to its right', async () => {
