@@ -23,7 +23,7 @@ export function createRepositoryControls({ showRepository }) {
       button.disabled = true;
     }
     setStatus('');
-    progress.textContent = 'Loading repository history…';
+    progress.textContent = 'Loading repository historyÃ¢â‚¬Â¦';
 
     try {
       showRepository(await loadRepository(repositoryPath));
