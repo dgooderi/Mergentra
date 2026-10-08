@@ -1,4 +1,4 @@
-﻿const { execFileSync, expect, fs, launchMergentra, os, path, test } = require('./e2e-helpers.cjs');
+const { execFileSync, expect, fs, launchMergentra, os, path, test } = require('./e2e-helpers.cjs');
 
 test('a developer can open a local Git repository', async () => {
   const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
@@ -295,7 +295,9 @@ test('dark mode is the default and light mode can be selected', async () => {
     const window = await app.firstWindow();
     const root = window.locator('html');
     await expect(root).not.toHaveAttribute('data-theme', 'light');
+    await expect(window.getByRole('button', { name: 'Light mode' })).toBeHidden();
 
+    await window.getByRole('button', { name: 'Settings' }).click();
     await window.getByRole('button', { name: 'Light mode' }).click();
     await expect(root).toHaveAttribute('data-theme', 'light');
 
