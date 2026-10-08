@@ -1,6 +1,6 @@
 {
   "name": "mergentra",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "A Windows-first desktop app for exploring local Git history.",
   "author": "Mergentra contributors",
   "license": "RPL-1.5",

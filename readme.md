@@ -10,7 +10,7 @@ Mergentra is a Windows-first Electron app for exploring the history of one local
 
 ## Status
 
-Mergentra is **pre-1.0 (version 0.9.0)** and is being made public. Expect rough edges and changes between releases.
+Mergentra is **pre-1.0 (version 0.10.1)** and is being made public. Expect rough edges and changes between releases.
 
 - **Platform:** Windows is the supported and tested platform. The app is built with Electron, so other platforms may run it, but they are untested and no installers are produced for them.
 - **Installer:** the Windows installer is currently **unsigned**, so Windows SmartScreen may warn when you run it. Authenticode signing is planned before a stable release, and an application for free code signing from [SignPath Foundation](https://signpath.org/) (via [SignPath.io](https://signpath.io/)) is pending.
@@ -60,9 +60,11 @@ npm run test:unit
 npm run test:e2e
 ```
 
+To measure how drawing cost grows with history size, run `npm run measure:render` (or `node scripts/measure-render.cjs 10000 50000`). It builds synthetic repositories and reports load and draw times.
+
 ## Code layout
 
-- `src/main.js` wires the CommonJS Electron main process. Git execution, settings storage, Git-output parsing, reference ordering, divergence markers, IPC registration, and window creation live in separate modules under `src/`.
+- `src/main.js` wires the CommonJS Electron main process. Git execution, settings storage, active-repository state (`src/app-state.js`), Git-output parsing, reference ordering, divergence markers, IPC registration, and window creation live in separate modules under `src/`.
 - `src/preload.js` is the only bridge between the main and renderer processes; renderer calls continue to use its existing IPC channels.
 - `src/renderer.js` is the native ES module entry point. Pure graph and time calculations, SVG graph drawing, state, persistence adapters, and focused UI modules for reference picking, the Review dock, repository controls, remote actions, time, and zoom live under `src/renderer/`.
 - `tests/unit/` covers pure logic and storage/process seams. Feature-grouped Playwright specs under `tests/` cover app-level behavior and share launch setup through `tests/e2e-helpers.cjs`.
