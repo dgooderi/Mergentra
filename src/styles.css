@@ -1269,3 +1269,21 @@ main:not(:has(#repository-view:not([hidden]))) #open-explorer {
 #clone-form .path-controls > .primary {
   margin: 0;
 }
+
+/* Both panels share one grid cell, so the taller one sets the height for both. */
+.tab-panels {
+  display: grid;
+}
+
+.tab-panels > [role='tabpanel'] {
+  grid-area: 1 / 1;
+}
+
+.tab-panels > [role='tabpanel'][hidden] {
+  display: block !important;
+  visibility: hidden;
+}
+
+.clone-section p:empty {
+  display: none;
+}

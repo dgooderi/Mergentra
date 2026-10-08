@@ -125,3 +125,20 @@ test('clone URL is as wide as the folder field and History only is centred', asy
     { openRepository: false }
   );
 });
+
+test('Open and Clone panels are the same height and the tab bar does not move', async () => {
+  await withApp(
+    async (window) => {
+      const tabs = window.locator('.mode-tabs');
+      const openTabY = (await tabs.boundingBox()).y;
+      const openPanel = await window.locator('#panel-open').boundingBox();
+      await window.getByRole('tab', { name: 'Clone' }).click();
+      const clonePanel = await window.locator('#panel-clone').boundingBox();
+      expect(Math.abs((await tabs.boundingBox()).y - openTabY)).toBeLessThan(1);
+      expect(Math.abs(clonePanel.height - openPanel.height)).toBeLessThan(1);
+      const emptyStatus = await window.locator('#clone-status').boundingBox();
+      expect(emptyStatus === null || emptyStatus.height < 2).toBe(true);
+    },
+    { openRepository: false }
+  );
+});
