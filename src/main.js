@@ -6,6 +6,7 @@ const { loadCommitGraph } = require('./commit-graph');
 const { createSettingsStore } = require('./settings-store');
 const { registerIpcHandlers } = require('./ipc-handlers');
 const { createMainWindow } = require('./main-window');
+const { createSplash, revealWhenReady } = require('./splash');
 const { UnsafeRepositoryConfigError, assertRepositoryConfigSafe } = require('./git-config-safety');
 const { rememberRepository } = require('./recent-repositories');
 const { validateCloneUrl, checkDestination, runClone } = require('./clone');
@@ -302,11 +303,18 @@ app.whenReady().then(() => {
     return;
   }
 
+  // Automated tests set a private user-data directory and look for the first window, so they skip the splash.
+  const splash = createSplash({
+    BrowserWindow,
+    applicationDirectory: __dirname,
+    enabled: !process.env.MERGENTRA_USER_DATA_DIR
+  });
   const window = createMainWindow({
     BrowserWindow,
     Menu,
     applicationDirectory: __dirname
   });
+  revealWhenReady({ window, splash });
 
   registerIpcHandlers({
     ipcMain,

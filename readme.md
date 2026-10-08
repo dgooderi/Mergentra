@@ -1,3 +1,5 @@
+<p align="center"><img src="./assets/icons/mergentra-256.png" alt="Mergentra logo" width="160" /></p>
+
 # Mergentra
 
 Mergentra is a Windows-first Electron app for exploring the history of one local Git repository at a time as a branch graph. It is read-only: it never commits, checks out, merges, or edits your repository. The only commands that change anything are the explicit **Fetch** button, which updates remote-tracking references of the open repository, and **Clone repository**, which only creates a new repository and never modifies an existing one.
