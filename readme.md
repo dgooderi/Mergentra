@@ -60,6 +60,8 @@ npm run test:unit
 npm run test:e2e
 ```
 
+Build the Windows installers with `npm run build:win` (NSIS Setup), `npm run build:win:portable` (portable exe) or `npm run build:win:msi` (per-machine x64 MSI with a fixed upgrade code, so a newer MSI upgrades an older one). The MSI also ships `resources\install-channel` containing `msi`, which lets the app recognise a managed install. Output goes to `dist/`.
+
 ## Code layout
 
 - `src/main.js` wires the CommonJS Electron main process. Git execution, settings storage, Git-output parsing, reference ordering, divergence markers, IPC registration, and window creation live in separate modules under `src/`.

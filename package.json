@@ -23,7 +23,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:unit": "vitest run",
-    "build:win:portable": "electron-builder --win portable --publish never"
+    "build:win:portable": "electron-builder --win portable --publish never",
+    "build:win:msi": "node scripts/build-msi.cjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
