@@ -1,4 +1,4 @@
-export function parseReleaseVersion(version) {
+function parseReleaseVersion(version) {
   const match = version.match(
     /^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/
   );
@@ -13,7 +13,7 @@ export function parseReleaseVersion(version) {
   };
 }
 
-export function compareReleaseVersions(left, right) {
+function compareReleaseVersions(left, right) {
   for (const part of ['major', 'minor', 'patch']) {
     if (left[part] !== right[part]) {
       return left[part] > right[part] ? 1 : -1;
@@ -56,3 +56,5 @@ export function compareReleaseVersions(left, right) {
   }
   return 0;
 }
+
+module.exports = { parseReleaseVersion, compareReleaseVersions };
