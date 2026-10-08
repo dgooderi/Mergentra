@@ -91,70 +91,99 @@
         <p class="eyebrow">MERGENTRA</p>
         <h1 id="picker-heading">Open a repository</h1>
         <p class="intro">Choose a local Git repository to explore its history.</p>
-        <section class="recent-section" aria-labelledby="recent-heading">
-          <h2 id="recent-heading">Recent repositories</h2>
-          <div class="path-controls">
-            <select id="recent-repositories" aria-label="Recent repositories"></select>
-            <button id="recent-remove" class="secondary" type="button" disabled>
-              Remove from recent list
-            </button>
-          </div>
-        </section>
-        <form id="repository-form">
-          <label for="repository-path">Repository folder</label>
-          <div class="path-controls">
-            <input
-              id="repository-path"
-              name="repository-path"
-              type="text"
-              autocomplete="off"
-              placeholder="C:\path\to\repository"
-              required
-            />
-            <button id="browse-button" class="secondary" type="button">Browse…</button>
-          </div>
-          <button class="primary" type="submit">Open repository</button>
-        </form>
-        <section class="clone-section" aria-labelledby="clone-heading">
-          <h2 id="clone-heading">Clone a repository</h2>
-          <form id="clone-form">
-            <label for="clone-url">Repository URL</label>
-            <input
-              id="clone-url"
-              name="clone-url"
-              type="text"
-              autocomplete="off"
-              placeholder="https://github.com/owner/repository.git"
-            />
-            <label for="clone-destination">Clone destination folder</label>
+        <div class="mode-tabs" role="tablist" aria-label="Open or clone a repository">
+          <button
+            id="tab-open"
+            class="mode-tab"
+            type="button"
+            role="tab"
+            aria-selected="true"
+            aria-controls="panel-open"
+          >
+            Open
+          </button>
+          <button
+            id="tab-clone"
+            class="mode-tab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-clone"
+            tabindex="-1"
+          >
+            Clone
+          </button>
+        </div>
+        <div id="panel-open" role="tabpanel" aria-labelledby="tab-open">
+          <section class="recent-section" aria-labelledby="recent-heading">
+            <h2 id="recent-heading">Recent repositories</h2>
+            <div class="path-controls">
+              <select id="recent-repositories" aria-label="Recent repositories"></select>
+              <button id="recent-remove" class="secondary" type="button" disabled>
+                Remove from recent list
+              </button>
+            </div>
+          </section>
+          <form id="repository-form">
+            <label for="repository-path">Repository folder</label>
             <div class="path-controls">
               <input
-                id="clone-destination"
-                name="clone-destination"
+                id="repository-path"
+                name="repository-path"
                 type="text"
                 autocomplete="off"
-                placeholder="C:\path\to\new\folder"
+                placeholder="C:\path\to\repository"
+                required
               />
-              <button id="clone-browse" class="secondary" type="button">Browse…</button>
+              <button id="browse-button" class="secondary" type="button">Browse…</button>
             </div>
-            <label class="checkbox-label">
-              <input id="clone-history-only" type="checkbox" />
-              History only (faster for large repositories, file contents download on demand)
-            </label>
-            <div class="path-controls">
-              <button id="clone-start" class="primary" type="submit">Clone repository</button>
-              <button id="clone-cancel" class="secondary" type="button" hidden>Cancel clone</button>
-            </div>
+            <button class="primary" type="submit">Open repository</button>
           </form>
-          <p id="clone-progress" role="status" aria-live="polite"></p>
-          <p id="clone-status" role="status" aria-live="polite"></p>
-          <div id="clone-diagnostics-panel" hidden>
-            <pre id="clone-diagnostics"></pre>
-            <button id="copy-clone-diagnostics" class="secondary" type="button">
-              Copy clone diagnostics
-            </button>
-          </div>
-        </section>
+        </div>
+        <div id="panel-clone" role="tabpanel" aria-labelledby="tab-clone" hidden>
+          <section class="clone-section" aria-labelledby="clone-heading">
+            <h2 id="clone-heading">Clone a repository</h2>
+            <form id="clone-form">
+              <label for="clone-url">Repository URL</label>
+              <input
+                id="clone-url"
+                name="clone-url"
+                type="text"
+                autocomplete="off"
+                placeholder="https://github.com/owner/repository.git"
+              />
+              <label for="clone-destination">Clone destination folder</label>
+              <div class="path-controls">
+                <input
+                  id="clone-destination"
+                  name="clone-destination"
+                  type="text"
+                  autocomplete="off"
+                  placeholder="C:\path\to\new\folder"
+                />
+                <button id="clone-browse" class="secondary" type="button">Browse…</button>
+              </div>
+              <label class="checkbox-label">
+                <input id="clone-history-only" type="checkbox" />
+                History only (faster for large repositories, file contents download on demand)
+              </label>
+              <div class="path-controls">
+                <button id="clone-start" class="primary" type="submit">Clone repository</button>
+                <button id="clone-cancel" class="secondary" type="button" hidden>
+                  Cancel clone
+                </button>
+              </div>
+            </form>
+            <p id="clone-progress" role="status" aria-live="polite"></p>
+            <p id="clone-status" role="status" aria-live="polite"></p>
+            <div id="clone-diagnostics-panel" hidden>
+              <pre id="clone-diagnostics"></pre>
+              <button id="copy-clone-diagnostics" class="secondary" type="button">
+                Copy clone diagnostics
+              </button>
+            </div>
+          </section>
+        </div>
         <p id="repository-progress" role="status" aria-live="polite"></p>
         <p id="status" role="alert" aria-live="polite"></p>
       </section>

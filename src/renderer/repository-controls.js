@@ -80,6 +80,29 @@ export function createRepositoryControls({ showRepository }) {
     await loadDefaultDirectory();
   }
 
+  function initModeTabs() {
+    const tabs = [document.getElementById('tab-open'), document.getElementById('tab-clone')];
+    const select = (index, focus) => {
+      tabs.forEach((tab, position) => {
+        const active = position === index;
+        tab.setAttribute('aria-selected', String(active));
+        tab.tabIndex = active ? 0 : -1;
+        document.getElementById(tab.getAttribute('aria-controls')).hidden = !active;
+      });
+      if (focus) {
+        tabs[index].focus();
+      }
+    };
+    tabs.forEach((tab, index) => {
+      tab.addEventListener('click', () => select(index, false));
+      tab.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+          select((index + 1) % tabs.length, true);
+        }
+      });
+    });
+  }
+
   function initClone() {
     const cloneForm = document.getElementById('clone-form');
     const urlInput = document.getElementById('clone-url');
@@ -166,6 +189,7 @@ export function createRepositoryControls({ showRepository }) {
 
   function init() {
     loadPickerSettings();
+    initModeTabs();
     initClone();
 
     document.getElementById('browse-button').addEventListener('click', async () => {
