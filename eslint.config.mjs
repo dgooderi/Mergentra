@@ -23,6 +23,7 @@ export default [
       'src/main-line.js',
       'src/clone.js',
       'tests/**/*.cjs',
+      'scripts/**/*.cjs',
       'playwright.config.*'
     ],
     languageOptions: { sourceType: 'commonjs', globals: { ...globals.node } }

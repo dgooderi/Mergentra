@@ -15,6 +15,7 @@
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
+    "build:icons": "node scripts/build-icons.cjs",
     "test:e2e": "playwright test",
     "build:win": "electron-builder --win nsis --publish never",
     "lint": "eslint .",
@@ -42,10 +43,12 @@
     },
     "files": [
       "src/**/*",
+      "assets/icons/**/*",
       "package.json"
     ],
     "win": {
       "target": "nsis",
+      "icon": "assets/icons/mergentra.ico",
       "artifactName": "${productName}-${version}-Setup.${ext}"
     },
     "nsis": {
