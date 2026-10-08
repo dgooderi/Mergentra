@@ -329,6 +329,16 @@
             <dd><code id="selected-commit-hash" data-testid="selected-commit-hash"></code></dd>
             <dt>Parents</dt>
             <dd id="selected-commit-parents" data-testid="selected-commit-parents"></dd>
+            <div
+              id="selected-commit-branch-context"
+              data-testid="selected-commit-branch-context"
+              hidden
+            >
+              <dt id="selected-commit-source-label">Source branch (inferred)</dt>
+              <dd id="selected-commit-source"></dd>
+              <dt id="selected-commit-destination-label">Destination branch (inferred)</dt>
+              <dd id="selected-commit-destination"></dd>
+            </div>
             <dt>Note</dt>
             <dd>
               <textarea
