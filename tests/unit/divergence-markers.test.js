@@ -71,4 +71,21 @@ describe('divergence markers', () => {
       }
     ]);
   });
+
+  it('measures divergence from master when there is no main', () => {
+    const commits = [
+      commit('base', []),
+      commit('master-tip', ['base']),
+      commit('a-only', ['base']),
+      commit('a-tip', ['a-only'])
+    ];
+    const references = [
+      { name: 'a', hash: 'a-tip', remote: false },
+      { name: 'master', hash: 'master-tip', remote: false }
+    ];
+
+    expect(computeDivergenceMarkers(commits, references)).toEqual([
+      { branchName: 'a', ancestorHash: 'base', commitHash: 'a-only', inferred: true }
+    ]);
+  });
 });

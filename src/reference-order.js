@@ -1,3 +1,5 @@
+const { mainLineName } = require('./main-line');
+
 function graphColor(index) {
   const hue = Math.round((index * 137.508 + 215) % 360);
   const lightness = index % 2 === 0 ? 62 : 48;
@@ -24,8 +26,9 @@ function orderReferences(references) {
     }
   }
 
-  const main = localReferences.find((reference) => reference.name === 'main');
-  const originMain = remoteReferences.find((reference) => reference.name === 'origin/main');
+  const mainName = mainLineName(localReferences.map((reference) => reference.name)) ?? 'main';
+  const main = localReferences.find((reference) => reference.name === mainName);
+  const originMain = remoteReferences.find((reference) => reference.name === `origin/${mainName}`);
   if (main) {
     addPair(main, originMain);
   } else if (originMain) {
@@ -35,7 +38,7 @@ function orderReferences(references) {
   }
 
   for (const local of localReferences) {
-    if (local.name === 'main') {
+    if (local.name === mainName) {
       continue;
     }
     const matchingRemote = remoteReferences.find(
@@ -51,7 +54,7 @@ function orderReferences(references) {
   const unpairedReferences = [
     ...localReferences.filter(
       (reference) =>
-        reference.name !== 'main' && !ordered.some((item) => item.name === reference.name)
+        reference.name !== mainName && !ordered.some((item) => item.name === reference.name)
     ),
     ...remoteReferences.filter((reference) => !pairedRemotes.has(reference.name))
   ].sort((left, right) => left.name.localeCompare(right.name));

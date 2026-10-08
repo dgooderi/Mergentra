@@ -20,6 +20,7 @@ export default [
       'src/repository-output.js',
       'src/settings-store.js',
       'src/recent-repositories.js',
+      'src/main-line.js',
       'tests/**/*.cjs',
       'playwright.config.*'
     ],

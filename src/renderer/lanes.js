@@ -4,6 +4,14 @@
 const graphIndexes = new WeakMap();
 const availabilityCache = new WeakMap();
 
+// The main line is the local `main` branch, or `master` when there is no `main`.
+export function findMainReference(references) {
+  return (
+    references.find((reference) => !reference.remote && reference.name === 'main') ||
+    references.find((reference) => !reference.remote && reference.name === 'master')
+  );
+}
+
 function indexesFor(graph) {
   let indexes = graphIndexes.get(graph);
   if (!indexes) {
@@ -17,7 +25,7 @@ function indexesFor(graph) {
         mergeCommits.push(commit);
       }
     });
-    const mainReference = graph.references.find((reference) => reference.name === 'main');
+    const mainReference = findMainReference(graph.references);
     let mainContainsAllCommits = false;
     if (mainReference && mergeCommits.length === 0) {
       let commit = commitsByHash.get(mainReference.hash);
@@ -86,7 +94,7 @@ export function buildFilteredGraph(sourceGraph, visibleReferences, timeRange) {
     mainContainsAllCommits: completeMainHistory
   } = indexesFor(sourceGraph);
   const laneByHash = new Map();
-  const mainReference = references.find((reference) => reference.name === 'main');
+  const mainReference = findMainReference(references);
   const mainContainsAllCommits = Boolean(mainReference && completeMainHistory);
 
   // Claim each branch's first-parent chain first so merged-in branches keep their own lane.
@@ -95,7 +103,8 @@ export function buildFilteredGraph(sourceGraph, visibleReferences, timeRange) {
   if (!mainContainsAllCommits) {
     const claimOrder = [...references].sort(
       (left, right) =>
-        (right.name === 'main' ? 1 : 0) - (left.name === 'main' ? 1 : 0) ||
+        (right.name === mainReference?.name ? 1 : 0) -
+          (left.name === mainReference?.name ? 1 : 0) ||
         (tipIndex.get(right.hash) ?? -1) - (tipIndex.get(left.hash) ?? -1)
     );
     for (const reference of claimOrder) {

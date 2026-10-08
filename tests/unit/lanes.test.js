@@ -128,3 +128,37 @@ describe('computeAvailableReferences', () => {
     expect([...computeAvailableReferences(graph, range(1, 3))]).toEqual(['a', 'b']);
   });
 });
+
+describe('buildFilteredGraph with a master main line', () => {
+  it('draws shared early history on master even when another branch has the older tip', () => {
+    const commits = [
+      commit('m2', ['r'], 9, ['master']),
+      commit('o1', ['r'], 7, ['oams']),
+      commit('r', ['r0'], 5),
+      commit('r0', [], 4)
+    ];
+    const graph = buildFilteredGraph(
+      graphOf(commits, [
+        { name: 'master', hash: 'm2' },
+        { name: 'oams', hash: 'o1' }
+      ]),
+      new Set(['master', 'oams']),
+      null
+    );
+    const lane = Object.fromEntries(graph.commits.map((c) => [c.hash, c.lane]));
+    expect(lane).toEqual({ m2: 0, o1: 1, r: 0, r0: 0 });
+  });
+  it('prefers main over master for shared history', () => {
+    const commits = [commit('x', ['s'], 9, ['feature']), commit('s', [], 5, ['main', 'master'])];
+    const graph = buildFilteredGraph(
+      graphOf(commits, [
+        { name: 'feature', hash: 'x' },
+        { name: 'master', hash: 's' },
+        { name: 'main', hash: 's' }
+      ]),
+      new Set(['feature', 'master', 'main']),
+      null
+    );
+    expect(graph.commits.find((c) => c.hash === 's').lane).toBe(2);
+  });
+});
