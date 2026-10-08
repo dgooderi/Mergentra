@@ -24,7 +24,8 @@ export function renderTimeAxis(
   commitPositions,
   width,
   axisHeight,
-  onRangeSelected
+  onRangeSelected,
+  selectionAvailable = true
 ) {
   const { showTime, ticks } = computeTimeAxisTicks(commits, commitPositions);
   if (ticks.length === 0) {
@@ -73,11 +74,18 @@ export function renderTimeAxis(
     }
   }
   graphElement.append(axis);
-  attachAxisDrag(graphElement, ticks, width, axisHeight, onRangeSelected);
+  attachAxisDrag(graphElement, ticks, width, axisHeight, onRangeSelected, selectionAvailable);
 }
 
 // Dragging across the axis selects the dates between the ticks it covers. Escape cancels.
-function attachAxisDrag(graphElement, ticks, width, axisHeight, onRangeSelected) {
+function attachAxisDrag(
+  graphElement,
+  ticks,
+  width,
+  axisHeight,
+  onRangeSelected,
+  selectionAvailable
+) {
   if (!onRangeSelected) {
     return;
   }
@@ -90,6 +98,15 @@ function attachAxisDrag(graphElement, ticks, width, axisHeight, onRangeSelected)
     height: axisHeight
   });
   graphElement.append(hitArea);
+  if (!selectionAvailable) {
+    hitArea.classList.add('disabled');
+    hitArea.setAttribute('aria-disabled', 'true');
+    hitArea.setAttribute('data-disabled', 'true');
+    const title = createSvgElement('title');
+    title.textContent = 'Zoom out to select a new date range';
+    hitArea.append(title);
+    return;
+  }
 
   const toGraphX = (event) => {
     const point = new DOMPoint(event.clientX, event.clientY);

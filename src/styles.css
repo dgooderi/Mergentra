@@ -1396,3 +1396,9 @@ main:not(:has(#repository-view:not([hidden]))) {
   grid-column: 2;
   grid-row: 1 / span 2;
 }
+
+#commit-graph .time-axis-drag-area.disabled {
+  cursor: not-allowed;
+  fill: var(--muted, #6b7280);
+  fill-opacity: 0.18;
+}
