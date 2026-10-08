@@ -147,6 +147,25 @@ export function drawEdges(ctx, actions) {
         definitions.append(gradient);
         stroke = `url(#${gradientId})`;
       }
+      const checkedOutReference = graph.references.find((reference) => reference.checkedOut);
+      if (checkedOutReference && checkedOutReference.lane === edgeLane) {
+        // A wide translucent copy under the line gives the whole lane a slight glow without a costly SVG filter.
+        graphElement.append(
+          createSvgElement('path', {
+            d: pathData,
+            fill: 'none',
+            stroke: checkedOutReference.color,
+            'stroke-width': 9,
+            'stroke-opacity': 0.28,
+            'stroke-linecap': 'round',
+            'pointer-events': 'none',
+            'aria-hidden': 'true',
+            'data-testid': 'checked-out-lane-glow',
+            'data-parent-hash': parentHash,
+            'data-child-hash': commit.hash
+          })
+        );
+      }
       graphElement.append(
         createSvgElement('path', {
           d: pathData,
