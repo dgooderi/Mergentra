@@ -17,6 +17,7 @@
     "start": "electron .",
     "build:icons": "node scripts/build-icons.cjs",
     "test:e2e": "playwright test",
+    "measure:render": "node scripts/measure-render.cjs",
     "build:win": "electron-builder --win nsis --publish never",
     "lint": "eslint .",
     "format": "prettier --write .",
