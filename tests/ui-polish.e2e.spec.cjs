@@ -230,3 +230,17 @@ test('picker screen fits the default window without scrolling on both tabs', asy
     { openRepository: false }
   );
 });
+
+test('repository note is level with the logo and to its right', async () => {
+  await withApp(async (window) => {
+    const logo = await window.locator('.repository-header img.brand-logo').boundingBox();
+    const note = await window.locator('.repository-header .markdown-note').boundingBox();
+    const path = await window.locator('.repository-path').boundingBox();
+    expect(Math.abs(note.y - logo.y)).toBeLessThan(2);
+    expect(note.x).toBeGreaterThanOrEqual(logo.x + logo.width);
+    expect(path.y).toBeGreaterThanOrEqual(logo.y + logo.height - 1);
+    expect(await window.evaluate(() => document.scrollingElement.scrollWidth <= innerWidth)).toBe(
+      true
+    );
+  });
+});

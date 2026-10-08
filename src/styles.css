@@ -1374,3 +1374,25 @@ main:not(:has(#repository-view:not([hidden]))) #open-explorer {
 main:not(:has(#repository-view:not([hidden]))) {
   padding-bottom: 16px;
 }
+
+.repository-header > div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 2px 16px;
+}
+
+.repository-header > div > * {
+  grid-column: 1 / -1;
+}
+
+.repository-header > div > .brand-logo-small {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  margin: 0;
+}
+
+.repository-header > div > .markdown-note {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
