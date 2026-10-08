@@ -1325,3 +1325,52 @@ main:not(:has(#repository-view:not([hidden]))) #open-explorer {
 #panel-open > #repository-form > .primary {
   margin-top: auto;
 }
+
+/* Compact picker so both tabs fit the default window without scrolling. */
+#repository-picker {
+  padding: 24px 48px 32px;
+}
+
+#repository-picker .brand-logo-large {
+  width: 64px;
+  height: 64px;
+  margin: 0 0 4px;
+}
+
+#repository-picker .eyebrow {
+  margin-bottom: 4px;
+}
+
+#repository-picker h1 {
+  margin: 0;
+}
+
+#repository-picker .intro {
+  margin: 8px 0 16px;
+}
+
+#repository-picker .mode-tabs {
+  margin-bottom: 12px;
+}
+
+#clone-form {
+  gap: 6px;
+}
+
+#clone-form label,
+#repository-form label,
+.recent-section h2 {
+  margin-bottom: 4px;
+}
+
+.recent-section {
+  margin: 0 0 12px;
+}
+
+#repository-picker p:empty {
+  display: none;
+}
+
+main:not(:has(#repository-view:not([hidden]))) {
+  padding-bottom: 16px;
+}

@@ -166,40 +166,67 @@ test('logo is shown on the picker screen and in the repository header', async ()
 });
 
 test('Clone form has no extra card layer and fits tightly', async () => {
-  await withApp(async (window) => {
-    await window.getByRole('tab', { name: 'Clone' }).click();
-    const section = window.locator('.clone-section');
-    const style = await section.evaluate((element) => {
-      const computed = getComputedStyle(element);
-      return {
-        border: computed.borderTopWidth,
-        padding: computed.paddingTop + computed.paddingLeft,
-        shadow: computed.boxShadow
-      };
-    });
-    expect(style.border).toBe('0px');
-    expect(style.padding).toBe('0px0px');
-    expect(style.shadow).toBe('none');
-    const panel = await window.locator('#panel-clone').boundingBox();
-    const sectionBox = await section.boundingBox();
-    expect(panel.height - sectionBox.height).toBeLessThan(2);
-    expect(sectionBox.height).toBeLessThan(330);
-  }, { openRepository: false });
+  await withApp(
+    async (window) => {
+      await window.getByRole('tab', { name: 'Clone' }).click();
+      const section = window.locator('.clone-section');
+      const style = await section.evaluate((element) => {
+        const computed = getComputedStyle(element);
+        return {
+          border: computed.borderTopWidth,
+          padding: computed.paddingTop + computed.paddingLeft,
+          shadow: computed.boxShadow
+        };
+      });
+      expect(style.border).toBe('0px');
+      expect(style.padding).toBe('0px0px');
+      expect(style.shadow).toBe('none');
+      const panel = await window.locator('#panel-clone').boundingBox();
+      const sectionBox = await section.boundingBox();
+      expect(panel.height - sectionBox.height).toBeLessThan(2);
+      expect(sectionBox.height).toBeLessThan(330);
+    },
+    { openRepository: false }
+  );
 });
 
 test('Open and Clone controls share the same position and size', async () => {
-  await withApp(async (window) => {
-    const openTop = (await window.locator('#panel-open h2').first().boundingBox()).y;
-    const openFolder = await window.locator('#repository-form .path-controls').boundingBox();
-    const openButton = await window.locator('#repository-form > .primary').boundingBox();
-    await window.getByRole('tab', { name: 'Clone' }).click();
-    const cloneTop = (await window.locator('#panel-clone h2').boundingBox()).y;
-    const cloneButton = await window.locator('#clone-start').boundingBox();
-    expect(Math.abs(openTop - cloneTop)).toBeLessThan(1);
-    expect(Math.abs(openFolder.width - (await window.locator('#clone-url').boundingBox()).width)).toBeLessThan(
-      1
-    );
-    expect(Math.abs(openButton.y + openButton.height - (cloneButton.y + cloneButton.height))).toBeLessThan(1);
-    expect(Math.abs(openButton.width - cloneButton.width)).toBeLessThan(1);
-  }, { openRepository: false });
+  await withApp(
+    async (window) => {
+      const openTop = (await window.locator('#panel-open h2').first().boundingBox()).y;
+      const openFolder = await window.locator('#repository-form .path-controls').boundingBox();
+      const openButton = await window.locator('#repository-form > .primary').boundingBox();
+      await window.getByRole('tab', { name: 'Clone' }).click();
+      const cloneTop = (await window.locator('#panel-clone h2').boundingBox()).y;
+      const cloneButton = await window.locator('#clone-start').boundingBox();
+      expect(Math.abs(openTop - cloneTop)).toBeLessThan(1);
+      expect(
+        Math.abs(openFolder.width - (await window.locator('#clone-url').boundingBox()).width)
+      ).toBeLessThan(1);
+      expect(
+        Math.abs(openButton.y + openButton.height - (cloneButton.y + cloneButton.height))
+      ).toBeLessThan(1);
+      expect(Math.abs(openButton.width - cloneButton.width)).toBeLessThan(1);
+    },
+    { openRepository: false }
+  );
+});
+
+test('picker screen fits the default window without scrolling on both tabs', async () => {
+  await withApp(
+    async (window) => {
+      const overflow = () =>
+        window.evaluate(() =>
+          [
+            document.scrollingElement,
+            document.querySelector('main'),
+            document.querySelector('#repository-picker')
+          ].map((element) => element.scrollHeight - element.clientHeight)
+        );
+      expect((await overflow()).every((value) => value <= 0)).toBe(true);
+      await window.getByRole('tab', { name: 'Clone' }).click();
+      expect((await overflow()).every((value) => value <= 0)).toBe(true);
+    },
+    { openRepository: false }
+  );
 });
