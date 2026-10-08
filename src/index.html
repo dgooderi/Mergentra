@@ -126,14 +126,13 @@
             <h1 id="repository-name"></h1>
             <p class="repository-path">Path: <span id="repository-path-value"></span></p>
             <p class="branch-label">Current Branch: <strong id="branch-name"></strong></p>
-            <input
+            <textarea
               id="repository-note"
               class="repository-note"
-              type="text"
-              placeholder="Add a note about this repository"
+              rows="2"
+              placeholder="Add a note about this repository (supports **bold** and lists)"
               aria-label="Repository note"
-              autocomplete="off"
-            />
+            ></textarea>
           </div>
         </header>
         <div class="fetch-controls">

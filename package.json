@@ -61,5 +61,8 @@
     "portable": {
       "artifactName": "${productName}-${version}-Portable.${ext}"
     }
+  },
+  "dependencies": {
+    "marked": "^18.1.0"
   }
 }

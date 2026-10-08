@@ -24,6 +24,7 @@ import { initZoomControls, stepZoom } from './renderer/zoom.js';
 import { createReferencePicker } from './renderer/reference-picker.js';
 import { viewStorage } from './renderer/app-storage.js';
 import { loadNotes, refreshNoteMarkers } from './renderer/notes-ui.js';
+import { enhanceNoteField } from './renderer/note-field.js';
 import { createRepositoryActions } from './renderer/repository-actions.js';
 import { createRepositoryControls } from './renderer/repository-controls.js';
 import {
@@ -58,6 +59,11 @@ function focusOnCommit(commit, position) {
   });
 }
 
+const repositoryNoteField = enhanceNoteField(document.getElementById('repository-note'), {
+  label: 'repository',
+  previewTestId: 'repository-note-preview'
+});
+
 function showRepository(repository) {
   state.currentRepositoryPath = repository.path;
   loadNotes();
@@ -67,6 +73,7 @@ function showRepository(repository) {
   document.getElementById('repository-note').value = viewStorage.readRepositoryNote(
     repository.path
   );
+  repositoryNoteField.showEditor();
   renderGraph(repository.graph);
   picker.hidden = true;
   repositoryView.hidden = false;

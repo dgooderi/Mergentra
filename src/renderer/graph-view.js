@@ -3,6 +3,7 @@
 import { computeTimeAxisTicks, dateRangeFromAxisDrag } from './time-axis.js';
 import { branchLabelNames, truncateBranchName } from './layout.js';
 import { findMainReference } from './lanes.js';
+import { markdownToPlainText } from './markdown.js';
 
 const releaseTagPattern = /^v?\d+(\.\d+)+([-+.].*)?$/;
 // Merge lines longer than this leave their branch with a visible curve instead of running along its row.
@@ -274,7 +275,9 @@ export function drawEdges(ctx, actions) {
         hit.append(title);
         hit.addEventListener('pointerenter', () => {
           const note = actions.getNotes().branches[hoverReference.name];
-          title.textContent = note ? `${hoverReference.name}\n${note}` : hoverReference.name;
+          title.textContent = note
+            ? `${hoverReference.name}\n${markdownToPlainText(note)}`
+            : hoverReference.name;
         });
         if (isMergeIn) {
           hit.addEventListener('contextmenu', (event) =>

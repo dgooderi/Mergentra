@@ -1,9 +1,14 @@
 import { state } from './state.js';
 import { renderSelectedBranchNotes, setNote } from './notes-ui.js';
 import { inferBranchContext } from './branch-context.js';
+import { enhanceNoteField } from './note-field.js';
 
 export function createReviewDock({ updateTimeNavigation }) {
   const dock = document.getElementById('review-dock');
+  const commitNoteField = enhanceNoteField(document.getElementById('selected-commit-note'), {
+    label: 'commit',
+    previewTestId: 'selected-commit-note-preview'
+  });
 
   function selectCommit(commit) {
     state.selectedCommit = commit;
@@ -31,6 +36,7 @@ export function createReviewDock({ updateTimeNavigation }) {
 
     const noteInput = document.getElementById('selected-commit-note');
     noteInput.value = state.notes.commits[state.selectedCommit.hash] || '';
+    commitNoteField.showEditor();
     noteInput.oninput = () => setNote('commits', state.selectedCommit.hash, noteInput.value);
     renderSelectedBranchNotes();
 

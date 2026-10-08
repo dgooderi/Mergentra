@@ -1,5 +1,6 @@
 import { state } from './state.js';
 import { viewStorage } from './app-storage.js';
+import { renderMarkdown } from './markdown.js';
 
 export function loadNotes() {
   state.notes = viewStorage.loadNotes(state.currentRepositoryPath);
@@ -41,7 +42,11 @@ export function renderSelectedBranchNotes() {
   );
   for (const name of names) {
     const item = document.createElement('li');
-    item.textContent = `${name}: ${state.notes.branches[name]}`;
+    const heading = document.createElement('span');
+    const body = document.createElement('div');
+    heading.textContent = `${name}: `;
+    renderMarkdown(state.notes.branches[name], body);
+    item.append(heading, body);
     list.append(item);
   }
   document.getElementById('selected-commit-branch-notes-heading').hidden = names.length === 0;
