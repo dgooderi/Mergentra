@@ -186,3 +186,20 @@ test('Clone form has no extra card layer and fits tightly', async () => {
     expect(sectionBox.height).toBeLessThan(330);
   }, { openRepository: false });
 });
+
+test('Open and Clone controls share the same position and size', async () => {
+  await withApp(async (window) => {
+    const openTop = (await window.locator('#panel-open h2').first().boundingBox()).y;
+    const openFolder = await window.locator('#repository-form .path-controls').boundingBox();
+    const openButton = await window.locator('#repository-form > .primary').boundingBox();
+    await window.getByRole('tab', { name: 'Clone' }).click();
+    const cloneTop = (await window.locator('#panel-clone h2').boundingBox()).y;
+    const cloneButton = await window.locator('#clone-start').boundingBox();
+    expect(Math.abs(openTop - cloneTop)).toBeLessThan(1);
+    expect(Math.abs(openFolder.width - (await window.locator('#clone-url').boundingBox()).width)).toBeLessThan(
+      1
+    );
+    expect(Math.abs(openButton.y + openButton.height - (cloneButton.y + cloneButton.height))).toBeLessThan(1);
+    expect(Math.abs(openButton.width - cloneButton.width)).toBeLessThan(1);
+  }, { openRepository: false });
+});

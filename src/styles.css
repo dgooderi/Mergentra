@@ -1309,3 +1309,19 @@ main:not(:has(#repository-view:not([hidden]))) #open-explorer {
 .repository-header > div > .brand-logo-small {
   margin: 0 4px 0 0;
 }
+
+/* Open and Clone fill the same panel, so their controls line up and the Open button sits level with Clone. */
+#panel-open {
+  display: flex;
+  flex-direction: column;
+}
+
+#panel-open > #repository-form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+#panel-open > #repository-form > .primary {
+  margin-top: auto;
+}
