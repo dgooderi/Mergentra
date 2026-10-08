@@ -186,6 +186,9 @@ describe('IPC handlers', () => {
       'repository:choose',
       'repository:open',
       'repository:fetch',
+      'clone:choose-destination',
+      'clone:start',
+      'clone:cancel',
       'app:version',
       'external:open-release',
       'diagnostics:copy',
@@ -198,6 +201,41 @@ describe('IPC handlers', () => {
       'settings:save-default-directory',
       'settings:choose-default-directory'
     ]);
+  });
+
+  it('starts a clone with sanitised input, forwards progress and returns the repository as JSON', async () => {
+    const repository = { path: 'C:\\clone', graph: { commits: [] } };
+    const { handlers, dependencies } = makeIpcDependencies({
+      cloneRepository: vi.fn(async (_request, onProgress) => {
+        onProgress('Receiving objects: 50%');
+        return { success: true, repository };
+      }),
+      window: { webContents: { send: vi.fn() } }
+    });
+
+    const result = await handlers.get('clone:start')(null, {
+      url: 'https://example.com/a.git',
+      destination: 'C:\\clone',
+      historyOnly: 'yes',
+      extra: 'ignored'
+    });
+    expect(dependencies.cloneRepository.mock.calls[0][0]).toEqual({
+      url: 'https://example.com/a.git',
+      destination: 'C:\\clone',
+      historyOnly: false
+    });
+    expect(dependencies.window.webContents.send).toHaveBeenCalledWith(
+      'clone:progress',
+      'Receiving objects: 50%'
+    );
+    expect(JSON.parse(result.repository)).toEqual(repository);
+    await expect(handlers.get('clone:start')(null, { url: 5 })).rejects.toThrow('Enter a');
+  });
+
+  it('cancels a running clone', async () => {
+    const { handlers, dependencies } = makeIpcDependencies({ cancelClone: vi.fn() });
+    await handlers.get('clone:cancel')();
+    expect(dependencies.cancelClone).toHaveBeenCalled();
   });
 
   it('sends repositories over IPC as JSON strings so large histories transfer quickly', async () => {

@@ -1,6 +1,6 @@
 # Mergentra
 
-Mergentra is a Windows-first Electron app for exploring the history of one local Git repository at a time as a branch graph. It is read-only: it never commits, checks out, merges, or edits your repository. The only command that changes repository data is the explicit **Fetch** button, which updates remote-tracking references.
+Mergentra is a Windows-first Electron app for exploring the history of one local Git repository at a time as a branch graph. It is read-only: it never commits, checks out, merges, or edits your repository. The only commands that change anything are the explicit **Fetch** button, which updates remote-tracking references of the open repository, and **Clone repository**, which only creates a new repository and never modifies an existing one.
 
 ## Screenshot
 
@@ -25,6 +25,7 @@ You do not need Node.js to run Mergentra; Electron bundles its own runtime. You 
 Mergentra runs your installed Git against the repository you open, so a repository you do not trust deserves care.
 
 - **Fetch is guarded.** Git can run programs named in a repository's own configuration. Before fetching, Mergentra checks for such settings (see the Fetch description below) and shows a warning. Fetching proceeds only if you choose **Fetch anyway**.
+- **Clone is restricted.** Only HTTPS and SSH URLs are accepted; local paths, `file://`, `ext::` and anything that looks like a command-line option are rejected, and Git is run with all other transports disabled. The destination must be an empty or new folder. A cloned repository's own configuration is untrusted, so the Fetch guard above still applies to it.
 - **Opening is hardened.** Opening a repository reads history only and never fetches. It disables signature verification so a repository cannot make `git log` launch its configured `gpg.program`.
 - **Not covered:** Git hooks and your own global Git configuration and environment (such as `GIT_SSH_COMMAND`) are trusted and not checked. Only fetch from repositories you trust.
 - **App hardening:** the renderer is sandboxed from Node.js and Git, and only a small set of IPC calls is exposed. Update checks only contact GitHub when you select **Check for updates**.
@@ -83,6 +84,8 @@ Select a commit in the graph with the mouse, or focus it and press Enter or Spac
 Use the checkboxes beside references to filter local branches and remote-tracking references independently. The graph retains each commit reachable from at least one enabled reference, including shared ancestors; disabling all references shows an empty graph without changing repository data.
 
 Use the time-range selector to choose a rolling preset, all history, or a custom local-date range. Day and week presets are elapsed durations; month and year presets roll back by calendar periods. Custom ranges include both selected local dates. Commits outside the selected window are clipped and history continuation is marked at range boundaries. Ordinary commits on a linear path between important commits are summarized by an endpoint-exclusive count.
+
+Select **Clone repository** on the Open a repository screen (also reached through **Open another repository**) to clone from an HTTPS or SSH URL into an empty or new folder. The optional **History only** checkbox (off by default) makes a partial clone that skips file contents. Progress is shown with a **Cancel clone** button that stops Git and removes the partly created folder; failures show copyable, credential-redacted diagnostics. Mergentra does not prompt for passwords, so private repositories need a Git credential helper or an SSH agent. On success the repository opens and joins the recent list.
 
 Select **Fetch** to explicitly update remote-tracking references using Git's configured credential helpers. Opening or filtering does not fetch. Fetch progress and its result are shown in the app; failures include copyable, credential-redacted diagnostics. Before fetching, Mergentra inspects the repository's own Git configuration and blocks the fetch if it would run a program (for example `core.sshCommand`, `core.askPass`, `core.gitProxy`, path-based or `!` credential helpers, `remote.*.vcs`, or `ext::` URLs). A warning lists the settings; choose **Fetch anyway** to proceed once, accepting the risk, or **Cancel**.
 

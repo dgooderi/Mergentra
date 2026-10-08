@@ -6,6 +6,13 @@ contextBridge.exposeInMainWorld('mergentra', {
   openRelease: (releaseUrl) => ipcRenderer.invoke('external:open-release', releaseUrl),
   // Returned as a JSON string: contextBridge deep-copies objects and is very slow for large graphs.
   openRepositoryJson: (repositoryPath) => ipcRenderer.invoke('repository:open', repositoryPath),
+  chooseCloneDestination: () => ipcRenderer.invoke('clone:choose-destination'),
+  startClone: (request) => ipcRenderer.invoke('clone:start', request),
+  cancelClone: () => ipcRenderer.invoke('clone:cancel'),
+  onCloneProgress: (callback) => {
+    ipcRenderer.removeAllListeners('clone:progress');
+    ipcRenderer.on('clone:progress', (_event, line) => callback(line));
+  },
   fetchRemoteReferences: () => ipcRenderer.invoke('repository:fetch'),
   copyDiagnostics: (diagnostics) => ipcRenderer.invoke('diagnostics:copy', diagnostics),
   openInExplorer: () => ipcRenderer.invoke('repository:open-in-explorer'),

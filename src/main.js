@@ -8,6 +8,7 @@ const { registerIpcHandlers } = require('./ipc-handlers');
 const { createMainWindow } = require('./main-window');
 const { UnsafeRepositoryConfigError, assertRepositoryConfigSafe } = require('./git-config-safety');
 const { rememberRepository } = require('./recent-repositories');
+const { validateCloneUrl, checkDestination, runClone } = require('./clone');
 const { runGit, runGitWithInput } = createGitRunner();
 let settings;
 let settingsStore;
@@ -229,6 +230,68 @@ async function fetchRemoteReferences() {
   }
 }
 
+const AUTHENTICATION_FAILURE =
+  /authentication failed|could not read (username|password)|terminal prompts disabled|permission denied|publickey/i;
+// Only the end-to-end tests clone from a local bare repository, which normal use rejects.
+const allowLocalClone = process.env.MERGENTRA_ALLOW_LOCAL_CLONE === '1';
+let activeClone = null;
+
+async function cloneRepository({ url, destination, historyOnly }, onProgress) {
+  if (activeClone) {
+    return { success: false, message: 'A clone is already running.', diagnostics: '' };
+  }
+  const urlCheck = validateCloneUrl(url, { allowLocal: allowLocalClone });
+  if (!urlCheck.valid) {
+    return { success: false, message: urlCheck.message, diagnostics: '' };
+  }
+  const destinationCheck = checkDestination(destination);
+  if (!destinationCheck.valid) {
+    return { success: false, message: destinationCheck.message, diagnostics: '' };
+  }
+
+  const run = runClone({
+    gitPath: settings.gitPath || 'git',
+    url: urlCheck.url,
+    destination: destinationCheck.path,
+    existed: destinationCheck.existed,
+    historyOnly: Boolean(historyOnly),
+    allowLocal: allowLocalClone,
+    onProgress
+  });
+  activeClone = run;
+  try {
+    const result = await run.promise;
+    if (result.cancelled) {
+      return { success: false, cancelled: true, message: 'Clone cancelled.', diagnostics: '' };
+    }
+  } catch (error) {
+    const diagnostics = errorDiagnostics(error);
+    return {
+      success: false,
+      message: AUTHENTICATION_FAILURE.test(diagnostics)
+        ? 'Clone failed: authentication is required. Mergentra cannot prompt for passwords, so set up a Git credential helper or an SSH agent and try again.'
+        : 'Clone failed. Check the URL and your network connection, then try again.',
+      diagnostics
+    };
+  } finally {
+    activeClone = null;
+  }
+
+  try {
+    return { success: true, repository: await openAndRememberRepository(destinationCheck.path) };
+  } catch (error) {
+    return {
+      success: false,
+      message: 'The repository was cloned, but Mergentra could not open it.',
+      diagnostics: errorDiagnostics(error)
+    };
+  }
+}
+
+function cancelClone() {
+  activeClone?.cancel();
+}
+
 app.whenReady().then(() => {
   try {
     settingsStore = createSettingsStore(app.getPath('userData'));
@@ -254,6 +317,8 @@ app.whenReady().then(() => {
     window,
     openAndRememberRepository,
     fetchRemoteReferences,
+    cloneRepository,
+    cancelClone,
     getSettings: () => settings,
     saveSettings,
     getActiveRepositoryPath: () => activeRepositoryPath,

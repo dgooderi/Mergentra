@@ -115,6 +115,46 @@
           </div>
           <button class="primary" type="submit">Open repository</button>
         </form>
+        <section class="clone-section" aria-labelledby="clone-heading">
+          <h2 id="clone-heading">Clone a repository</h2>
+          <form id="clone-form">
+            <label for="clone-url">Repository URL</label>
+            <input
+              id="clone-url"
+              name="clone-url"
+              type="text"
+              autocomplete="off"
+              placeholder="https://github.com/owner/repository.git"
+            />
+            <label for="clone-destination">Clone destination folder</label>
+            <div class="path-controls">
+              <input
+                id="clone-destination"
+                name="clone-destination"
+                type="text"
+                autocomplete="off"
+                placeholder="C:\path\to\new\folder"
+              />
+              <button id="clone-browse" class="secondary" type="button">Browse…</button>
+            </div>
+            <label class="checkbox-label">
+              <input id="clone-history-only" type="checkbox" />
+              History only (faster for large repositories, file contents download on demand)
+            </label>
+            <div class="path-controls">
+              <button id="clone-start" class="primary" type="submit">Clone repository</button>
+              <button id="clone-cancel" class="secondary" type="button" hidden>Cancel clone</button>
+            </div>
+          </form>
+          <p id="clone-progress" role="status" aria-live="polite"></p>
+          <p id="clone-status" role="status" aria-live="polite"></p>
+          <div id="clone-diagnostics-panel" hidden>
+            <pre id="clone-diagnostics"></pre>
+            <button id="copy-clone-diagnostics" class="secondary" type="button">
+              Copy clone diagnostics
+            </button>
+          </div>
+        </section>
         <p id="repository-progress" role="status" aria-live="polite"></p>
         <p id="status" role="alert" aria-live="polite"></p>
       </section>
