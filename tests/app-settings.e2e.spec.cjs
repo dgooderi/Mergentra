@@ -40,6 +40,8 @@ test('a developer can open a local Git repository', async () => {
 
     await expect(window.getByRole('heading', { name: 'sample-repository' })).toBeVisible();
     await expect(window.locator('#repository-path-value')).toHaveText(repositoryPath);
+    await expect(window.locator('.repository-header')).toContainText(`Path: ${repositoryPath}`);
+    await expect(window.locator('.repository-header')).toContainText('Current Branch: main');
     await expect(window.locator('#branch-name')).toHaveText('main');
     await expect(window.getByRole('button', { name: 'Check for updates' })).toBeVisible();
   } finally {
