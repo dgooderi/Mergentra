@@ -1,3 +1,5 @@
+import { localDateString } from './time-range.js';
+
 // Each visible commit gets a tick with its own date and time. Commits are laid out in
 // history order, not strictly by time, so every label carries enough detail to be read
 // on its own. The time is dropped for long spans and the year when it is the current one.
@@ -33,4 +35,23 @@ export function computeTimeAxisTicks(commits, commitPositions, now = new Date())
     });
   }
   return { showTime, ticks };
+}
+
+// Turns a horizontal drag across the axis into the date range of the ticks it covers.
+// Drags shorter than the threshold are treated as plain clicks.
+export function dateRangeFromAxisDrag(ticks, startX, endX, minimumDragPx = 8) {
+  const left = Math.min(startX, endX);
+  const right = Math.max(startX, endX);
+  if (right - left < minimumDragPx) {
+    return null;
+  }
+  const covered = ticks.filter((tick) => tick.x >= left && tick.x <= right);
+  if (covered.length === 0) {
+    return null;
+  }
+  const timestamps = covered.map((tick) => tick.timestamp * 1000);
+  return {
+    start: localDateString(Math.min(...timestamps)),
+    end: localDateString(Math.max(...timestamps))
+  };
 }

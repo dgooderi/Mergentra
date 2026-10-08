@@ -1132,3 +1132,14 @@ main:not(:has(#repository-view:not([hidden]))) #open-explorer {
 #zoom-options li:hover {
   background: rgb(96 165 250 / 22%);
 }
+
+#commit-graph .time-axis-drag-area {
+  fill: transparent;
+  cursor: col-resize;
+}
+
+#commit-graph .time-axis-selection {
+  fill: var(--accent, #2563eb);
+  fill-opacity: 0.18;
+  pointer-events: none;
+}

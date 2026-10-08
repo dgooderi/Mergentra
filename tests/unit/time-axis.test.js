@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeTimeAxisTicks } from '../../src/renderer/time-axis.js';
+import { computeTimeAxisTicks, dateRangeFromAxisDrag } from '../../src/renderer/time-axis.js';
 
 const DAY = 24 * 60 * 60;
 const at = (year, month, day, hour = 12) => new Date(year, month, day, hour).getTime() / 1000;
@@ -58,5 +58,38 @@ describe('computeTimeAxisTicks', () => {
     const { ticks } = computeTimeAxisTicks(commits, positions(commits), now);
     expect(ticks[0].dateText).not.toContain('2024');
     expect(ticks[1].dateText).toContain('2022');
+  });
+});
+
+describe('dateRangeFromAxisDrag', () => {
+  const tick = (x, year, month, day) => ({ x, timestamp: at(year, month, day) });
+  const ticks = [
+    tick(100, 2024, 0, 10),
+    tick(200, 2024, 1, 20),
+    tick(300, 2024, 2, 5),
+    tick(400, 2024, 3, 30)
+  ];
+
+  it('covers the dates of the ticks the drag passes over, whichever direction it goes', () => {
+    const expected = { start: '2024-02-20', end: '2024-03-05' };
+    expect(dateRangeFromAxisDrag(ticks, 150, 350)).toEqual(expected);
+    expect(dateRangeFromAxisDrag(ticks, 350, 150)).toEqual(expected);
+  });
+
+  it('uses the earliest and latest dates even when history order is not date order', () => {
+    const unordered = [tick(100, 2024, 5, 1), tick(200, 2024, 0, 1), tick(300, 2024, 2, 1)];
+    expect(dateRangeFromAxisDrag(unordered, 50, 350)).toEqual({
+      start: '2024-01-01',
+      end: '2024-06-01'
+    });
+  });
+
+  it('ignores tiny drags so a plain click is not a selection', () => {
+    expect(dateRangeFromAxisDrag(ticks, 150, 154)).toBeNull();
+  });
+
+  it('returns null when the drag does not cover any dated tick', () => {
+    expect(dateRangeFromAxisDrag(ticks, 210, 290)).toBeNull();
+    expect(dateRangeFromAxisDrag([], 0, 500)).toBeNull();
   });
 });
