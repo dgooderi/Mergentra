@@ -359,3 +359,22 @@ test('the default directory setting is saved, survives a restart and flags a mis
     fs.rmSync(testDirectory, { recursive: true, force: true });
   }
 });
+
+test('settings is a cog icon button with an accessible name', async () => {
+  const userDataPath = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
+  let app;
+
+  try {
+    app = await launchMergentra(userDataPath);
+    const window = await app.firstWindow();
+    const settings = window.getByRole('button', { name: 'Settings' });
+    await expect(settings).toHaveText('');
+    await expect(settings.locator('svg')).toHaveCount(1);
+    await expect(settings).toHaveAttribute('title', 'Settings');
+  } finally {
+    if (app) {
+      await app.close();
+    }
+    fs.rmSync(userDataPath, { recursive: true, force: true });
+  }
+});
