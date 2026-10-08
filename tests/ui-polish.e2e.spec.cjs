@@ -104,3 +104,24 @@ test('picker screen shows only the Open or the Clone form and keeps typed values
     { openRepository: false }
   );
 });
+
+test('clone URL is as wide as the folder field and History only is centred', async () => {
+  await withApp(
+    async (window) => {
+      await window.getByRole('tab', { name: 'Clone' }).click();
+      const url = await window.getByLabel('Repository URL').boundingBox();
+      const destinationRow = await window.locator('#clone-destination').boundingBox();
+      const browse = await window.locator('#clone-browse').boundingBox();
+      const rowRight = browse.x + browse.width;
+      expect(Math.abs(url.x + url.width - rowRight)).toBeLessThan(1);
+      expect(Math.abs(url.x - destinationRow.x)).toBeLessThan(1);
+
+      const checkbox = await window.locator('.clone-section .checkbox-label').boundingBox();
+      const start = await window.locator('#clone-start').boundingBox();
+      const above = checkbox.y - (destinationRow.y + destinationRow.height);
+      const below = start.y - (checkbox.y + checkbox.height);
+      expect(Math.abs(above - below)).toBeLessThan(2);
+    },
+    { openRepository: false }
+  );
+});
