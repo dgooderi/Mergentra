@@ -10,7 +10,7 @@ Mergentra is a Windows-first Electron app for exploring the history of one local
 
 ## Status
 
-Mergentra is **pre-1.0 (version 0.9.0)** and is being made public. Expect rough edges and changes between releases.
+Mergentra is **pre-1.0 (version 0.11.0)** and is being made public. Expect rough edges and changes between releases.
 
 - **Platform:** Windows is the supported and tested platform. The app is built with Electron, so other platforms may run it, but they are untested and no installers are produced for them.
 - **Installer:** the Windows installer is currently **unsigned**, so Windows SmartScreen may warn when you run it. Authenticode signing is planned before a stable release.
