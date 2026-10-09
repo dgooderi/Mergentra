@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Ask a question or share an idea
+    url: https://github.com/dgooderi/Mergentra/discussions
+    about: Questions, ideas and show-and-tell belong in Discussions. Use issues for bugs and concrete feature requests.
+  - name: Report a security problem
+    url: https://github.com/dgooderi/Mergentra/blob/main/SECURITY.md
+    about: Please do not open a public issue for security problems.

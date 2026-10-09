@@ -1,10 +1,12 @@
-﻿# Contributing to Mergentra
+# Contributing to Mergentra
 
 Thanks for helping. Mergentra is released under [RPL-1.5](LICENSE).
 
 ## Before you start
 
+- Ask questions and float ideas in [Discussions](https://github.com/dgooderi/Mergentra/discussions); use issues for bugs and concrete feature requests.
 - Open an issue to discuss larger changes before writing code.
+- Follow the [code of conduct](CODE_OF_CONDUCT.md).
 - Report security problems privately, as described in [SECURITY.md](SECURITY.md), not in public issues.
 
 ## Contributor License Agreement
