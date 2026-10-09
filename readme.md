@@ -44,7 +44,7 @@ Mergentra is licensed under the [Reciprocal Public License 1.5 (RPL-1.5)](./LICE
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) and the [changelog](CHANGELOG.md). Pull requests need a signed [CLA](CLA.md). Report security issues as described in [SECURITY.md](SECURITY.md).
+Questions, ideas and show-and-tell are welcome in [GitHub Discussions](https://github.com/dgooderi/Mergentra/discussions); use issues for bugs and concrete feature requests. Please follow the [code of conduct](CODE_OF_CONDUCT.md). See [CONTRIBUTING.md](CONTRIBUTING.md) and the [changelog](CHANGELOG.md). Pull requests need a signed [CLA](CLA.md). Report security issues as described in [SECURITY.md](SECURITY.md).
 
 ## Development
 
