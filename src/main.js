@@ -11,6 +11,7 @@ const { createSplash, revealWhenReady } = require('./splash');
 const { UnsafeRepositoryConfigError, assertRepositoryConfigSafe } = require('./git-config-safety');
 const { createUpdateService } = require('./update-service');
 const { downloadAsset } = require('./update-download');
+const licenseRules = require('./license');
 const { detectInstallChannel } = require('./update-policy');
 const { rememberRepository } = require('./recent-repositories');
 const { validateCloneUrl, checkDestination, runClone } = require('./clone');
@@ -321,12 +322,40 @@ app.whenReady().then(() => {
     fileSystem: fs
   });
 
+  // Automated tests set MERGENTRA_SKIP_LICENSE; managed installs accept by MERGENTRA_ACCEPT_LICENSE.
+  const licenseNeeded = () =>
+    process.env.MERGENTRA_SKIP_LICENSE !== '1' &&
+    !licenseRules.isAcceptedByPolicy(process.env, licenseRules.LICENSE_VERSION) &&
+    licenseRules.needsAcceptance(state.getSettings(), licenseRules.LICENSE_VERSION);
+  const license = {
+    describe: () => ({
+      needed: licenseNeeded(),
+      version: licenseRules.LICENSE_VERSION,
+      text: licenseRules.readLicenseText(fs),
+      whatChanged: licenseRules.WHAT_CHANGED,
+      accepted: {
+        version: state.getSettings().acceptedLicenseVersion ?? null,
+        date: state.getSettings().acceptedLicenseDate ?? null
+      }
+    }),
+    accept: () => {
+      state.saveSettings(
+        licenseRules.recordAcceptance(state.getSettings(), {
+          licenseVersion: licenseRules.LICENSE_VERSION,
+          appVersion: app.getVersion(),
+          now: Date.now()
+        })
+      );
+    },
+    decline: () => app.quit()
+  };
   const apiUrl = process.env.MERGENTRA_UPDATE_API_URL;
   const updateService = createUpdateService({
     getVersion: () => app.getVersion(),
     getSettings: state.getSettings,
     saveSettings: state.saveSettings,
     channel: installChannel,
+    licenseVersion: licenseRules.LICENSE_VERSION,
     ...(apiUrl ? { apiUrl } : {}),
     showMessageBox: (options) => dialog.showMessageBox(window, options),
     showError: (title, message) => dialog.showErrorBox(title, message),
@@ -356,6 +385,7 @@ app.whenReady().then(() => {
     getActiveRepositoryPath: state.getActiveRepositoryPath,
     runGit,
     installChannel,
+    license,
     checkForUpdates: updateService.check
   });
 
@@ -363,7 +393,12 @@ app.whenReady().then(() => {
   const delay = Number(process.env.MERGENTRA_UPDATE_CHECK_DELAY_MS) || 5000;
   // Tests with a private user-data folder only check when pointed at a stub server.
   if (apiUrl || !process.env.MERGENTRA_USER_DATA_DIR) {
-    setTimeout(() => void updateService.runScheduledCheck(), delay);
+    setTimeout(() => {
+      // Nothing contacts GitHub until the licence terms have been accepted.
+      if (!licenseNeeded()) {
+        void updateService.runScheduledCheck();
+      }
+    }, delay);
   }
 });
 

@@ -1421,3 +1421,52 @@ main:not(:has(#repository-view:not([hidden]))) {
   cursor: grabbing;
   user-select: none;
 }
+
+.license-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 24px;
+}
+
+.license-card {
+  display: grid;
+  gap: 12px;
+  width: min(720px, 100%);
+  max-height: 100%;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  padding: 20px;
+  border-radius: 8px;
+  background: #111827;
+  color: var(--text);
+}
+
+:root[data-theme='light'] .license-card {
+  background: #ffffff;
+}
+
+.license-text {
+  margin: 0;
+  overflow: auto;
+  white-space: pre-wrap;
+  font: inherit;
+  line-height: 1.5;
+}
+
+.license-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.license-summary {
+  margin-top: 12px;
+}
+
+.license-summary .license-text {
+  max-height: 240px;
+  margin-top: 8px;
+}
