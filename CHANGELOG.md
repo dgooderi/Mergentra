@@ -4,6 +4,26 @@ All notable changes to Mergentra are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.11.0] - 2026-10-09
+
+### Added
+
+- `npm run measure:render` measures render cost on synthetic histories up to 1,000,000 commits (#13).
+- A code of conduct, a Discussions link in the issue chooser, and pointers to Discussions in the readme and CONTRIBUTING.md.
+- Automatic weekly update check with an update dialog (download and install, download, release notes, skip this version), a Settings toggle, and checksum-verified downloads. Off by default for MSI installs (#62).
+- Versioned license agreement: accepted on first run, shown again when the bundled terms change, readable in Settings, and accepted by policy for managed installs. The text is a placeholder (#64).
+- MSI build target: `npm run build:win:msi` produces a per-machine x64 `Mergentra-<version>-x64.msi` that upgrades in place and carries an `install-channel` marker (#63).
+
+### Changed
+
+- Split `drawCommitNode` into smaller helpers and moved main-process settings state into `src/app-state.js` (#14).
+
+### Fixed
+
+- Panning no longer swallows clicks on the "+N" commit summaries or Shift-click zoom; a drag starts after 4 px of movement.
+- Restored the ellipsis in the "Loading repository history..." message.
+- End-to-end tests no longer depend on the user's global Git signing configuration.
+
 ## [0.10.0]
 
 ### Added
@@ -42,7 +62,7 @@ All notable changes to Mergentra are recorded here. The format follows
 ### Project
 
 - Added CONTRIBUTING.md, a CLA and a CLA bot workflow.
-- The README documents manual testing on the VS Code repository, includes a screenshot, and mentions the pending SignPath code signing application.
+- The README documents manual testing on the VS Code repository, and includes a screenshot.
 
 ## [0.9.0]
 

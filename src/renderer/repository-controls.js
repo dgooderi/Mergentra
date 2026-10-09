@@ -38,6 +38,15 @@ export function createRepositoryControls({ showRepository }) {
     }
   }
 
+  async function loadAutoUpdateCheck() {
+    try {
+      document.getElementById('auto-update-check').checked =
+        await window.mergentra.getAutoUpdateCheck();
+    } catch (error) {
+      document.getElementById('update-status').textContent = error.message;
+    }
+  }
+
   async function loadDefaultDirectory() {
     const status = document.getElementById('default-directory-status');
     try {
@@ -87,6 +96,7 @@ export function createRepositoryControls({ showRepository }) {
       setStatus(error.message);
     }
     await loadDefaultDirectory();
+    await loadAutoUpdateCheck();
   }
 
   function initModeTabs() {
@@ -232,6 +242,14 @@ export function createRepositoryControls({ showRepository }) {
       }
     });
 
+    document.getElementById('auto-update-check').addEventListener('change', async (event) => {
+      try {
+        await window.mergentra.saveAutoUpdateCheck(event.currentTarget.checked);
+      } catch (error) {
+        event.currentTarget.checked = !event.currentTarget.checked;
+        document.getElementById('update-status').textContent = error.message;
+      }
+    });
     document.getElementById('default-directory-browse').addEventListener('click', async () => {
       try {
         const selected = await window.mergentra.chooseDefaultDirectory();

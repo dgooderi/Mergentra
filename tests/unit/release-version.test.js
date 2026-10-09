@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compareReleaseVersions, parseReleaseVersion } from '../../src/renderer/release-version.js';
+import { compareReleaseVersions, parseReleaseVersion } from '../../src/release-version.js';
 
 const compare = (left, right) =>
   compareReleaseVersions(parseReleaseVersion(left), parseReleaseVersion(right));

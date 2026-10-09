@@ -1,4 +1,3 @@
-import { compareReleaseVersions, parseReleaseVersion } from './release-version.js';
 import { fetchRemoteReferences } from './repository-api.js';
 
 export function createRepositoryActions({ refreshRepositoryGraph }) {
@@ -69,57 +68,22 @@ export function createRepositoryActions({ refreshRepositoryGraph }) {
     releaseLink.removeAttribute('href');
 
     try {
-      const [response, currentVersion] = await Promise.all([
-        fetch('https://api.github.com/repos/dgooderi/Mergentra/releases/latest', {
-          headers: { Accept: 'application/vnd.github+json' },
-          cache: 'no-store',
-          credentials: 'omit',
-          signal: AbortSignal.timeout(10_000)
-        }),
-        window.mergentra.getAppVersion()
-      ]);
-      if (!response.ok) {
-        throw new Error(
-          `GitHub release check failed with HTTP ${response.status}. Try again later.`
-        );
-      }
-
-      const release = await response.json();
-      if (
-        typeof release?.tag_name !== 'string' ||
-        typeof release?.html_url !== 'string' ||
-        release.draft ||
-        release.prerelease
-      ) {
-        throw new Error('GitHub returned an invalid latest-release response. Try again later.');
-      }
-      const releaseUrl = new URL(release.html_url);
-      if (
-        releaseUrl.origin !== 'https://github.com' ||
-        !releaseUrl.pathname.startsWith('/dgooderi/Mergentra/releases/')
-      ) {
-        throw new Error('GitHub returned an unexpected release link.');
-      }
-
-      const latestVersion = parseReleaseVersion(release.tag_name.replace(/^v/, ''));
-      const installedVersion = parseReleaseVersion(currentVersion);
-      const versionComparison = compareReleaseVersions(latestVersion, installedVersion);
-      const displayedVersion = release.tag_name.replace(/^v/, '');
-      if (versionComparison > 0) {
-        updateStatus.textContent = `Mergentra ${displayedVersion} is available.`;
-        releaseLink.href = releaseUrl.href;
-        releaseLink.textContent = `View Mergentra ${displayedVersion} on GitHub Releases`;
+      const result = await window.mergentra.checkForUpdates();
+      if (result.available) {
+        updateStatus.textContent = `Mergentra ${result.version} is available.`;
+        releaseLink.href = result.url;
+        releaseLink.textContent = `View Mergentra ${result.version} on GitHub Releases`;
         releaseLink.hidden = false;
       } else {
-        updateStatus.textContent = `Mergentra is up to date (${currentVersion}).`;
+        updateStatus.textContent = `Mergentra is up to date (${result.currentVersion}).`;
       }
     } catch (error) {
-      updateStatus.textContent = `Could not check for updates: ${error.message}`;
+      const reason = error.message.replace(/^Error invoking remote method '[^']+': (Error: )?/, '');
+      updateStatus.textContent = `Could not check for updates: ${reason}`;
     } finally {
       button.disabled = false;
     }
   }
-
   async function openReleaseLink(event) {
     event.preventDefault();
     const updateStatus = document.getElementById('update-status');

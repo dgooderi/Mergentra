@@ -1,6 +1,7 @@
 const path = require('node:path');
 const fs = require('node:fs');
 const { forgetRepository, renameRepository } = require('./recent-repositories');
+const { isAutoCheckEnabled } = require('./update-policy');
 
 function isExistingDirectory(directory) {
   try {
@@ -25,6 +26,9 @@ function registerIpcHandlers({
   saveSettings,
   getActiveRepositoryPath,
   runGit,
+  installChannel = 'installer',
+  license,
+  checkForUpdates,
   directoryExists = isExistingDirectory
 }) {
   // The last folder used wins; the default directory only applies when there is none.
@@ -85,6 +89,23 @@ function registerIpcHandlers({
       : result;
   });
   ipcMain.handle('clone:cancel', () => cancelClone());
+  ipcMain.handle('settings:get-auto-update-check', () =>
+    isAutoCheckEnabled(getSettings(), installChannel)
+  );
+  ipcMain.handle('settings:save-auto-update-check', (_event, enabled) => {
+    if (typeof enabled !== 'boolean') {
+      throw new Error('The automatic update setting must be on or off.');
+    }
+    saveSettings({ ...getSettings(), autoUpdateCheck: enabled });
+    return enabled;
+  });
+  ipcMain.handle('license:get', () => license.describe());
+  ipcMain.handle('license:accept', () => license.accept());
+  ipcMain.handle('license:decline', () => license.decline());
+  ipcMain.handle('updates:check', async () => {
+    const { available, currentVersion, release } = await checkForUpdates();
+    return { available, currentVersion, version: release.version, url: release.url };
+  });
   ipcMain.handle('app:version', () => app.getVersion());
   ipcMain.handle('external:open-release', async (_event, releaseUrl) => {
     if (typeof releaseUrl !== 'string') {

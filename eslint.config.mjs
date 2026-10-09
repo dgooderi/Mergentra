@@ -24,6 +24,11 @@ export default [
       'src/clone.js',
       'src/splash.js',
       'src/app-state.js',
+      'src/release-version.js',
+      'src/license.js',
+      'src/update-policy.js',
+      'src/update-download.js',
+      'src/update-service.js',
       'tests/**/*.cjs',
       'scripts/**/*.cjs',
       'playwright.config.*'
