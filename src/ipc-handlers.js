@@ -27,6 +27,7 @@ function registerIpcHandlers({
   getActiveRepositoryPath,
   runGit,
   installChannel = 'installer',
+  license,
   checkForUpdates,
   directoryExists = isExistingDirectory
 }) {
@@ -98,6 +99,9 @@ function registerIpcHandlers({
     saveSettings({ ...getSettings(), autoUpdateCheck: enabled });
     return enabled;
   });
+  ipcMain.handle('license:get', () => license.describe());
+  ipcMain.handle('license:accept', () => license.accept());
+  ipcMain.handle('license:decline', () => license.decline());
   ipcMain.handle('updates:check', async () => {
     const { available, currentVersion, release } = await checkForUpdates();
     return { available, currentVersion, version: release.version, url: release.url };

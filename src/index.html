@@ -12,7 +12,25 @@
     <script type="module" src="./renderer.js"></script>
   </head>
   <body>
-    <main>
+    <div
+      id="license-gate"
+      class="license-gate"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="license-heading"
+      hidden
+    >
+      <div class="license-card">
+        <h2 id="license-heading">License agreement</h2>
+        <p id="license-changes" hidden></p>
+        <pre id="license-gate-text" class="license-text" tabindex="0"></pre>
+        <div class="license-actions">
+          <button id="license-decline" class="secondary" type="button">Decline</button>
+          <button id="license-accept" type="button">I accept</button>
+        </div>
+      </div>
+    </div>
+    <main id="app-main">
       <div class="app-toolbar">
         <button id="open-explorer" class="secondary" type="button">Open in Explorer</button>
         <button id="change-repository" class="secondary" type="button">
@@ -90,6 +108,10 @@
           <p id="update-status" role="status" aria-live="polite"></p>
           <a id="update-release-link" hidden target="_blank" rel="noopener noreferrer"></a>
         </div>
+        <details class="license-summary">
+          <summary id="license-summary">License agreement</summary>
+          <pre id="license-settings-text" class="license-text"></pre>
+        </details>
       </section>
       <section id="repository-picker" aria-labelledby="picker-heading">
         <img

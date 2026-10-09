@@ -9,6 +9,7 @@ All notable changes to Mergentra are recorded here. The format follows
 ### Added
 
 - Automatic weekly update check with an update dialog (download and install, download, release notes, skip this version), a Settings toggle, and checksum-verified downloads. Off by default for MSI installs (#62).
+- Versioned license agreement: accepted on first run, shown again when the bundled terms change, readable in Settings, and accepted by policy for managed installs. The text is a placeholder (#64).
 - MSI build target: `npm run build:win:msi` produces a per-machine x64 `Mergentra-<version>-x64.msi` that upgrades in place and carries an `install-channel` marker (#63).
 
 ## [0.10.0]

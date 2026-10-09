@@ -1,0 +1,18 @@
+﻿MERGENTRA LICENSE AGREEMENT (PLACEHOLDER)
+
+This text is a placeholder so the acceptance flow can be built and tested. It is not a legal
+document and must be replaced with reviewed terms before Mergentra is licensed to anyone on them.
+
+1. Use
+   You may use Mergentra on your own computers. Terms for personal and business use, and any
+   fees for business use, will be set out here.
+
+2. Versions
+   These terms apply to the version of Mergentra you installed and accepted them with. A later
+   version may come with new terms; you will be asked to accept them before you use that version.
+
+3. No warranty
+   Mergentra is provided as is, without warranty of any kind.
+
+By choosing "I accept" you agree to these terms. If you do not agree, choose "Decline" and
+Mergentra will close.

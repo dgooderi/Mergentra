@@ -26,6 +26,7 @@ import { viewStorage } from './renderer/app-storage.js';
 import { loadNotes, refreshNoteMarkers } from './renderer/notes-ui.js';
 import { enhanceNoteField } from './renderer/note-field.js';
 import { createRepositoryActions } from './renderer/repository-actions.js';
+import { initLicenseGate } from './renderer/license-gate.js';
 import { createRepositoryControls } from './renderer/repository-controls.js';
 import {
   closeCompactedPopover,
@@ -362,3 +363,4 @@ function renderGraphContents(graph) {
 
 createRepositoryControls({ showRepository }).init();
 createRepositoryActions({ refreshRepositoryGraph }).init();
+initLicenseGate();

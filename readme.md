@@ -22,6 +22,10 @@ Mergentra is **pre-1.0 (version 0.9.0)** and is being made public. Expect rough 
 
 You do not need Node.js to run Mergentra; Electron bundles its own runtime. You do need [Git for Windows](https://gitforwindows.org/) installed. Mergentra uses your installed Git and does not bundle it. If Git is not on `PATH`, enter the full path to `git.exe` in the app.
 
+## License agreement
+
+On first run Mergentra shows its license agreement and asks you to accept it; declining closes the app. The accepted license version, date and app version are saved in your settings, and you can read the agreement in Settings. If a later release ships newer terms (the license version is bumped), the new terms are shown before that version opens. The update dialog also says when a release comes with new terms, and **Skip this version** never hides such a release. Managed installs can accept on the organisation's behalf by setting the `MERGENTRA_ACCEPT_LICENSE` environment variable to the license version they reviewed (currently `1`). The current text is a placeholder pending reviewed terms. Releases that change the terms declare `License-Version: <number>` on its own line in their GitHub release notes.
+
 ## Security and trust
 
 Mergentra runs your installed Git against the repository you open, so a repository you do not trust deserves care.

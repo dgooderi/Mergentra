@@ -25,6 +25,7 @@ export default [
       'src/splash.js',
       'src/app-state.js',
       'src/release-version.js',
+      'src/license.js',
       'src/update-policy.js',
       'src/update-download.js',
       'src/update-service.js',

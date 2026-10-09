@@ -47,11 +47,14 @@ function parseLatestRelease(release) {
   if (url.origin !== 'https://github.com' || !url.pathname.startsWith(RELEASE_PAGE_PREFIX)) {
     throw new Error('GitHub returned an unexpected release link.');
   }
+  const notes = typeof release.body === 'string' ? release.body : '';
+  const declared = /^License-Version:\s*(\d+)\s*$/im.exec(notes);
   return {
+    licenseVersion: declared ? Number(declared[1]) : null,
     version: release.tag_name.replace(/^v/, ''),
     tag: release.tag_name,
     url: url.href,
-    notes: typeof release.body === 'string' ? release.body : '',
+    notes,
     assets: Array.isArray(release.assets) ? release.assets : []
   };
 }

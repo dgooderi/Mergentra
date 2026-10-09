@@ -21,6 +21,7 @@ function createUpdateService({
   getSettings,
   saveSettings,
   channel,
+  licenseVersion = 0,
   apiUrl = RELEASES_API,
   fetchImpl = fetch,
   showMessageBox,
@@ -82,10 +83,14 @@ function createUpdateService({
     }
   }
 
+  const changesLicense = (release) =>
+    Number.isInteger(release.licenseVersion) && release.licenseVersion > licenseVersion;
+
   async function prompt(release) {
     const actions = actionsForChannel(channel);
     const currentVersion = getVersion();
     let stopChecking = false;
+    const newTerms = changesLicense(release);
 
     for (;;) {
       const { response, checkboxChecked } = await showMessageBox({
@@ -94,6 +99,9 @@ function createUpdateService({
         message: `Mergentra ${release.version} is available`,
         detail:
           `You have version ${currentVersion}. Would you like to update now?` +
+          (newTerms
+            ? '\n\nThis version comes with new licence terms, which you will be asked to accept.'
+            : '') +
           (channel === 'msi'
             ? '\n\nThis is a managed (MSI) installation, so updates are normally deployed by your administrator.'
             : ''),
@@ -140,7 +148,9 @@ function createUpdateService({
     }
     try {
       const result = await check();
-      if (result.available && getSettings().skippedVersion !== result.release.version) {
+      // A change to the licence terms is never hidden by Skip this version.
+      const skipped = getSettings().skippedVersion === result.release.version;
+      if (result.available && (!skipped || changesLicense(result.release))) {
         await prompt(result.release);
       }
       return result;

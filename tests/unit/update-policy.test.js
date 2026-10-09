@@ -116,6 +116,13 @@ describe('parseLatestRelease', () => {
     });
   });
 
+  it('reads the licence version a release declares in its notes', () => {
+    expect(
+      parseLatestRelease(release({ body: 'Fixes\nLicense-Version: 2\n' })).licenseVersion
+    ).toBe(2);
+    expect(parseLatestRelease(release({ body: 'No terms here' })).licenseVersion).toBeNull();
+  });
+
   it('rejects drafts, pre-releases and links to other places', () => {
     expect(() => parseLatestRelease(release({ draft: true }))).toThrow(/invalid/);
     expect(() => parseLatestRelease(release({ prerelease: true }))).toThrow(/invalid/);

@@ -151,6 +151,30 @@ describe('scheduled update check', () => {
   });
 });
 
+describe('releases with new licence terms', () => {
+  const withTerms = (version) => async () =>
+    Response.json({ ...releaseJson(), body: `License-Version: ${version}` });
+
+  it('tells the user the new version comes with new licence terms', async () => {
+    clicks = ['Remind me later'];
+    await build({ fetchImpl: withTerms(2), licenseVersion: 1 }).runScheduledCheck();
+    expect(calls.dialogs[0].detail).toMatch(/new licence terms/);
+  });
+
+  it('does not mention terms when they are unchanged', async () => {
+    clicks = ['Remind me later'];
+    await build({ fetchImpl: withTerms(1), licenseVersion: 1 }).runScheduledCheck();
+    expect(calls.dialogs[0].detail).not.toMatch(/licence/);
+  });
+
+  it('still offers a skipped version when it changes the licence terms', async () => {
+    settings.skippedVersion = '0.11.0';
+    clicks = ['Remind me later'];
+    await build({ fetchImpl: withTerms(2), licenseVersion: 1 }).runScheduledCheck();
+    expect(calls.dialogs).toHaveLength(1);
+  });
+});
+
 describe('update dialog choices', () => {
   const available = async (service) => (await service.check()).release;
 
