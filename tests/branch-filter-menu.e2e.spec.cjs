@@ -61,6 +61,10 @@ test.describe('branch filters in the commit context menu', () => {
     await window.getByRole('menuitem', { name: label }).click();
   };
 
+  test('opening a repository starts with no target branch selected', async () => {
+    await expect(window.getByLabel('Target branch')).toHaveValue('');
+  });
+
   test('filter to all branches from main to the selected node', async () => {
     await chooseFromNodeMenu('nested', 'Show branches from main to here');
     expect(await shownBranches()).toEqual(['feature', 'main', 'nested']);
