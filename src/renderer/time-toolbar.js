@@ -21,6 +21,13 @@ function earliestCommitDate() {
   return localDateString(earliestTimestamp);
 }
 
+function latestCommitDate() {
+  const latestTimestamp = Math.max(
+    ...state.currentGraph.commits.map((commit) => commit.committerTimestamp * 1000)
+  );
+  return localDateString(latestTimestamp);
+}
+
 export function syncCustomInputsToRange() {
   state.customRangeValues = {
     start: localDateString(state.timeRange.start),
@@ -123,7 +130,7 @@ function openCalendar() {
   }
   const calendar = document.getElementById('time-calendar-date');
   calendar.min = earliestCommitDate();
-  calendar.max = localDateString(Date.now());
+  calendar.max = latestCommitDate();
   calendar.value = calendar.max;
   if (typeof calendar.showPicker === 'function') {
     calendar.showPicker();
