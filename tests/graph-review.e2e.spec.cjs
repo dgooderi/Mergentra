@@ -333,6 +333,13 @@ test('pointer and keyboard commit selection show the same Review dock details', 
     await expect(
       dock.getByTestId('selected-commit-references').getByText('main', { exact: true })
     ).toBeVisible();
+    await childNode.click();
+    await expect(childNode).toHaveAttribute('aria-pressed', 'false');
+    await expect(dock).toBeHidden();
+
+    await childNode.click();
+    await expect(childNode).toHaveAttribute('aria-pressed', 'true');
+    await expect(dock).toBeVisible();
     const detailsBox = await dock.locator('.commit-details').boundingBox();
     const noteBox = await dock.locator('.review-note').boundingBox();
     const noteEditorBox = await dock.getByTestId('selected-commit-note').boundingBox();

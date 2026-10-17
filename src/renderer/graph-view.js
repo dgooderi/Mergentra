@@ -433,17 +433,17 @@ function commitContextMenuItems(commit, ctx, actions) {
 }
 
 function attachNodeHandlers(group, commit, ctx, actions) {
+  const toggleSelection = () =>
+    actions.selectCommit(actions.getSelectedCommit()?.hash === commit.hash ? null : commit);
   group.addEventListener('contextmenu', (event) => {
     const items = commitContextMenuItems(commit, ctx, actions);
     if (items.length) actions.openGraphContextMenu(event, items);
   });
-  group.addEventListener('click', () =>
-    actions.selectCommit(actions.getSelectedCommit()?.hash === commit.hash ? null : commit)
-  );
+  group.addEventListener('click', toggleSelection);
   group.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      actions.selectCommit(commit);
+      toggleSelection();
     }
   });
 }
