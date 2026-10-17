@@ -3,6 +3,7 @@ import { saveViewState } from './view-state.js';
 import { setNote } from './notes-ui.js';
 import { enhanceNoteField } from './note-field.js';
 import { createSvgElement } from './graph-view.js';
+import { branchPathToMain } from './branch-path.js';
 
 export function createReferencePicker({ renderFilteredGraph }) {
   const ownerCache = new WeakMap();
@@ -218,7 +219,8 @@ export function createReferencePicker({ renderFilteredGraph }) {
       state.targetBranchName = event.target.value || null;
       if (state.targetBranchName) {
         state.visibleReferencesBeforeTarget = new Set(state.visibleReferences);
-        setVisibleBranches((reference) => reference.name === state.targetBranchName, {
+        const targetPath = new Set(branchPathToMain(state.currentGraph, state.targetBranchName));
+        setVisibleBranches((reference) => targetPath.has(reference.name), {
           preserveBeforeTarget: true
         });
       } else {

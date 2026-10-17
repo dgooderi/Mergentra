@@ -86,11 +86,17 @@ test.describe('branch filters in the commit context menu', () => {
     const nestedLane = window.locator('[data-testid="reference-lane"][data-ref-name="nested"]');
     const featureLane = window.locator('[data-testid="reference-lane"][data-ref-name="feature"]');
     const nestedHash = await nestedLane.getAttribute('data-target-hash');
+    const featureHash = await featureLane.getAttribute('data-target-hash');
     const nestedColor = await nestedLane.getAttribute('data-color');
-    const featureColor = await featureLane.getAttribute('data-color');
     const nestedNode = window.locator(
       `[data-testid="commit-node"][data-commit-hash="${nestedHash}"]`
     );
+    const featureNode = window.locator(
+      `[data-testid="commit-node"][data-commit-hash="${featureHash}"]`
+    );
+    const featureNodeColor = await featureNode
+      .locator('circle:not(.selection-ring)')
+      .getAttribute('fill');
 
     await expect(nestedNode.locator('circle:not(.selection-ring)')).toHaveAttribute(
       'fill',
@@ -102,33 +108,26 @@ test.describe('branch filters in the commit context menu', () => {
       'fill',
       nestedColor
     );
-    await expect(window.getByTestId('parent-branch-continuation')).toHaveAttribute(
-      'stroke',
-      featureColor
+    await expect(featureNode.locator('circle:not(.selection-ring)')).toHaveAttribute(
+      'fill',
+      featureNodeColor
     );
   });
 
-  test('selecting a target shows only that branch and retains its hidden parent as a guide', async () => {
-    const nestedLane = window.locator('[data-testid="reference-lane"][data-ref-name="nested"]');
-    const nestedHash = await nestedLane.getAttribute('data-target-hash');
-
+  test('selecting a target shows its full parent chain through main', async () => {
     await window.getByLabel('Target branch').selectOption('nested');
 
     await expect(window.getByLabel('Target branch')).toHaveValue('nested');
-    expect(await shownBranches()).toEqual(['nested']);
-    await expect(window.getByTestId('parent-branch-continuation')).toHaveAttribute(
-      'data-parent-branch',
-      'feature'
-    );
-    await expect(window.getByTestId('parent-branch-continuation')).toHaveAttribute(
-      'data-target-hash',
-      nestedHash
-    );
+    expect(await shownBranches()).toEqual(['feature', 'main', 'nested']);
+    await expect(window.getByTestId('parent-branch-continuation')).toHaveCount(0);
 
     const edgePaths = await window
       .getByTestId('commit-edge')
       .evaluateAll((edges) => edges.map((edge) => edge.getAttribute('d')));
-    expect(edgePaths.every((path) => /^M [\d.]+ [\d.]+ L [\d.]+ [\d.]+$/.test(path))).toBe(true);
+    expect(
+      edgePaths.some((path) => /^M [\d.]+ [\d.]+ L [\d.]+ [\d.]+$/.test(path))
+    ).toBe(true);
+    expect(edgePaths.some((path) => path.includes('C'))).toBe(true);
     await expect(window.getByTestId('commit-branch-label')).toHaveCount(0);
     await expect(window.getByTestId('commit-tag')).toHaveCount(0);
     await expect(window.getByTestId('note-marker')).toHaveCount(0);
