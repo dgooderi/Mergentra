@@ -57,12 +57,15 @@ export function createReferencePicker({ renderFilteredGraph }) {
 
   function renderTargetBranch(references) {
     const targetSelect = document.getElementById('target-branch');
-    targetSelect.replaceChildren();
+    targetSelect.replaceChildren(new Option('None', ''));
     for (const reference of references) {
       targetSelect.append(new Option(reference.name, reference.name));
     }
-    if (!references.some((reference) => reference.name === state.targetBranchName)) {
-      state.targetBranchName = references[0]?.name ?? null;
+    if (
+      state.targetBranchName &&
+      !references.some((reference) => reference.name === state.targetBranchName)
+    ) {
+      state.targetBranchName = null;
     }
     targetSelect.value = state.targetBranchName || '';
   }
@@ -209,7 +212,12 @@ export function createReferencePicker({ renderFilteredGraph }) {
   function init() {
     document.getElementById('target-branch').addEventListener('change', (event) => {
       state.targetBranchName = event.target.value || null;
-      setVisibleBranches((reference) => reference.name === state.targetBranchName);
+      if (state.targetBranchName) {
+        setVisibleBranches((reference) => reference.name === state.targetBranchName);
+      } else {
+        saveViewState();
+        renderFilteredGraph();
+      }
     });
     document.getElementById('branch-owner-filter').addEventListener('change', (event) => {
       const owner = event.target.value;

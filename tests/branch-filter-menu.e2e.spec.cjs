@@ -102,5 +102,11 @@ test.describe('branch filters in the commit context menu', () => {
     await expect(window.getByTestId('commit-branch-label')).toHaveCount(0);
     await expect(window.getByTestId('commit-tag')).toHaveCount(0);
     await expect(window.getByTestId('note-marker')).toHaveCount(0);
+
+    await window.getByLabel('Target branch').selectOption('');
+
+    await expect(window.getByLabel('Target branch')).toHaveValue('');
+    expect(await shownBranches()).toEqual(['nested']);
+    await expect(window.getByTestId('parent-branch-continuation')).toHaveCount(0);
   });
 });
