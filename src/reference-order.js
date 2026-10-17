@@ -1,11 +1,12 @@
 const { mainLineName } = require('./main-line');
 
 function graphColor(key) {
-  let hash = 0;
+  let hash = 2166136261;
   for (const character of key) {
-    hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+    hash ^= character.charCodeAt(0);
+    hash = Math.imul(hash, 16777619) >>> 0;
   }
-  const hue = hash % 360;
+  const hue = Math.round((hash * 137.508 + 215) % 360);
   const lightness = (hash >>> 9) % 2 === 0 ? 62 : 48;
   return `hsl(${hue} 78% ${lightness}%)`;
 }

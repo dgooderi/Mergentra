@@ -80,4 +80,22 @@ describe('reference ordering', () => {
       expect(colorByName.get(reference.name)).toBe(reference.color);
     }
   });
+
+  it('assigns visibly different colors to similarly named branches', () => {
+    const colors = orderReferences([
+      { name: 'main', hash: 'm', remote: false },
+      { name: 'feature-1', hash: 'f1', remote: false },
+      { name: 'feature-2', hash: 'f2', remote: false },
+      { name: 'feature-3', hash: 'f3', remote: false }
+    ])
+      .filter((reference) => reference.name.startsWith('feature-'))
+      .map((reference) => Number(reference.color.match(/hsl\((\d+)/)[1]));
+
+    for (let left = 0; left < colors.length; left += 1) {
+      for (let right = left + 1; right < colors.length; right += 1) {
+        const difference = Math.abs(colors[left] - colors[right]);
+        expect(Math.min(difference, 360 - difference)).toBeGreaterThanOrEqual(30);
+      }
+    }
+  });
 });

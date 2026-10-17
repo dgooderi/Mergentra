@@ -136,7 +136,7 @@ test.describe('branch filters in the commit context menu', () => {
     await window.getByLabel('Target branch').selectOption('');
 
     await expect(window.getByLabel('Target branch')).toHaveValue('');
-    expect(await shownBranches()).toEqual(['nested']);
+    expect(await shownBranches()).toEqual(['feature', 'main', 'nested', 'other']);
     await expect(window.getByTestId('parent-branch-continuation')).toHaveCount(0);
   });
 });

@@ -101,6 +101,27 @@ test('time presets and custom local dates filter by committer timestamp', async 
     await expect(
       window.locator(`[data-testid="commit-node"][data-commit-hash="${tipCommit}"]`)
     ).toHaveCount(0);
+
+    await window.getByLabel('Start date').fill('2026-05-17');
+    await window.getByLabel('End date').fill('2026-05-17');
+    await window.getByRole('button', { name: 'Apply date range' }).click();
+    await expect(window.getByLabel('End date')).toHaveValue('2026-05-16');
+    expect(
+      Number(await window.getByTestId('commit-graph').getAttribute('data-time-range-end'))
+    ).toBeLessThanOrEqual(frozenNow.getTime());
+
+    const calendar = window.locator('#time-calendar-date');
+    await window.getByRole('button', { name: 'Choose graph date' }).click();
+    await expect(calendar).toHaveAttribute('min', '2026-05-14');
+    await expect(calendar).toHaveAttribute('max', '2026-05-16');
+    await expect(calendar).toHaveValue('2026-05-16');
+    await calendar.evaluate((input) => {
+      input.value = '2026-05-15';
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    expect(
+      Number(await window.getByTestId('commit-graph').getAttribute('data-time-range-end'))
+    ).toBeLessThanOrEqual(new Date('2026-05-16T00:00:00').getTime());
   } finally {
     if (app) {
       await app.close();

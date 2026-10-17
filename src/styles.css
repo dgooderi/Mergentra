@@ -1101,9 +1101,18 @@ main:not(:has(#repository-view:not([hidden]))) #open-explorer {
 }
 
 .time-navigation {
+  position: relative;
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+#time-calendar-date {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 .owner-filter {
   display: flex;

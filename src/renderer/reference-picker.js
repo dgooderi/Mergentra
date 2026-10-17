@@ -94,7 +94,10 @@ export function createReferencePicker({ renderFilteredGraph }) {
     }
   }
 
-  function setVisibleBranches(predicate) {
+  function setVisibleBranches(predicate, { preserveBeforeTarget = false } = {}) {
+    if (!preserveBeforeTarget) {
+      state.visibleReferencesBeforeTarget = null;
+    }
     state.ownerFilter = '';
     state.visibleReferences = new Set(
       state.currentGraph.references.filter(predicate).map((reference) => reference.name)
@@ -139,6 +142,7 @@ export function createReferencePicker({ renderFilteredGraph }) {
       checkbox.setAttribute('aria-label', reference.name);
       checkbox.dataset.testid = 'reference-filter';
       checkbox.addEventListener('change', () => {
+        state.visibleReferencesBeforeTarget = null;
         if (checkbox.checked) {
           state.visibleReferences.add(reference.name);
         } else {
@@ -213,9 +217,21 @@ export function createReferencePicker({ renderFilteredGraph }) {
     document.getElementById('target-branch').addEventListener('change', (event) => {
       state.targetBranchName = event.target.value || null;
       if (state.targetBranchName) {
-        setVisibleBranches((reference) => reference.name === state.targetBranchName);
+        state.visibleReferencesBeforeTarget = new Set(state.visibleReferences);
+        setVisibleBranches((reference) => reference.name === state.targetBranchName, {
+          preserveBeforeTarget: true
+        });
       } else {
+        if (state.visibleReferencesBeforeTarget) {
+          state.visibleReferences = new Set(
+            [...state.visibleReferencesBeforeTarget].filter((name) =>
+              state.currentGraph.references.some((reference) => reference.name === name)
+            )
+          );
+        }
+        state.visibleReferencesBeforeTarget = null;
         saveViewState();
+        renderReferenceLanes(state.currentGraph.references);
         renderFilteredGraph();
       }
     });

@@ -14,5 +14,6 @@ export const state = {
   zoomLevel: 1,
   compactedMembership: new Map(),
   availableReferenceNames: null,
-  targetBranchName: null
+  targetBranchName: null,
+  visibleReferencesBeforeTarget: null
 };

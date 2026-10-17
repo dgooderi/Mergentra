@@ -89,6 +89,7 @@ function renderGraph(graph) {
     graph.references.some((reference) => reference.name === saved?.target) ?
       saved.target
     : null;
+  state.visibleReferencesBeforeTarget = null;
   state.selectedTimePreset = 'all';
   state.timeRange = null;
   state.customRangeValues = null;
@@ -156,6 +157,7 @@ function refreshRepositoryGraph(repository) {
   state.targetBranchName =
     state.currentGraph.references.find((reference) => reference.name === previousTarget)?.name ??
     null;
+  state.visibleReferencesBeforeTarget = null;
   renderWorktrees(state.currentGraph.worktrees);
   referencePicker.render(state.currentGraph.references);
   renderFilteredGraph();
