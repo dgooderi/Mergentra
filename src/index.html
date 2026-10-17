@@ -479,29 +479,42 @@
               <h2 id="review-heading">Selected commit</h2>
             </div>
           </div>
-          <dl class="commit-details">
-            <dt>Message</dt>
-            <dd id="selected-commit-message" data-testid="selected-commit-message"></dd>
-            <dt>Author</dt>
-            <dd id="selected-commit-author" data-testid="selected-commit-author"></dd>
-            <dt>Author date</dt>
-            <dd id="selected-commit-author-date" data-testid="selected-commit-author-date"></dd>
-            <dt>Hash</dt>
-            <dd><code id="selected-commit-hash" data-testid="selected-commit-hash"></code></dd>
-            <dt>Parents</dt>
-            <dd id="selected-commit-parents" data-testid="selected-commit-parents"></dd>
-            <div
-              id="selected-commit-branch-context"
-              data-testid="selected-commit-branch-context"
-              hidden
-            >
-              <dt id="selected-commit-source-label">Source branch (inferred)</dt>
-              <dd id="selected-commit-source"></dd>
-              <dt id="selected-commit-destination-label">Destination branch (inferred)</dt>
-              <dd id="selected-commit-destination"></dd>
-            </div>
-            <dt>Note</dt>
-            <dd>
+          <div class="review-dock-content">
+            <dl class="commit-details">
+              <dt>Message</dt>
+              <dd id="selected-commit-message" data-testid="selected-commit-message"></dd>
+              <dt>Author</dt>
+              <dd id="selected-commit-author" data-testid="selected-commit-author"></dd>
+              <dt>Author date</dt>
+              <dd id="selected-commit-author-date" data-testid="selected-commit-author-date"></dd>
+              <dt>Hash</dt>
+              <dd><code id="selected-commit-hash" data-testid="selected-commit-hash"></code></dd>
+              <dt>Parents</dt>
+              <dd id="selected-commit-parents" data-testid="selected-commit-parents"></dd>
+              <div
+                id="selected-commit-branch-context"
+                data-testid="selected-commit-branch-context"
+                hidden
+              >
+                <dt id="selected-commit-source-label">Source branch (inferred)</dt>
+                <dd id="selected-commit-source"></dd>
+                <dt id="selected-commit-destination-label">Destination branch (inferred)</dt>
+                <dd id="selected-commit-destination"></dd>
+              </div>
+              <dt id="selected-commit-branch-notes-heading" hidden>Branch notes</dt>
+              <dd hidden>
+                <ul
+                  id="selected-commit-branch-notes"
+                  data-testid="selected-commit-branch-notes"
+                ></ul>
+              </dd>
+              <dt>References</dt>
+              <dd>
+                <ul id="selected-commit-references" data-testid="selected-commit-references"></ul>
+              </dd>
+            </dl>
+            <div class="review-note" aria-labelledby="selected-commit-note-heading">
+              <h3 id="selected-commit-note-heading">Note</h3>
               <textarea
                 id="selected-commit-note"
                 data-testid="selected-commit-note"
@@ -509,16 +522,8 @@
                 placeholder="Private note about this commit (saved for this repository)"
                 aria-label="Commit note"
               ></textarea>
-            </dd>
-            <dt id="selected-commit-branch-notes-heading" hidden>Branch notes</dt>
-            <dd hidden>
-              <ul id="selected-commit-branch-notes" data-testid="selected-commit-branch-notes"></ul>
-            </dd>
-            <dt>References</dt>
-            <dd>
-              <ul id="selected-commit-references" data-testid="selected-commit-references"></ul>
-            </dd>
-          </dl>
+            </div>
+          </div>
         </section>
       </section>
     </main>

@@ -170,6 +170,24 @@ button:disabled {
   font-size: 18px;
 }
 
+.review-dock-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 36%);
+  gap: 24px;
+  align-items: start;
+}
+
+.review-note {
+  min-width: 0;
+}
+
+.review-note h3 {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .commit-details {
   display: grid;
   grid-template-columns: minmax(100px, 140px) minmax(0, 1fr);
@@ -944,6 +962,13 @@ main:has(#repository-view:not([hidden])) {
 
 .review-dock .commit-details {
   gap: 6px 16px;
+}
+
+.review-note .markdown-note > textarea,
+.review-note .markdown-note > .note-preview {
+  flex: 1 1 0;
+  width: 100%;
+  min-width: 0;
 }
 .repository-view:not([hidden]) {
   padding: 20px 32px;
