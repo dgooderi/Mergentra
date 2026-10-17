@@ -195,6 +195,17 @@ button:disabled {
   margin: 0;
 }
 
+.commit-details #selected-commit-branch-context {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  gap: 10px 16px;
+}
+
+.commit-details #selected-commit-branch-context[hidden] {
+  display: none;
+}
+
 .commit-details dt {
   color: var(--muted);
   font-size: 13px;

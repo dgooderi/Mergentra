@@ -34,6 +34,14 @@ test('selecting a merge commit shows the inferred source and destination branche
     await expect(context).toContainText('feature');
     await expect(context).toContainText('Destination branch (inferred)');
     await expect(context).toContainText('main');
+    const sourceLabel = await window.locator('#selected-commit-source-label').boundingBox();
+    const sourceValue = await window.locator('#selected-commit-source').boundingBox();
+    const destinationLabel = await window
+      .locator('#selected-commit-destination-label')
+      .boundingBox();
+    const destinationValue = await window.locator('#selected-commit-destination').boundingBox();
+    expect(sourceValue.x).toBeGreaterThan(sourceLabel.x);
+    expect(destinationValue.x).toBeGreaterThan(destinationLabel.x);
 
     await window.locator(`[data-testid="commit-node"][data-commit-hash="${baseHash}"]`).click();
     await expect(context).toBeHidden();
