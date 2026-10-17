@@ -88,10 +88,7 @@ function renderGraph(graph) {
   state.targetBranchName =
     graph.references.some((reference) => reference.name === saved?.target) ?
       saved.target
-    : (graph.references.find((reference) => reference.checkedOut)?.name ??
-      graph.references.find((reference) => !reference.remote)?.name ??
-      graph.references[0]?.name ??
-      null);
+    : null;
   state.selectedTimePreset = 'all';
   state.timeRange = null;
   state.customRangeValues = null;
@@ -158,8 +155,6 @@ function refreshRepositoryGraph(repository) {
   }
   state.targetBranchName =
     state.currentGraph.references.find((reference) => reference.name === previousTarget)?.name ??
-    state.currentGraph.references.find((reference) => reference.checkedOut)?.name ??
-    state.currentGraph.references[0]?.name ??
     null;
   renderWorktrees(state.currentGraph.worktrees);
   referencePicker.render(state.currentGraph.references);
