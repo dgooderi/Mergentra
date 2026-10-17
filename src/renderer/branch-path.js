@@ -2,14 +2,16 @@
 // Pure: no DOM or shared state.
 import { findMainReference } from './lanes.js';
 
-function firstParentChain(commitsByHash, tipHash) {
-  const chain = [];
+function firstParentChainDistances(commitsByHash, tipHash) {
+  const distances = new Map();
   let commit = commitsByHash.get(tipHash);
-  while (commit) {
-    chain.push(commit.hash);
+  let distance = 0;
+  while (commit && !distances.has(commit.hash)) {
+    distances.set(commit.hash, distance);
+    distance += 1;
     commit = commitsByHash.get(commit.parents[0]);
   }
-  return chain;
+  return distances;
 }
 
 // The parent of a branch is the branch it forked from: the first commit on its chain that
@@ -23,24 +25,33 @@ export function parentReferenceName(graph, referenceName) {
   if (!reference || reference.name === main?.name) {
     return null;
   }
-  const others = graph.references
-    .filter((candidate) => candidate.name !== reference.name)
-    .map((candidate) => ({
-      name: candidate.name,
-      tipOrder: tipOrder.get(candidate.hash),
-      chain: new Set(firstParentChain(commitsByHash, candidate.hash))
-    }));
-  for (const hash of firstParentChain(commitsByHash, reference.hash)) {
-    const holders = others.filter(
-      (other) =>
-        other.chain.has(hash) &&
-        (other.name === main?.name || other.tipOrder < tipOrder.get(reference.hash))
-    );
-    if (holders.length > 0) {
-      return (holders.find((other) => other.name === main?.name) || holders[0]).name;
+  const targetDistances = firstParentChainDistances(commitsByHash, reference.hash);
+  const targetTipOrder = tipOrder.get(reference.hash);
+  let parent = null;
+  let parentDistance = Infinity;
+
+  for (const candidate of graph.references) {
+    if (
+      candidate.name === reference.name ||
+      (candidate.name !== main?.name && tipOrder.get(candidate.hash) >= targetTipOrder)
+    ) {
+      continue;
+    }
+    let commit = commitsByHash.get(candidate.hash);
+    while (commit) {
+      const distance = targetDistances.get(commit.hash);
+      if (
+        distance !== undefined &&
+        (distance < parentDistance ||
+          (distance === parentDistance && candidate.name === main?.name))
+      ) {
+        parent = candidate.name;
+        parentDistance = distance;
+      }
+      commit = commitsByHash.get(commit.parents[0]);
     }
   }
-  return null;
+  return parent;
 }
 
 // The branch and each parent above it, up to main.

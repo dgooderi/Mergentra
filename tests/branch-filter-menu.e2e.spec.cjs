@@ -77,4 +77,30 @@ test.describe('branch filters in the commit context menu', () => {
     await window.locator('#branch-picker-all').click();
     expect(await shownBranches()).toEqual(['feature', 'main', 'nested', 'other']);
   });
+
+  test('selecting a target shows only that branch and retains its hidden parent as a guide', async () => {
+    const nestedLane = window.locator('[data-testid="reference-lane"][data-ref-name="nested"]');
+    const nestedHash = await nestedLane.getAttribute('data-target-hash');
+
+    await window.getByLabel('Target branch').selectOption('nested');
+
+    await expect(window.getByLabel('Target branch')).toHaveValue('nested');
+    expect(await shownBranches()).toEqual(['nested']);
+    await expect(window.getByTestId('parent-branch-continuation')).toHaveAttribute(
+      'data-parent-branch',
+      'feature'
+    );
+    await expect(window.getByTestId('parent-branch-continuation')).toHaveAttribute(
+      'data-target-hash',
+      nestedHash
+    );
+
+    const edgePaths = await window
+      .getByTestId('commit-edge')
+      .evaluateAll((edges) => edges.map((edge) => edge.getAttribute('d')));
+    expect(edgePaths.every((path) => /^M [\d.]+ [\d.]+ L [\d.]+ [\d.]+$/.test(path))).toBe(true);
+    await expect(window.getByTestId('commit-branch-label')).toHaveCount(0);
+    await expect(window.getByTestId('commit-tag')).toHaveCount(0);
+    await expect(window.getByTestId('note-marker')).toHaveCount(0);
+  });
 });

@@ -163,6 +163,13 @@ test('merge commits and grouped tags are annotated in the commit graph', async (
       mergeParents.push(await mergeEdges.nth(index).getAttribute('data-parent-hash'));
     }
     expect(new Set(mergeParents)).toEqual(new Set([featureCommit, mainCommit]));
+    expect(
+      await window
+        .locator(
+          `[data-testid="commit-edge"][data-child-hash="${mergeCommit}"][data-parent-hash="${featureCommit}"]`
+        )
+        .getAttribute('d')
+    ).toMatch(/[CQ]/);
 
     const mergeLine = window.locator(
       `[data-testid="commit-edge-hover"][data-child-hash="${mergeCommit}"][data-parent-hash="${featureCommit}"]`
@@ -181,10 +188,7 @@ test('merge commits and grouped tags are annotated in the commit graph', async (
     await expect(mergeNode).toHaveAttribute('aria-pressed', 'true');
     await expect(window.locator('#graph-context-menu')).toHaveCount(0);
 
-    const tags = mergeNode.getByTestId('commit-tag');
-    await expect(tags).toHaveCount(2);
-    await expect(tags.nth(0)).toHaveAttribute('data-tag-name', 'release-candidate');
-    await expect(tags.nth(1)).toHaveAttribute('data-tag-name', 'v1.0.0');
+    await expect(mergeNode.getByTestId('commit-tag')).toHaveCount(0);
     await expect(window.getByTestId('commit-node')).toHaveCount(4);
     await expect(
       window.locator(`[data-testid="commit-node"][data-commit-hash="${baseCommit}"]`)

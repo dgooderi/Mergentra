@@ -12,7 +12,7 @@ export const state = {
   ownerFilter: '',
   notes: { commits: {}, branches: {} },
   zoomLevel: 1,
-  displayOptions: { tags: true, hashes: true, releases: true },
   compactedMembership: new Map(),
-  availableReferenceNames: null
+  availableReferenceNames: null,
+  targetBranchName: null
 };

@@ -284,6 +284,25 @@ button:disabled {
   font-weight: 600;
 }
 
+.target-branch-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.target-branch-control select {
+  min-width: 150px;
+  min-height: 42px;
+  padding: 0 32px 0 10px;
+  border: 1px solid var(--field-border);
+  border-radius: 7px;
+  background: var(--field-background);
+  color: var(--text);
+  font: inherit;
+}
+
 #reference-lanes input[type='checkbox'] {
   width: 15px;
   height: 15px;
@@ -721,16 +740,6 @@ button:focus-visible {
   display: inline;
 }
 
-#commit-graph .note-marker {
-  display: none;
-  fill: #f59e0b;
-  font-size: 13px;
-}
-
-#commit-graph [data-testid='commit-node'][data-has-note='true'] .note-marker {
-  display: inline;
-}
-
 .review-dock {
   border-color: #f59e0b;
 }
@@ -786,33 +795,6 @@ button:focus-visible {
 
 .graph-scroll {
   position: relative;
-}
-
-.display-toggles {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.display-toggles label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-#commit-graph[data-show-hashes='false'] .hash-label,
-#commit-graph[data-show-tags='false'] .plain-tag,
-#commit-graph[data-show-releases='false'] .release-tag {
-  display: none;
-}
-
-#commit-graph .release-tag {
-  fill: #34d399;
-  font-weight: 700;
 }
 
 #commit-graph [data-testid='compacted-commit-count'] {
@@ -982,16 +964,6 @@ main:has(#repository-view:not([hidden])) {
   margin-top: 16px;
   text-align: left;
   max-width: none;
-}
-
-.display-menu > summary {
-  min-width: 100px;
-}
-
-.display-menu .display-toggles {
-  flex-direction: column;
-  align-items: flex-start;
-  min-width: 180px;
 }
 
 .app-toolbar {

@@ -303,6 +303,10 @@
         </header>
         <div class="fetch-controls">
           <button id="fetch-button" class="secondary" type="button">Fetch</button>
+          <label class="target-branch-control" for="target-branch">
+            Target branch
+            <select id="target-branch" aria-label="Target branch"></select>
+          </label>
           <details id="branch-picker" class="branch-picker">
             <summary id="branch-picker-summary">Branches</summary>
             <div class="branch-picker-panel">
@@ -378,14 +382,6 @@
             </div>
             <p id="time-range-status" role="alert" aria-live="polite"></p>
           </div>
-          <details class="branch-picker display-menu">
-            <summary>Display</summary>
-            <div class="branch-picker-panel display-toggles" role="group" aria-label="Graph labels">
-              <label><input id="show-tags" type="checkbox" checked /> Tags</label>
-              <label><input id="show-hashes" type="checkbox" checked /> Commit hashes</label>
-              <label><input id="show-releases" type="checkbox" checked /> Releases</label>
-            </div>
-          </details>
           <p id="fetch-status" role="status" aria-live="polite"></p>
           <section
             id="fetch-diagnostics-panel"

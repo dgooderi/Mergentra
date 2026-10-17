@@ -14,8 +14,8 @@ export function saveViewState() {
     .map((reference) => reference.name);
   viewStorage.saveViewState(state.currentRepositoryPath, {
     hidden,
+    target: state.targetBranchName,
     preset: state.selectedTimePreset,
-    display: state.displayOptions,
     custom: state.selectedTimePreset === 'custom' ? state.customRangeValues : null,
     range: state.rangeAdjusted && state.timeRange ? state.timeRange : null
   });
