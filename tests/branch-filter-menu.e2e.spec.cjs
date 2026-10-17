@@ -78,6 +78,32 @@ test.describe('branch filters in the commit context menu', () => {
     expect(await shownBranches()).toEqual(['feature', 'main', 'nested', 'other']);
   });
 
+  test('a target view preserves the full repository branch colors', async () => {
+    const nestedLane = window.locator('[data-testid="reference-lane"][data-ref-name="nested"]');
+    const featureLane = window.locator('[data-testid="reference-lane"][data-ref-name="feature"]');
+    const nestedHash = await nestedLane.getAttribute('data-target-hash');
+    const nestedColor = await nestedLane.getAttribute('data-color');
+    const featureColor = await featureLane.getAttribute('data-color');
+    const nestedNode = window.locator(
+      `[data-testid="commit-node"][data-commit-hash="${nestedHash}"]`
+    );
+
+    await expect(nestedNode.locator('circle:not(.selection-ring)')).toHaveAttribute(
+      'fill',
+      nestedColor
+    );
+    await window.getByLabel('Target branch').selectOption('nested');
+
+    await expect(nestedNode.locator('circle:not(.selection-ring)')).toHaveAttribute(
+      'fill',
+      nestedColor
+    );
+    await expect(window.getByTestId('parent-branch-continuation')).toHaveAttribute(
+      'stroke',
+      featureColor
+    );
+  });
+
   test('selecting a target shows only that branch and retains its hidden parent as a guide', async () => {
     const nestedLane = window.locator('[data-testid="reference-lane"][data-ref-name="nested"]');
     const nestedHash = await nestedLane.getAttribute('data-target-hash');
