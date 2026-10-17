@@ -1,9 +1,20 @@
 const { mainLineName } = require('./main-line');
 
-function graphColor(index) {
-  const hue = Math.round((index * 137.508 + 215) % 360);
-  const lightness = index % 2 === 0 ? 62 : 48;
+function graphColor(key) {
+  let hash = 0;
+  for (const character of key) {
+    hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+  }
+  const hue = hash % 360;
+  const lightness = (hash >>> 9) % 2 === 0 ? 62 : 48;
   return `hsl(${hue} 78% ${lightness}%)`;
+}
+
+function colorKey(reference) {
+  if (!reference.remote || !reference.name.startsWith('origin/')) {
+    return reference.name;
+  }
+  return reference.name.slice('origin/'.length);
 }
 
 function orderReferences(references) {
@@ -15,10 +26,9 @@ function orderReferences(references) {
     .sort((left, right) => left.name.localeCompare(right.name));
   const ordered = [];
   const pairedRemotes = new Set();
-  let pairIndex = 0;
 
   function addPair(local, remote) {
-    const color = graphColor(pairIndex++);
+    const color = graphColor(colorKey(local));
     ordered.push({ ...local, color });
     if (remote) {
       pairedRemotes.add(remote.name);
@@ -32,7 +42,7 @@ function orderReferences(references) {
   if (main) {
     addPair(main, originMain);
   } else if (originMain) {
-    const color = graphColor(pairIndex++);
+    const color = graphColor(colorKey(originMain));
     ordered.push({ ...originMain, color });
     pairedRemotes.add(originMain.name);
   }
@@ -62,7 +72,7 @@ function orderReferences(references) {
   for (const reference of unpairedReferences) {
     ordered.push({
       ...reference,
-      color: graphColor(pairIndex++)
+      color: graphColor(colorKey(reference))
     });
   }
 

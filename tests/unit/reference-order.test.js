@@ -61,4 +61,23 @@ describe('reference ordering', () => {
 
     expect(ordered.map(({ name }) => name)).toEqual(['main', 'master']);
   });
+
+  it('keeps a reference color when other references are added or removed', () => {
+    const baseline = orderReferences([
+      { name: 'main', hash: 'm', remote: false },
+      { name: 'feature', hash: 'f', remote: false },
+      { name: 'origin/feature', hash: 'rf', remote: true }
+    ]);
+    const expanded = orderReferences([
+      { name: 'main', hash: 'm', remote: false },
+      { name: 'feature', hash: 'f', remote: false },
+      { name: 'origin/feature', hash: 'rf', remote: true },
+      { name: 'new-branch', hash: 'n', remote: false }
+    ]);
+    const colorByName = new Map(expanded.map((reference) => [reference.name, reference.color]));
+
+    for (const reference of baseline) {
+      expect(colorByName.get(reference.name)).toBe(reference.color);
+    }
+  });
 });
