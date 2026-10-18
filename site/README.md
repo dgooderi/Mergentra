@@ -17,15 +17,18 @@ Build the static site with:
 npm run build
 ```
 
-The generated files are written to `dist/`.
+The deployable files are written to `dist/browser/`.
 
 ## Cloudflare Pages
 
-Configure the Pages project with:
+Set the Pages project root directory to `site`, then configure it with:
 
 - **Production branch:** `main`
 - **Framework preset:** Angular
-- **Build command:** `npm --prefix site ci && npm --prefix site run build`
-- **Build output directory:** `site/dist`
+- **Build command:** `npm run build`
+- **Build output directory:** `dist/browser`
+
+The output directory is relative to the `site` root, so do not prefix it with
+`site/`.
 
 After deployment, add `mergentra.ourhh.net` under **Custom domains**.
