@@ -198,6 +198,24 @@ test('targeting a feature branched from main excludes an unrelated upgrade branc
           .sort()
       );
     expect(visibleBranches).toEqual(['feature-3', 'main']);
+
+    const mainColor = await window
+      .locator('[data-testid="reference-lane"][data-ref-name="main"]')
+      .getAttribute('data-color');
+    const featureOneLane = window.locator(
+      '[data-testid="reference-lane"][data-ref-name="feature-1"]'
+    );
+    const featureOneColor = await featureOneLane.getAttribute('data-color');
+    const featureOneHash = await featureOneLane.getAttribute('data-target-hash');
+
+    await window.getByLabel('Target branch').selectOption('feature-1');
+
+    await expect(
+      window
+        .locator(`[data-testid="commit-node"][data-commit-hash="${featureOneHash}"]`)
+        .locator('circle:not(.selection-ring)')
+    ).toHaveAttribute('fill', featureOneColor);
+    expect(featureOneColor).not.toBe(mainColor);
   } finally {
     if (app) {
       await app.close();
