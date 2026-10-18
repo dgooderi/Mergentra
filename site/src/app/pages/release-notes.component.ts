@@ -60,7 +60,7 @@ interface Release {
         </article>
       }
     </div>
-  `,
+  `
 })
 export class ReleaseNotesComponent {
   protected readonly releases: Release[] = [
@@ -73,13 +73,13 @@ export class ReleaseNotesComponent {
         'Straight branch lanes with curved connectors between branches.',
         'Dotted continuation lanes for visible parent branches with no later commits.',
         'Per-branch notes and editable branch colors.',
-        'Windows NSIS, portable, and x64 MSI packages.',
+        'Windows NSIS, portable, and x64 MSI packages.'
       ],
       changed: [
         'Commit labels show hashes only.',
         'Target views hide unrelated histories while preserving the selected parent chain.',
-        'Calendar-bounded custom time navigation.',
-      ],
+        'Calendar-bounded custom time navigation.'
+      ]
     },
     {
       version: '0.11.0',
@@ -89,9 +89,9 @@ export class ReleaseNotesComponent {
         'Render-cost measurement for histories up to 1,000,000 commits.',
         'Automatic weekly update checks and an update dialog.',
         'Versioned license agreement acceptance.',
-        'Per-machine x64 MSI build target.',
+        'Per-machine x64 MSI build target.'
       ],
-      fixed: ['Improved graph interaction and test reliability around large histories.'],
+      fixed: ['Improved graph interaction and test reliability around large histories.']
     },
     {
       version: '0.10.0',
@@ -100,15 +100,15 @@ export class ReleaseNotesComponent {
       added: [
         'Clone over HTTPS or SSH with a History only option.',
         'Open and Clone tabs, graph panning, time-range dragging, and branch context filters.',
-        'Editable recent repository names and repository notes.',
+        'Editable recent repository names and repository notes.'
       ],
-      changed: ['Improved layout, settings, themes, zoom controls, and review details.'],
+      changed: ['Improved layout, settings, themes, zoom controls, and review details.']
     },
     {
       version: '0.9.0',
       date: 'October 2026',
       summary: 'First public release',
-      added: ['The initial Mergentra desktop application for exploring local Git history.'],
-    },
+      added: ['The initial Mergentra desktop application for exploring local Git history.']
+    }
   ];
 }

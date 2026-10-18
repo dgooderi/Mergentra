@@ -135,6 +135,6 @@ import { RouterLink } from '@angular/router';
         >
       </div>
     </section>
-  `,
+  `
 })
 export class HomeComponent {}
