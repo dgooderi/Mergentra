@@ -14,6 +14,37 @@ function firstParentChainDistances(commitsByHash, tipHash) {
   return distances;
 }
 
+function mergeParentReferenceName(graph, reference, main, commitsByHash) {
+  const mergeCommit = commitsByHash.get(reference.hash);
+  if (!mergeCommit || mergeCommit.parents.length < 2 || !main) {
+    return null;
+  }
+  const mainChain = firstParentChainDistances(commitsByHash, main.hash);
+  const candidates = graph.references
+    .filter((candidate) => candidate.name !== reference.name)
+    .filter((candidate) => {
+      const candidateChain = firstParentChainDistances(commitsByHash, candidate.hash);
+      return (
+        mergeCommit.parents.some((parentHash) => candidateChain.has(parentHash)) &&
+        [...candidateChain.keys()].some((hash) => mainChain.has(hash))
+      );
+    });
+
+  if (candidates.length === 0) {
+    return null;
+  }
+
+  return candidates.sort((left, right) => {
+    const leftTimestamp = commitsByHash.get(left.hash)?.committerTimestamp ?? -Infinity;
+    const rightTimestamp = commitsByHash.get(right.hash)?.committerTimestamp ?? -Infinity;
+    return (
+      rightTimestamp - leftTimestamp ||
+      Number(left.remote) - Number(right.remote) ||
+      left.name.localeCompare(right.name)
+    );
+  })[0].name;
+}
+
 // The parent of a branch is the branch it forked from: the first commit on its chain that
 // another branch also holds. `main` always qualifies; any other branch must have an older tip
 // (commits are listed oldest first), so branches that share a fork point are not each other's parent.
@@ -24,6 +55,10 @@ export function parentReferenceName(graph, referenceName) {
   const reference = graph.references.find((candidate) => candidate.name === referenceName);
   if (!reference || reference.name === main?.name) {
     return null;
+  }
+  const mergeParent = mergeParentReferenceName(graph, reference, main, commitsByHash);
+  if (mergeParent) {
+    return mergeParent;
   }
   const targetDistances = firstParentChainDistances(commitsByHash, reference.hash);
   const targetTipOrder = tipOrder.get(reference.hash);
