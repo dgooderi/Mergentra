@@ -455,6 +455,24 @@ h2 {
 .download-card.featured {
   border-color: rgba(255, 127, 174, 0.55);
 }
+.checksum {
+  display: grid;
+  gap: 5px;
+  margin: 18px 0 0;
+}
+.checksum span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.checksum code {
+  color: var(--blue);
+  font-size: 0.7rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
 .download-details {
   border-top: 1px solid var(--line);
   padding: 55px 0 100px;
