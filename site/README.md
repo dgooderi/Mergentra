@@ -1,16 +1,31 @@
-# Mergentra static site
+# Mergentra website
 
-This directory contains the static marketing and download site for Mergentra.
-It does not run the Electron application in a browser.
+This directory contains the statically generated Angular marketing and
+documentation site for Mergentra. It does not run the Electron application in
+a browser.
+
+## Local development
+
+```powershell
+npm install
+npm start
+```
+
+Build the static site with:
+
+```powershell
+npm run build
+```
+
+The generated files are written to `dist/`.
 
 ## Cloudflare Pages
 
-Create a Cloudflare Pages project connected to this repository with:
+Configure the Pages project with:
 
 - **Production branch:** `main`
-- **Build command:** none
-- **Output directory:** `site`
+- **Framework preset:** Angular
+- **Build command:** `npm --prefix site ci && npm --prefix site run build`
+- **Build output directory:** `site/dist`
 
-After the first deployment, add `mergentra.ourhh.net` under **Custom domains**
-in the Pages project. If `ourhh.net` is managed by Cloudflare, the DNS record
-and HTTPS certificate can be provisioned from the Pages custom-domain flow.
+After deployment, add `mergentra.ourhh.net` under **Custom domains**.
