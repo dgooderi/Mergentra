@@ -42,6 +42,17 @@ function indexesFor(graph) {
   return indexes;
 }
 
+function firstParentContains(commitsByHash, tipHash, targetHash) {
+  let commit = commitsByHash.get(tipHash);
+  while (commit) {
+    if (commit.hash === targetHash) {
+      return true;
+    }
+    commit = commitsByHash.get(commit.parents[0]);
+  }
+  return false;
+}
+
 export function computeAvailableReferences(currentGraph, timeRange) {
   if (!currentGraph || !timeRange) {
     return null;
@@ -175,10 +186,21 @@ export function buildFilteredGraph(sourceGraph, visibleReferences, timeRange, ta
   );
   const inRangeHashes = new Set(commitsInRange.map((commit) => commit.hash));
   const visibleNames = new Set(references.map((reference) => reference.name));
+  const branchContinuations = references
+    .filter((reference) => reference.name !== mainReference?.name)
+    .filter((reference) =>
+      references.some(
+        (child) =>
+          child.name !== reference.name &&
+          firstParentContains(commitsByHash, child.hash, reference.hash)
+      )
+    )
+    .map((reference) => ({ targetHash: reference.hash, parent: reference }));
   const graph = {
     ...sourceGraph,
     references,
     sideLanes,
+    branchContinuations,
     commits: commitsInRange.map((commit) => ({
       ...commit,
       lane: mainContainsAllCommits ? mainReference.lane : laneByHash.get(commit.hash),

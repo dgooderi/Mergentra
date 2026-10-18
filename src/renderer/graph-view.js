@@ -334,6 +334,30 @@ export function drawParentContinuations({ graph, graphElement, commitPositions, 
       })
     );
   }
+  for (const continuation of graph.branchContinuations || []) {
+    const position = commitPositions.get(continuation.targetHash);
+    if (!position) {
+      continue;
+    }
+    graphElement.append(
+      createSvgElement('line', {
+        x1: position.x,
+        y1: position.y,
+        x2: width,
+        y2: position.y,
+        stroke: continuation.parent.color,
+        'stroke-width': 3,
+        'stroke-opacity': 0.65,
+        'stroke-dasharray': '2 8',
+        'stroke-linecap': 'round',
+        'pointer-events': 'none',
+        'aria-hidden': 'true',
+        'data-testid': 'branch-continuation',
+        'data-branch': continuation.parent.name,
+        'data-target-hash': continuation.targetHash
+      })
+    );
+  }
 }
 
 function drawSummaryPill(commit, position, summaryLayer, ctx, actions) {

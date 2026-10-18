@@ -10,7 +10,7 @@ export const state = {
   rangeAdjusted: false,
   axisSelectedSpan: null,
   ownerFilter: '',
-  notes: { commits: {}, branches: {} },
+  notes: { commits: {}, branches: {}, colors: {} },
   zoomLevel: 1,
   compactedMembership: new Map(),
   availableReferenceNames: null,

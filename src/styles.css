@@ -340,6 +340,16 @@ button:disabled {
   accent-color: #2563eb;
 }
 
+#reference-lanes .branch-color-input {
+  width: 28px;
+  height: 24px;
+  flex: 0 0 28px;
+  padding: 1px;
+  border: 1px solid var(--field-border);
+  border-radius: 4px;
+  background: var(--field-background);
+}
+
 #reference-lanes svg {
   width: 28px;
   height: 16px;

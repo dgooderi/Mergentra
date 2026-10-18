@@ -65,6 +65,35 @@ test.describe('branch filters in the commit context menu', () => {
     await expect(window.getByLabel('Target branch')).toHaveValue('');
   });
 
+  test('branch colors can be customized from the Branches picker', async () => {
+    const mainLane = window.locator('[data-testid="reference-lane"][data-ref-name="main"]');
+    const color = mainLane.getByLabel('Color for main');
+
+    await color.evaluate((input) => {
+      input.value = '#123456';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+
+    await expect(mainLane).toHaveAttribute('data-color', '#123456');
+    await expect(mainLane.locator('[data-testid="reference-lane-style"]')).toHaveAttribute(
+      'stroke',
+      '#123456'
+    );
+  });
+
+  test('a parent branch with no later commits gets a dotted continuation', async () => {
+    const featureLane = window.locator(
+      '[data-testid="reference-lane"][data-ref-name="feature"]'
+    );
+    const featureColor = await featureLane.getAttribute('data-color');
+    const continuation = window.locator(
+      '[data-testid="branch-continuation"][data-branch="feature"]'
+    );
+
+    await expect(continuation).toHaveAttribute('stroke', featureColor);
+    await expect(continuation).toHaveAttribute('stroke-dasharray', '2 8');
+  });
+
   test('filter to all branches from main to the selected node', async () => {
     await chooseFromNodeMenu('nested', 'Show branches from main to here');
     expect(await shownBranches()).toEqual(['feature', 'main', 'nested']);

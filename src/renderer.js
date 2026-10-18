@@ -58,6 +58,16 @@ const repositoryNoteField = enhanceNoteField(document.getElementById('repository
   previewTestId: 'repository-note-preview'
 });
 
+function applySavedBranchColors(graph) {
+  return {
+    ...graph,
+    references: graph.references.map((reference) => ({
+      ...reference,
+      color: state.notes.colors[reference.name] || reference.color
+    }))
+  };
+}
+
 function showRepository(repository) {
   state.currentRepositoryPath = repository.path;
   loadNotes();
@@ -76,7 +86,7 @@ function showRepository(repository) {
 const LARGE_HISTORY_COMMITS = 100000;
 
 function renderGraph(graph) {
-  state.currentGraph = graph;
+  state.currentGraph = applySavedBranchColors(graph);
   state.selectedCommit = null;
   const saved = loadViewState();
   const hidden = new Set(saved?.hidden || []);
@@ -143,7 +153,7 @@ function refreshRepositoryGraph(repository) {
   document.getElementById('branch-name').textContent = repository.branch;
   const previouslyVisible = state.visibleReferences;
   const previousTarget = state.targetBranchName;
-  state.currentGraph = repository.graph;
+  state.currentGraph = applySavedBranchColors(repository.graph);
   state.visibleReferences = new Set(
     state.currentGraph.references
       .filter((reference) => previouslyVisible.has(reference.name))

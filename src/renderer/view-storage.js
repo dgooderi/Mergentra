@@ -8,9 +8,13 @@ export function createViewStorage(storage) {
     loadNotes(repositoryPath) {
       try {
         const stored = JSON.parse(storage.getItem(notesKeyPrefix + repositoryPath));
-        return { commits: stored?.commits || {}, branches: stored?.branches || {} };
+        return {
+          commits: stored?.commits || {},
+          branches: stored?.branches || {},
+          colors: stored?.colors || {}
+        };
       } catch {
-        return { commits: {}, branches: {} };
+        return { commits: {}, branches: {}, colors: {} };
       }
     },
 

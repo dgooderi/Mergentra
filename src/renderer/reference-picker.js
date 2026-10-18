@@ -1,9 +1,41 @@
 import { state } from './state.js';
 import { saveViewState } from './view-state.js';
-import { setNote } from './notes-ui.js';
+import { setBranchColor, setNote } from './notes-ui.js';
 import { enhanceNoteField } from './note-field.js';
 import { createSvgElement } from './graph-view.js';
 import { branchPathToMain } from './branch-path.js';
+
+function hslToHex(color) {
+  const match = color.match(/^hsl\((\d+(?:\.\d+)?)\s+(\d+)%\s+(\d+)%\)$/);
+  if (!match) {
+    return '#000000';
+  }
+  const hue = Number(match[1]) / 360;
+  const saturation = Number(match[2]) / 100;
+  const lightness = Number(match[3]) / 100;
+  const hueToRgb = (p, q, t) => {
+    let normalized = t;
+    if (normalized < 0) normalized += 1;
+    if (normalized > 1) normalized -= 1;
+    if (normalized < 1 / 6) return p + (q - p) * 6 * normalized;
+    if (normalized < 1 / 2) return q;
+    if (normalized < 2 / 3) return p + (q - p) * (2 / 3 - normalized) * 6;
+    return p;
+  };
+  if (saturation === 0) {
+    const channel = Math.round(lightness * 255).toString(16).padStart(2, '0');
+    return `#${channel}${channel}${channel}`;
+  }
+  const q =
+    lightness < 0.5
+      ? lightness * (1 + saturation)
+      : lightness + saturation - lightness * saturation;
+  const p = 2 * lightness - q;
+  const red = Math.round(hueToRgb(p, q, hue + 1 / 3) * 255);
+  const green = Math.round(hueToRgb(p, q, hue) * 255);
+  const blue = Math.round(hueToRgb(p, q, hue - 1 / 3) * 255);
+  return `#${[red, green, blue].map((channel) => channel.toString(16).padStart(2, '0')).join('')}`;
+}
 
 export function createReferencePicker({ renderFilteredGraph }) {
   const ownerCache = new WeakMap();
@@ -175,6 +207,7 @@ export function createReferencePicker({ renderFilteredGraph }) {
       }
       const noteToggle = document.createElement('button');
       const noteEditor = document.createElement('textarea');
+      const colorEditor = document.createElement('input');
       noteToggle.type = 'button';
       noteToggle.className = 'note-toggle secondary';
       noteToggle.dataset.testid = 'branch-note-toggle';
@@ -182,6 +215,18 @@ export function createReferencePicker({ renderFilteredGraph }) {
       noteToggle.textContent = Object.hasOwn(state.notes.branches, reference.name)
         ? 'Note ✎'
         : 'Note';
+      colorEditor.type = 'color';
+      colorEditor.className = 'branch-color-input';
+      colorEditor.dataset.testid = 'branch-color-input';
+      colorEditor.setAttribute('aria-label', `Color for ${reference.name}`);
+      colorEditor.value = state.notes.colors[reference.name] || hslToHex(reference.color);
+      colorEditor.addEventListener('input', () => {
+        reference.color = colorEditor.value;
+        setBranchColor(reference.name, colorEditor.value);
+        lane.dataset.color = reference.color;
+        line.setAttribute('stroke', reference.color);
+        renderFilteredGraph();
+      });
       noteEditor.rows = 2;
 
       noteEditor.className = 'note-editor';
@@ -205,7 +250,7 @@ export function createReferencePicker({ renderFilteredGraph }) {
         setNote('branches', reference.name, noteEditor.value)
       );
       lane.dataset.hasNote = String(Object.hasOwn(state.notes.branches, reference.name));
-      lane.append(checkbox, marker, labelGroup, noteToggle, noteField.element);
+      lane.append(checkbox, marker, labelGroup, colorEditor, noteToggle, noteField.element);
       laneList.append(lane);
     }
     renderOwnerFilter();
