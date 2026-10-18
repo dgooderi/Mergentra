@@ -208,6 +208,10 @@ test('targeting a feature branched from main excludes an unrelated upgrade branc
     const featureOneColor = await featureOneLane.getAttribute('data-color');
     const featureOneHash = await featureOneLane.getAttribute('data-target-hash');
 
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${featureOneHash}"]`)
+    ).toHaveCount(0);
+
     await window.getByLabel('Target branch').selectOption('feature-1');
 
     await expect(

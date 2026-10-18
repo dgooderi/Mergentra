@@ -171,7 +171,12 @@ function renderFilteredGraph() {
   updateTimeNavigation();
   referencePicker.refresh();
 
-  const graph = buildFilteredGraph(state.currentGraph, state.visibleReferences, state.timeRange);
+  const graph = buildFilteredGraph(
+    state.currentGraph,
+    state.visibleReferences,
+    state.timeRange,
+    state.targetBranchName
+  );
   const displayGraph = compactSameLaneRuns(compactOrdinaryHistory(graph));
   const parentName =
     state.visibleReferences.size < state.currentGraph.references.length &&

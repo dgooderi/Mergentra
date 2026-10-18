@@ -83,7 +83,7 @@ export function computeAvailableReferences(currentGraph, timeRange) {
   return new Set(names);
 }
 
-export function buildFilteredGraph(sourceGraph, visibleReferences, timeRange) {
+export function buildFilteredGraph(sourceGraph, visibleReferences, timeRange, targetBranchName = null) {
   const references = sourceGraph.references
     .filter((reference) => visibleReferences.has(reference.name))
     .map((reference, lane) => ({ ...reference, lane }));
@@ -122,6 +122,9 @@ export function buildFilteredGraph(sourceGraph, visibleReferences, timeRange) {
   // the second parents of merges on that chain.
   const sideLanes = new Map();
   if (!mainContainsAllCommits && mergeCommits.length > 0) {
+    const firstParentHashes = new Set(laneByHash.keys());
+    const includeUnselectedMergeHistory =
+      !targetBranchName || references.length === sourceGraph.references.length;
     const walked = new Set();
     for (const reference of references) {
       const sideLane = references.length + 1 + reference.lane;
@@ -139,7 +142,12 @@ export function buildFilteredGraph(sourceGraph, visibleReferences, timeRange) {
           }
           laneByHash.set(hash, hash === reference.hash ? reference.lane : sideLane);
         }
-        pending.push(...commit.parents);
+        pending.push(
+          ...commit.parents.filter(
+            (parentHash) =>
+              includeUnselectedMergeHistory || firstParentHashes.has(parentHash)
+          )
+        );
       }
     }
   }
