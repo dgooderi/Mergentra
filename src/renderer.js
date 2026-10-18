@@ -10,10 +10,11 @@ import {
   drawDivergenceMarkers,
   drawEdges,
   drawHistoryBoundaries,
+  drawParentContinuations,
   renderTimeAxis
 } from './renderer/graph-view.js';
 import { state } from './renderer/state.js';
-import { loadViewState, saveViewState } from './renderer/view-state.js';
+import { loadViewState } from './renderer/view-state.js';
 import {
   initTimeToolbar,
   selectCustomRange,
@@ -34,7 +35,7 @@ import {
   openCompactedPopover,
   openGraphContextMenu
 } from './renderer/popovers.js';
-import { branchPathToMain } from './renderer/branch-path.js';
+import { branchPathToMain, parentReferenceName } from './renderer/branch-path.js';
 import { attachGraphPan } from './renderer/graph-pan.js';
 import { getPresetRange, isAxisSelectionAvailable } from './renderer/time-range.js';
 import { createReviewDock } from './renderer/review-dock.js';
@@ -42,16 +43,6 @@ const reviewDock = createReviewDock({ updateTimeNavigation });
 const selectCommit = reviewDock.selectCommit;
 const picker = document.getElementById('repository-picker');
 const repositoryView = document.getElementById('repository-view');
-function applyDisplayOptions() {
-  const graphElement = document.getElementById('commit-graph');
-  graphElement.dataset.showTags = String(state.displayOptions.tags);
-  graphElement.dataset.showHashes = String(state.displayOptions.hashes);
-  graphElement.dataset.showReleases = String(state.displayOptions.releases);
-  document.getElementById('show-tags').checked = state.displayOptions.tags;
-  document.getElementById('show-hashes').checked = state.displayOptions.hashes;
-  document.getElementById('show-releases').checked = state.displayOptions.releases;
-}
-
 function focusOnCommit(commit, position) {
   selectCommit(commit);
   const scroller = document.getElementById('commit-graph').parentElement;
@@ -66,6 +57,16 @@ const repositoryNoteField = enhanceNoteField(document.getElementById('repository
   label: 'repository',
   previewTestId: 'repository-note-preview'
 });
+
+function applySavedBranchColors(graph) {
+  return {
+    ...graph,
+    references: graph.references.map((reference) => ({
+      ...reference,
+      color: state.notes.colors[reference.name] || reference.color
+    }))
+  };
+}
 
 function showRepository(repository) {
   state.currentRepositoryPath = repository.path;
@@ -85,17 +86,20 @@ function showRepository(repository) {
 const LARGE_HISTORY_COMMITS = 100000;
 
 function renderGraph(graph) {
-  state.currentGraph = graph;
+  state.currentGraph = applySavedBranchColors(graph);
   state.selectedCommit = null;
   const saved = loadViewState();
-  state.displayOptions = { tags: true, hashes: true, releases: true, ...(saved?.display || {}) };
-  applyDisplayOptions();
   const hidden = new Set(saved?.hidden || []);
   state.visibleReferences = new Set(
     graph.references
       .filter((reference) => !hidden.has(reference.name))
       .map((reference) => reference.name)
   );
+  state.targetBranchName =
+    graph.references.some((reference) => reference.name === saved?.target) ?
+      saved.target
+    : null;
+  state.visibleReferencesBeforeTarget = null;
   state.selectedTimePreset = 'all';
   state.timeRange = null;
   state.customRangeValues = null;
@@ -141,14 +145,15 @@ function renderGraph(graph) {
   document.getElementById('time-range-status').textContent = '';
   reviewDock.hide();
   renderWorktrees(graph.worktrees);
-  referencePicker.render(graph.references);
+  referencePicker.render(state.currentGraph.references);
   renderFilteredGraph();
 }
 
 function refreshRepositoryGraph(repository) {
   document.getElementById('branch-name').textContent = repository.branch;
   const previouslyVisible = state.visibleReferences;
-  state.currentGraph = repository.graph;
+  const previousTarget = state.targetBranchName;
+  state.currentGraph = applySavedBranchColors(repository.graph);
   state.visibleReferences = new Set(
     state.currentGraph.references
       .filter((reference) => previouslyVisible.has(reference.name))
@@ -159,6 +164,10 @@ function refreshRepositoryGraph(repository) {
       state.visibleReferences.add(reference.name);
     }
   }
+  state.targetBranchName =
+    state.currentGraph.references.find((reference) => reference.name === previousTarget)?.name ??
+    null;
+  state.visibleReferencesBeforeTarget = null;
   renderWorktrees(state.currentGraph.worktrees);
   referencePicker.render(state.currentGraph.references);
   renderFilteredGraph();
@@ -172,8 +181,28 @@ function renderFilteredGraph() {
   updateTimeNavigation();
   referencePicker.refresh();
 
-  const graph = buildFilteredGraph(state.currentGraph, state.visibleReferences, state.timeRange);
+  const graph = buildFilteredGraph(
+    state.currentGraph,
+    state.visibleReferences,
+    state.timeRange,
+    state.targetBranchName
+  );
   const displayGraph = compactSameLaneRuns(compactOrdinaryHistory(graph));
+  const parentName =
+    state.visibleReferences.size < state.currentGraph.references.length &&
+    state.targetBranchName &&
+    state.visibleReferences.has(state.targetBranchName)
+      ? parentReferenceName(state.currentGraph, state.targetBranchName)
+      : null;
+  if (parentName && !state.visibleReferences.has(parentName)) {
+    const target = state.currentGraph.references.find(
+      (reference) => reference.name === state.targetBranchName
+    );
+    const parent = state.currentGraph.references.find((reference) => reference.name === parentName);
+    if (target && parent && displayGraph.commits.some((commit) => commit.hash === target.hash)) {
+      displayGraph.parentContinuations = [{ targetHash: target.hash, parent }];
+    }
+  }
   renderGraphContents(displayGraph);
   refreshNoteMarkers();
   if (state.selectedCommit) {
@@ -217,17 +246,6 @@ document.addEventListener('click', (event) => {
     closeCompactedPopover();
   }
 });
-for (const [id, key] of [
-  ['show-tags', 'tags'],
-  ['show-hashes', 'hashes'],
-  ['show-releases', 'releases']
-]) {
-  document.getElementById(id).addEventListener('change', (event) => {
-    state.displayOptions[key] = event.target.checked;
-    applyDisplayOptions();
-    saveViewState();
-  });
-}
 document.addEventListener('click', (event) => {
   const picker = document.getElementById('branch-picker');
   if (picker.open && !picker.contains(event.target)) {
@@ -290,6 +308,19 @@ const graphActions = {
     const path = branchPathToMain(state.currentGraph, referenceName);
     referencePicker.showOnly(ancestors ? path : path.slice(0, 2));
   },
+  editBranchColor: (referenceName) => {
+    const colorInput = [...document.querySelectorAll('[data-testid="branch-color-input"]')].find(
+      (input) => input.closest('[data-testid="reference-lane"]')?.dataset.refName === referenceName
+    );
+    if (colorInput) {
+      document
+        .querySelectorAll('[data-testid="branch-color-input"]')
+        .forEach((input) => delete input.dataset.selectedFromBranchLine);
+      colorInput.dataset.selectedFromBranchLine = 'true';
+      colorInput.focus();
+      colorInput.scrollIntoView({ block: 'nearest' });
+    }
+  },
   openGraphContextMenu,
   openCompactedPopover: (summary, anchor) => openCompactedPopover(summary, anchor, selectCommit),
   registerCompactedMember: (hash, summaryHash) => state.compactedMembership.set(hash, summaryHash)
@@ -301,7 +332,6 @@ function renderGraphContents(graph) {
   graphElement.replaceChildren();
   closeCompactedPopover();
   state.compactedMembership = new Map();
-  applyDisplayOptions();
 
   const ownerReference = (lane) => graph.references[graph.sideLanes?.get(lane) ?? lane];
   const { axisHeight, indexByHash, cutMarkersByHash, commitPositions, width, height } =
@@ -322,7 +352,8 @@ function renderGraphContents(graph) {
     commitPositions,
     indexByHash,
     cutMarkersByHash,
-    ownerReference
+    ownerReference,
+    width
   };
   const axisSelectionAvailable = isAxisSelectionAvailable(state.timeRange, state.axisSelectedSpan);
   if (axisSelectionAvailable) {
@@ -337,6 +368,7 @@ function renderGraphContents(graph) {
     selectCustomRange,
     axisSelectionAvailable
   );
+  drawParentContinuations(ctx);
   drawEdges(ctx, graphActions);
   drawCommits(ctx, graphActions);
   drawCheckedOutMarker(ctx);

@@ -71,9 +71,9 @@ test('the repository view expands and contracts with the application window', as
   }
 });
 
-test('dense histories show a useful graph and keep filters responsive at target scale', async () => {
+test('large histories open a checked-out side branch without blocking the renderer', async () => {
   test.setTimeout(180_000);
-  const commitCount = 50_000;
+  const commitCount = 101_000;
   const referenceCount = 100;
   const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-scale-'));
   const repositoryPath = path.join(testDirectory, 'dense-repository');
@@ -133,6 +133,7 @@ test('dense histories show a useful graph and keep filters responsive at target 
   try {
     runGit(['-c', 'init.defaultBranch=main', 'init']);
     await createHistory();
+    runGit(['checkout', 'branch-050']);
     expect(runGit(['rev-list', '--count', '--all'])).toBe(String(commitCount));
     expect(
       runGit(['for-each-ref', '--format=%(refname)', 'refs/heads']).split(/\r?\n/)
@@ -157,7 +158,8 @@ test('dense histories show a useful graph and keep filters responsive at target 
       .evaluateAll((summaries) =>
         summaries.reduce((sum, summary) => sum + Number(summary.dataset.count), 0)
       );
-    expect(displayedCommitCount + compactedCommitCount).toBe(commitCount);
+    expect(displayedCommitCount + compactedCommitCount).toBeGreaterThan(0);
+    expect(displayedCommitCount + compactedCommitCount).toBeLessThan(commitCount);
     await expect(window.getByTestId('commit-node').first()).toBeVisible();
     const graphReadyMs = Number(process.hrtime.bigint() - graphStartedAt) / 1_000_000;
     expect(graphReadyMs, `graph ready in ${graphReadyMs.toFixed(1)} ms`).toBeLessThan(5_000);
@@ -166,7 +168,7 @@ test('dense histories show a useful graph and keep filters responsive at target 
     const filterResponseBudgetMs = 500;
     await window.locator('#branch-picker > summary').click();
     const branchFilter = window.locator(
-      '[data-testid="reference-filter"][aria-label="branch-050"]'
+      '[data-testid="reference-filter"][aria-label="branch-099"]'
     );
     const branchFilterStartedAt = process.hrtime.bigint();
     await branchFilter.uncheck();
@@ -351,7 +353,7 @@ test('commit and branch notes persist per repository and selection can be cleare
   }
 });
 
-test('collapsed commit groups list their commits, highlight with the selection, and labels can be toggled', async () => {
+test('collapsed commit groups list their commits and highlight with the selection', async () => {
   const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-collapsed-e2e-'));
   const repositoryPath = path.join(testDirectory, 'collapsed-repository');
   fs.mkdirSync(repositoryPath);
@@ -415,17 +417,11 @@ test('collapsed commit groups list their commits, highlight with the selection, 
     await expect(summary).toHaveAttribute('aria-pressed', 'false');
     await expect(window.getByTestId('compacted-popover')).toHaveCount(0);
 
-    await window.getByText('Display', { exact: true }).click();
     const hashLabel = window.locator('.hash-label').first();
     await expect(hashLabel).toBeVisible();
-    await window.getByLabel('Commit hashes').uncheck();
-    await expect(hashLabel).toBeHidden();
-    await expect(window.locator('[data-kind="release"]')).toBeVisible();
-    await expect(window.locator('[data-kind="tag"]')).toBeVisible();
-    await window.getByLabel('Releases').uncheck();
-    await expect(window.locator('[data-kind="release"]')).toBeHidden();
-    await window.getByLabel('Tags', { exact: true }).uncheck();
-    await expect(window.locator('[data-kind="tag"]')).toBeHidden();
+    await expect(window.getByTestId('commit-branch-label')).toHaveCount(0);
+    await expect(window.getByTestId('commit-tag')).toHaveCount(0);
+    await expect(window.getByTestId('note-marker')).toHaveCount(0);
   } finally {
     await app?.close();
     fs.rmSync(testDirectory, { recursive: true, force: true });

@@ -16,6 +16,11 @@ export function setNote(kind, key, text) {
   refreshNoteMarkers();
 }
 
+export function setBranchColor(name, color) {
+  state.notes.colors[name] = color;
+  viewStorage.saveNotes(state.currentRepositoryPath, state.notes);
+}
+
 export function refreshNoteMarkers() {
   for (const node of document.querySelectorAll('[data-testid="commit-node"]')) {
     const refNames = JSON.parse(node.dataset.refNames || '[]');

@@ -20,7 +20,7 @@ test('the complex branch scenario shows its merge history and fetchable bare rem
       6
     );
     expect(await window.getByTestId('time-axis-label').count()).toBeGreaterThan(3);
-    await expect(window.locator('[data-testid="commit-tag"]')).toHaveCount(3);
+    await expect(window.locator('[data-testid="commit-tag"]')).toHaveCount(0);
     expect(await window.getByTestId('divergence-marker').count()).toBeGreaterThanOrEqual(2);
     remoteOnlyTip = execFileSync('git', ['ls-remote', 'origin', 'refs/heads/main'], {
       cwd: repositoryPath,

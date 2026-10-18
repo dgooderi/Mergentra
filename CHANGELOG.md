@@ -4,6 +4,23 @@ All notable changes to Mergentra are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [1.0.0] - 2026-10-18
+
+### Added
+
+- Target branch selection with inferred parent paths through `main`.
+- Straight horizontal branch lanes with curved connectors between branches.
+- Dotted continuation lanes for visible parent branches with no later commits.
+- Per-branch notes and editable branch colors from the References picker or graph.
+- Windows NSIS, portable, and x64 MSI distribution packages.
+
+### Changed
+
+- Commit labels in the graph show hashes only.
+- Target views hide unrelated branch histories while preserving the selected
+  branch's parent chain and colors.
+- Added calendar-bounded custom time navigation.
+
 ## [0.11.0] - 2026-10-09
 
 ### Added

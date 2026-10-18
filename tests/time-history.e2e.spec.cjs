@@ -4,7 +4,7 @@ test('time presets and custom local dates filter by committer timestamp', async 
   const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
   const repositoryPath = path.join(testDirectory, 'sample-repository');
   const userDataPath = path.join(testDirectory, 'user-data');
-  const frozenNow = new Date(2026, 4, 16, 12, 0, 0);
+  const frozenNow = new Date(2026, 4, 17, 12, 0, 0);
   fs.mkdirSync(repositoryPath);
 
   const commitAt = (message, committedAt) => {
@@ -37,17 +37,17 @@ test('time presets and custom local dates filter by committer timestamp', async 
     });
     const oldestCommit = commitAt(
       'Oldest commit',
-      new Date(frozenNow.getTime() - 50 * 60 * 60 * 1000)
+      new Date(2026, 4, 14, 10, 0, 0)
     );
     const middleCommit = commitAt(
       'Middle commit',
-      new Date(frozenNow.getTime() - 30 * 60 * 60 * 1000)
+      new Date(2026, 4, 15, 6, 0, 0)
     );
     const recentCommit = commitAt(
       'Recent commit',
-      new Date(frozenNow.getTime() - 12 * 60 * 60 * 1000)
+      new Date(2026, 4, 16, 13, 0, 0)
     );
-    const tipCommit = commitAt('Tip commit', new Date(frozenNow.getTime() - 3 * 60 * 60 * 1000));
+    const tipCommit = commitAt('Tip commit', new Date(2026, 4, 16, 21, 0, 0));
 
     app = await launchMergentra(userDataPath);
     const window = await app.firstWindow();
@@ -101,6 +101,27 @@ test('time presets and custom local dates filter by committer timestamp', async 
     await expect(
       window.locator(`[data-testid="commit-node"][data-commit-hash="${tipCommit}"]`)
     ).toHaveCount(0);
+
+    await window.getByLabel('Start date').fill('2026-05-18');
+    await window.getByLabel('End date').fill('2026-05-18');
+    await window.getByRole('button', { name: 'Apply date range' }).click();
+    await expect(window.getByLabel('End date')).toHaveValue('2026-05-17');
+    expect(
+      Number(await window.getByTestId('commit-graph').getAttribute('data-time-range-end'))
+    ).toBeLessThanOrEqual(frozenNow.getTime());
+
+    const calendar = window.locator('#time-calendar-date');
+    await window.getByRole('button', { name: 'Choose graph date' }).click();
+    await expect(calendar).toHaveAttribute('min', '2026-05-14');
+    await expect(calendar).toHaveAttribute('max', '2026-05-16');
+    await expect(calendar).toHaveValue('2026-05-16');
+    await calendar.evaluate((input) => {
+      input.value = '2026-05-15';
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    expect(
+      Number(await window.getByTestId('commit-graph').getAttribute('data-time-range-end'))
+    ).toBeLessThanOrEqual(new Date('2026-05-16T00:00:00').getTime());
   } finally {
     if (app) {
       await app.close();

@@ -3,6 +3,30 @@ import { saveViewState } from './view-state.js';
 import { getPresetRange, localDateString } from './time-range.js';
 
 let renderFilteredGraph = () => {};
+const dayMilliseconds = 24 * 60 * 60 * 1000;
+
+function clampRangeToToday(start, end) {
+  const now = Date.now();
+  if (end <= now) {
+    return { start, end };
+  }
+  const span = end - start;
+  return { start: now - span, end: now };
+}
+
+function earliestCommitDate() {
+  const earliestTimestamp = Math.min(
+    ...state.currentGraph.commits.map((commit) => commit.committerTimestamp * 1000)
+  );
+  return localDateString(earliestTimestamp);
+}
+
+function latestCommitDate() {
+  const latestTimestamp = Math.max(
+    ...state.currentGraph.commits.map((commit) => commit.committerTimestamp * 1000)
+  );
+  return localDateString(latestTimestamp);
+}
 
 export function syncCustomInputsToRange() {
   state.customRangeValues = {
@@ -14,7 +38,7 @@ export function syncCustomInputsToRange() {
 }
 
 function setAdjustedRange(start, end) {
-  state.timeRange = { start, end };
+  state.timeRange = clampRangeToToday(start, end);
   state.rangeAdjusted = true;
   if (state.selectedTimePreset === 'custom') {
     syncCustomInputsToRange();
@@ -75,9 +99,14 @@ function applyCustomTimeRange() {
   }
 
   endDate.setDate(endDate.getDate() + 1);
-  state.timeRange = { start: startDate.getTime(), end: endDate.getTime() };
+  state.timeRange = clampRangeToToday(startDate.getTime(), endDate.getTime());
   state.selectedTimePreset = 'custom';
-  state.customRangeValues = { start: startValue, end: endValue };
+  state.customRangeValues = {
+    start: localDateString(state.timeRange.start),
+    end: localDateString(state.timeRange.end - 1)
+  };
+  document.getElementById('time-range-start').value = state.customRangeValues.start;
+  document.getElementById('time-range-end').value = state.customRangeValues.end;
   state.rangeAdjusted = false;
   saveViewState();
   status.textContent = '';
@@ -95,10 +124,38 @@ export function selectCustomRange({ start, end }) {
   applyCustomTimeRange();
 }
 
+function openCalendar() {
+  if (!state.currentGraph?.commits.length) {
+    return;
+  }
+  const calendar = document.getElementById('time-calendar-date');
+  calendar.min = earliestCommitDate();
+  calendar.max = latestCommitDate();
+  calendar.value = calendar.max;
+  if (typeof calendar.showPicker === 'function') {
+    calendar.showPicker();
+  } else {
+    calendar.focus();
+  }
+}
+
+function selectCalendarDate() {
+  const value = document.getElementById('time-calendar-date').value;
+  if (!value) {
+    return;
+  }
+  const selectedStart = new Date(`${value}T00:00:00`).getTime();
+  const selectedEnd = Math.min(selectedStart + dayMilliseconds, Date.now());
+  const span = state.timeRange ? state.timeRange.end - state.timeRange.start : dayMilliseconds;
+  setAdjustedRange(selectedEnd - span, selectedEnd);
+}
+
 export function initTimeToolbar(handlers) {
   renderFilteredGraph = handlers.renderFilteredGraph;
   document.getElementById('time-earlier').addEventListener('click', () => shiftTimeRange(-1));
   document.getElementById('time-later').addEventListener('click', () => shiftTimeRange(1));
+  document.getElementById('time-calendar').addEventListener('click', openCalendar);
+  document.getElementById('time-calendar-date').addEventListener('change', selectCalendarDate);
   document.getElementById('time-centre').addEventListener('click', centreTimeRangeOnSelection);
 
   document.getElementById('time-range').addEventListener('change', (event) => {
@@ -119,7 +176,7 @@ export function initTimeToolbar(handlers) {
       // Keep the selected commit in the middle of the new range.
       const half = (state.timeRange.end - state.timeRange.start) / 2;
       const middle = state.selectedCommit.committerTimestamp * 1000;
-      state.timeRange = { start: middle - half, end: middle + half };
+      state.timeRange = clampRangeToToday(middle - half, middle + half);
       state.rangeAdjusted = true;
     }
     saveViewState();

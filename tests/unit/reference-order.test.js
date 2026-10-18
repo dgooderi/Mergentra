@@ -61,4 +61,73 @@ describe('reference ordering', () => {
 
     expect(ordered.map(({ name }) => name)).toEqual(['main', 'master']);
   });
+
+  it('keeps a reference color when other references are added or removed', () => {
+    const baseline = orderReferences([
+      { name: 'main', hash: 'm', remote: false },
+      { name: 'feature', hash: 'f', remote: false },
+      { name: 'origin/feature', hash: 'rf', remote: true }
+    ]);
+    const expanded = orderReferences([
+      { name: 'main', hash: 'm', remote: false },
+      { name: 'feature', hash: 'f', remote: false },
+      { name: 'origin/feature', hash: 'rf', remote: true },
+      { name: 'new-branch', hash: 'n', remote: false }
+    ]);
+    const colorByName = new Map(expanded.map((reference) => [reference.name, reference.color]));
+
+    for (const reference of baseline) {
+      expect(colorByName.get(reference.name)).toBe(reference.color);
+    }
+  });
+
+  it('assigns visibly different colors to similarly named branches', () => {
+    const colors = orderReferences([
+      { name: 'main', hash: 'm', remote: false },
+      { name: 'feature-1', hash: 'f1', remote: false },
+      { name: 'feature-2', hash: 'f2', remote: false },
+      { name: 'feature-3', hash: 'f3', remote: false }
+    ])
+      .filter((reference) => reference.name.startsWith('feature-'))
+      .map((reference) => Number(reference.color.match(/hsl\((\d+)/)[1]));
+
+    for (let left = 0; left < colors.length; left += 1) {
+      for (let right = left + 1; right < colors.length; right += 1) {
+        const difference = Math.abs(colors[left] - colors[right]);
+        expect(Math.min(difference, 360 - difference)).toBeGreaterThanOrEqual(30);
+      }
+    }
+  });
+
+  it('assigns main and a feature branch visibly different colors', () => {
+    const colors = new Map(
+      orderReferences([
+        { name: 'main', hash: 'm', remote: false },
+        { name: 'feature-3', hash: 'f3', remote: false }
+      ]).map((reference) => [
+        reference.name,
+        Number(reference.color.match(/hsl\((\d+)/)[1])
+      ])
+    );
+    const difference = Math.abs(colors.get('main') - colors.get('feature-3'));
+
+    expect(Math.min(difference, 360 - difference)).toBeGreaterThanOrEqual(30);
+  });
+
+  it('assigns visibly different colors to the sample repository branches', () => {
+    const hues = orderReferences([
+      { name: 'main', hash: 'm', remote: false },
+      { name: 'upgrade', hash: 'u', remote: false },
+      { name: 'feature-1', hash: 'f1', remote: false },
+      { name: 'feature-2', hash: 'f2', remote: false },
+      { name: 'feature-3', hash: 'f3', remote: false }
+    ]).map((reference) => Number(reference.color.match(/hsl\((\d+)/)[1]));
+
+    for (let left = 0; left < hues.length; left += 1) {
+      for (let right = left + 1; right < hues.length; right += 1) {
+        const difference = Math.abs(hues[left] - hues[right]);
+        expect(Math.min(difference, 360 - difference)).toBeGreaterThanOrEqual(30);
+      }
+    }
+  });
 });

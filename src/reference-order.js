@@ -1,9 +1,31 @@
 const { mainLineName } = require('./main-line');
 
-function graphColor(index) {
-  const hue = Math.round((index * 137.508 + 215) % 360);
-  const lightness = index % 2 === 0 ? 62 : 48;
+const colorBucketCount = 12;
+
+function graphColor(key, assignedBuckets) {
+  let hash = 2166136261;
+  for (const character of key) {
+    hash ^= character.charCodeAt(0);
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+  let bucket = (hash >>> 8) % colorBucketCount;
+  for (let attempts = 0; attempts < colorBucketCount; attempts += 1) {
+    if (!assignedBuckets.has(bucket)) {
+      assignedBuckets.add(bucket);
+      break;
+    }
+    bucket = (bucket + 1) % colorBucketCount;
+  }
+  const hue = bucket * (360 / colorBucketCount);
+  const lightness = (hash >>> 9) % 2 === 0 ? 62 : 48;
   return `hsl(${hue} 78% ${lightness}%)`;
+}
+
+function colorKey(reference) {
+  if (!reference.remote || !reference.name.startsWith('origin/')) {
+    return reference.name;
+  }
+  return reference.name.slice('origin/'.length);
 }
 
 function orderReferences(references) {
@@ -15,10 +37,19 @@ function orderReferences(references) {
     .sort((left, right) => left.name.localeCompare(right.name));
   const ordered = [];
   const pairedRemotes = new Set();
-  let pairIndex = 0;
+  const colorsByKey = new Map();
+  const assignedBuckets = new Set();
+
+  function colorFor(reference) {
+    const key = colorKey(reference);
+    if (!colorsByKey.has(key)) {
+      colorsByKey.set(key, graphColor(key, assignedBuckets));
+    }
+    return colorsByKey.get(key);
+  }
 
   function addPair(local, remote) {
-    const color = graphColor(pairIndex++);
+    const color = colorFor(local);
     ordered.push({ ...local, color });
     if (remote) {
       pairedRemotes.add(remote.name);
@@ -32,7 +63,7 @@ function orderReferences(references) {
   if (main) {
     addPair(main, originMain);
   } else if (originMain) {
-    const color = graphColor(pairIndex++);
+    const color = colorFor(originMain);
     ordered.push({ ...originMain, color });
     pairedRemotes.add(originMain.name);
   }
@@ -62,7 +93,7 @@ function orderReferences(references) {
   for (const reference of unpairedReferences) {
     ordered.push({
       ...reference,
-      color: graphColor(pairIndex++)
+      color: colorFor(reference)
     });
   }
 

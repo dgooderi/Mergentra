@@ -163,6 +163,13 @@ test('merge commits and grouped tags are annotated in the commit graph', async (
       mergeParents.push(await mergeEdges.nth(index).getAttribute('data-parent-hash'));
     }
     expect(new Set(mergeParents)).toEqual(new Set([featureCommit, mainCommit]));
+    expect(
+      await window
+        .locator(
+          `[data-testid="commit-edge"][data-child-hash="${mergeCommit}"][data-parent-hash="${featureCommit}"]`
+        )
+        .getAttribute('d')
+    ).toMatch(/[CQ]/);
 
     const mergeLine = window.locator(
       `[data-testid="commit-edge-hover"][data-child-hash="${mergeCommit}"][data-parent-hash="${featureCommit}"]`
@@ -181,10 +188,7 @@ test('merge commits and grouped tags are annotated in the commit graph', async (
     await expect(mergeNode).toHaveAttribute('aria-pressed', 'true');
     await expect(window.locator('#graph-context-menu')).toHaveCount(0);
 
-    const tags = mergeNode.getByTestId('commit-tag');
-    await expect(tags).toHaveCount(2);
-    await expect(tags.nth(0)).toHaveAttribute('data-tag-name', 'release-candidate');
-    await expect(tags.nth(1)).toHaveAttribute('data-tag-name', 'v1.0.0');
+    await expect(mergeNode.getByTestId('commit-tag')).toHaveCount(0);
     await expect(window.getByTestId('commit-node')).toHaveCount(4);
     await expect(
       window.locator(`[data-testid="commit-node"][data-commit-hash="${baseCommit}"]`)
@@ -329,6 +333,18 @@ test('pointer and keyboard commit selection show the same Review dock details', 
     await expect(
       dock.getByTestId('selected-commit-references').getByText('main', { exact: true })
     ).toBeVisible();
+    await childNode.click();
+    await expect(childNode).toHaveAttribute('aria-pressed', 'false');
+    await expect(dock).toBeHidden();
+
+    await childNode.click();
+    await expect(childNode).toHaveAttribute('aria-pressed', 'true');
+    await expect(dock).toBeVisible();
+    const detailsBox = await dock.locator('.commit-details').boundingBox();
+    const noteBox = await dock.locator('.review-note').boundingBox();
+    const noteEditorBox = await dock.getByTestId('selected-commit-note').boundingBox();
+    expect(noteBox.x).toBeGreaterThan(detailsBox.x + detailsBox.width - 1);
+    expect(noteEditorBox.width).toBeGreaterThan(200);
 
     await commitNode.click({ timeout: 5_000 });
     await expect(commitNode).toHaveAttribute('aria-pressed', 'true');

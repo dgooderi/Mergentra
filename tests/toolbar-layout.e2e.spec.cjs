@@ -30,15 +30,16 @@ async function openSampleRepository(use) {
 
 const box = async (locator) => await locator.boundingBox();
 
-test('toolbar buttons share one height, including Branches and Display', async () => {
+test('toolbar controls share one height, including Target branch and Branches', async () => {
   await openSampleRepository(async (window) => {
     const toolbar = window.locator('.fetch-controls');
     const heights = [];
     for (const locator of [
       toolbar.getByRole('button', { name: 'Fetch' }),
+      toolbar.getByLabel('Target branch'),
       toolbar.locator('#branch-picker-summary'),
-      toolbar.locator('.display-menu > summary'),
       window.locator('#time-earlier'),
+      window.locator('#time-calendar'),
       window.locator('#time-centre'),
       window.locator('#change-repository')
     ]) {
@@ -61,8 +62,18 @@ test('neighbouring toolbar controls are separated by the same gap', async () => 
       });
     };
     const appGaps = await gaps(['#open-explorer', '#change-repository', '#open-settings']);
-    const navigationGaps = await gaps(['#time-earlier', '#time-later', '#time-centre']);
-    const rowGaps = await gaps(['#fetch-button', '#branch-picker', '.time-controls']);
+    const navigationGaps = await gaps([
+      '#time-earlier',
+      '#time-calendar',
+      '#time-later',
+      '#time-centre'
+    ]);
+    const rowGaps = await gaps([
+      '#fetch-button',
+      '.target-branch-control',
+      '#branch-picker',
+      '.time-controls'
+    ]);
     const all = [...appGaps, ...navigationGaps, ...rowGaps];
     expect(new Set(all).size, `gaps: ${all}`).toBe(1);
   });

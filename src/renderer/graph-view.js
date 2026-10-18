@@ -1,11 +1,9 @@
 // SVG drawing for the commit graph. Each function appends one kind of element to the graph and
 // receives everything it needs explicitly: a layout context and an object of actions.
 import { computeTimeAxisTicks, dateRangeFromAxisDrag } from './time-axis.js';
-import { branchLabelNames, truncateBranchName } from './layout.js';
 import { findMainReference } from './lanes.js';
 import { markdownToPlainText } from './markdown.js';
 
-const releaseTagPattern = /^v?\d+(\.\d+)+([-+.].*)?$/;
 // Merge lines longer than this leave their branch with a visible curve instead of running along its row.
 const MERGE_CURVE_AT_START_SPAN = 400;
 
@@ -296,6 +294,7 @@ export function drawEdges(ctx, actions) {
             ? `${hoverReference.name}\n${markdownToPlainText(note)}`
             : hoverReference.name;
         });
+        hit.addEventListener('click', () => actions.editBranchColor(hoverReference.name));
         if (isMergeIn) {
           hit.addEventListener('contextmenu', (event) =>
             actions.openGraphContextMenu(event, [
@@ -309,6 +308,56 @@ export function drawEdges(ctx, actions) {
         graphElement.append(hit);
       }
     }
+  }
+}
+
+export function drawParentContinuations({ graph, graphElement, commitPositions, width }) {
+  for (const continuation of graph.parentContinuations || []) {
+    const position = commitPositions.get(continuation.targetHash);
+    if (!position) {
+      continue;
+    }
+    graphElement.append(
+      createSvgElement('line', {
+        x1: 0,
+        y1: position.y,
+        x2: width,
+        y2: position.y,
+        stroke: continuation.parent.color,
+        'stroke-width': 3,
+        'stroke-opacity': 0.25,
+        'stroke-dasharray': '8 8',
+        'pointer-events': 'none',
+        'aria-hidden': 'true',
+        'data-testid': 'parent-branch-continuation',
+        'data-parent-branch': continuation.parent.name,
+        'data-target-hash': continuation.targetHash
+      })
+    );
+  }
+  for (const continuation of graph.branchContinuations || []) {
+    const position = commitPositions.get(continuation.targetHash);
+    if (!position) {
+      continue;
+    }
+    graphElement.append(
+      createSvgElement('line', {
+        x1: position.x,
+        y1: position.y,
+        x2: width,
+        y2: position.y,
+        stroke: continuation.parent.color,
+        'stroke-width': 3,
+        'stroke-opacity': 0.65,
+        'stroke-dasharray': '2 8',
+        'stroke-linecap': 'round',
+        'pointer-events': 'none',
+        'aria-hidden': 'true',
+        'data-testid': 'branch-continuation',
+        'data-branch': continuation.parent.name,
+        'data-target-hash': continuation.targetHash
+      })
+    );
   }
 }
 
@@ -409,17 +458,17 @@ function commitContextMenuItems(commit, ctx, actions) {
 }
 
 function attachNodeHandlers(group, commit, ctx, actions) {
+  const toggleSelection = () =>
+    actions.selectCommit(actions.getSelectedCommit()?.hash === commit.hash ? null : commit);
   group.addEventListener('contextmenu', (event) => {
     const items = commitContextMenuItems(commit, ctx, actions);
     if (items.length) actions.openGraphContextMenu(event, items);
   });
-  group.addEventListener('click', () =>
-    actions.selectCommit(actions.getSelectedCommit()?.hash === commit.hash ? null : commit)
-  );
+  group.addEventListener('click', toggleSelection);
   group.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      actions.selectCommit(commit);
+      toggleSelection();
     }
   });
 }
@@ -464,61 +513,7 @@ function createNodeBody(commit, color) {
     class: 'hash-label'
   });
   label.textContent = commit.hash.slice(0, 7);
-  const noteMarker = createSvgElement('text', {
-    x: -16,
-    y: -9,
-    class: 'note-marker',
-    'data-testid': 'note-marker',
-    'text-anchor': 'middle',
-    'aria-hidden': 'true'
-  });
-  noteMarker.textContent = '✎';
-  return [title, hitTarget, selectionRing, createNodeShape(commit, color), label, noteMarker];
-}
-
-function appendBranchLabels(group, commit, color, hasCutMarker) {
-  const { shortNames, hasPairedRemote } = branchLabelNames(commit);
-  for (const [nameIndex, name] of shortNames.entries()) {
-    const branchLabel = createSvgElement('text', {
-      x: 0,
-      y: 37 + (hasCutMarker ? 13 : 0) + nameIndex * 13,
-      'text-anchor': 'middle',
-      class: 'branch-label',
-      'data-testid': 'commit-branch-label',
-      fill: color
-    });
-    branchLabel.textContent =
-      truncateBranchName(name) + (hasPairedRemote && nameIndex === 0 ? ' ⇄' : '');
-    const labelTitle = createSvgElement('title');
-    labelTitle.textContent = name;
-    branchLabel.append(labelTitle);
-    group.append(branchLabel);
-  }
-}
-
-function appendTagLabels(group, commit) {
-  if (commit.tags.length === 0) return;
-  const tagGroup = createSvgElement('g', {
-    'data-testid': 'commit-tags',
-    'aria-label': `Tags: ${commit.tags.join(', ')}`
-  });
-  for (const [tagIndex, tagName] of commit.tags.entries()) {
-    const isRelease = releaseTagPattern.test(tagName);
-    const tagLabel = createSvgElement('text', {
-      x: 15,
-      y: -4 + tagIndex * 13,
-      'data-testid': 'commit-tag',
-      'data-tag-name': tagName,
-      'data-kind': isRelease ? 'release' : 'tag',
-      class: isRelease ? 'release-tag' : 'plain-tag'
-    });
-    tagLabel.textContent = tagName.length > 14 ? `${tagName.slice(0, 13)}…` : tagName;
-    const tagTitle = createSvgElement('title');
-    tagTitle.textContent = tagName;
-    tagLabel.append(tagTitle);
-    tagGroup.append(tagLabel);
-  }
-  group.append(tagGroup);
+  return [title, hitTarget, selectionRing, createNodeShape(commit, color), label];
 }
 
 function drawCommitNode(commit, position, ctx, actions) {
@@ -538,9 +533,7 @@ function drawCommitNode(commit, position, ctx, actions) {
     'aria-label': `Inspect ${commit.subject} (${commit.hash.slice(0, 7)})`
   });
   group.append(...createNodeBody(commit, color));
-  appendBranchLabels(group, commit, color, ctx.cutMarkersByHash.has(commit.hash));
   attachNodeHandlers(group, commit, ctx, actions);
-  appendTagLabels(group, commit);
   ctx.graphElement.append(group);
 }
 
@@ -701,6 +694,7 @@ export function drawDivergenceMarkers({ graph, graphElement, commitPositions }) 
       'data-commit-hash': marker.commitHash,
       transform: `translate(${position.x} ${position.y - 27 - stackIndex * 12})`,
       role: 'img',
+      'pointer-events': 'none',
       'aria-label': `Branch diverges: ${marker.branchName}`
     });
     const label = createSvgElement('text', {
