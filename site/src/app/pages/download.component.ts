@@ -55,6 +55,6 @@ import { Component } from '@angular/core';
         </li>
       </ul>
     </section>
-  `,
+  `
 })
 export class DownloadComponent {}

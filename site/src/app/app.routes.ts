@@ -9,5 +9,5 @@ export const routes: Routes = [
   { path: 'documentation', component: DocumentationComponent, title: 'Documentation | Mergentra' },
   { path: 'release-notes', component: ReleaseNotesComponent, title: 'Release notes | Mergentra' },
   { path: 'download', component: DownloadComponent, title: 'Download Mergentra for Windows' },
-  { path: '**', redirectTo: '' },
+  { path: '**', redirectTo: '' }
 ];

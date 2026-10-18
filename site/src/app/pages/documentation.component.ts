@@ -97,6 +97,6 @@ import { Component } from '@angular/core';
         </section>
       </article>
     </div>
-  `,
+  `
 })
 export class DocumentationComponent {}
