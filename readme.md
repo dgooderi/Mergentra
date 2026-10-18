@@ -10,10 +10,10 @@ Mergentra is a Windows-first Electron app for exploring the history of one local
 
 ## Status
 
-Mergentra is **pre-1.0 (version 0.11.0)** and is being made public. Expect rough edges and changes between releases.
+Mergentra **1.0.0** is the first stable public release.
 
 - **Platform:** Windows is the supported and tested platform. The app is built with Electron, so other platforms may run it, but they are untested and no installers are produced for them.
-- **Installer:** the Windows installer is currently **unsigned**, so Windows SmartScreen may warn when you run it. Authenticode signing is planned before a stable release.
+- **Installer:** the Windows installers are currently **unsigned**, so Windows SmartScreen may warn when you run them. Authenticode signing is planned for a future release.
 - **Updates:** Mergentra checks GitHub Releases for a newer version once a week (turn this off in Settings; it is off by default for MSI installs) and asks before downloading or installing anything. **Check for updates** in Settings checks on demand.
 - **Scale:** manually tested against a clone of the [Visual Studio Code repository](https://github.com/microsoft/vscode): about 190,000 commits across all branches (about 20,000 of them merges), 5,400 remote-tracking branches and 394 tags, with history from November 2015 to October 2026. Automated tests cover a repository of 50,000 commits and 100 local branches. Synthetic linear histories of up to 1,000,000 commits loaded in about 19 seconds, using roughly 2.6 GB of memory in total. Real repositories vary. Above 300,000 commits Mergentra asks for confirmation before opening; set `MERGENTRA_LARGE_REPOSITORY_COMMITS` to change the threshold.
 - **Tested with:** Git for Windows 2.55.
@@ -21,6 +21,18 @@ Mergentra is **pre-1.0 (version 0.11.0)** and is being made public. Expect rough
 ## Requirements
 
 You do not need Node.js to run Mergentra; Electron bundles its own runtime. You do need [Git for Windows](https://gitforwindows.org/) installed. Mergentra uses your installed Git and does not bundle it. If Git is not on `PATH`, enter the full path to `git.exe` in the app.
+
+## Download
+
+Download the Windows packages from the [Mergentra 1.0.0 release](https://github.com/dgooderi/Mergentra/releases/tag/v1.0.0.0):
+
+- **Setup.exe** installs Mergentra for the current Windows user.
+- **Portable.exe** runs without installation.
+- **x64.msi** is intended for managed or per-machine deployments.
+
+The packages are unsigned, so Windows may show a SmartScreen warning before
+the app starts. Verify the release assets and their checksums on GitHub before
+installing.
 
 ## License agreement
 
@@ -77,7 +89,9 @@ Keep Git and Electron access in the main process, persistence behind its storage
 
 On launch, enter a repository folder or use **Browse…** to choose one. Mergentra shows loading progress while it reads repository history and remembers repositories opened from the picker. If Git is not on `PATH`, enter the full path to `git.exe` and select **Save Git path**. Dark mode is the default; select **Light mode** to change the appearance.
 
-For a realistic test history with parallel features, release/hotfix merges, tags, and a local bare remote, open [the complex branch scenario](./samples/complex-branch-scenario/SCENARIO.md) in Mergentra.
+For a realistic test history with parallel features and a hidden parent
+continuation, open [the branch target scenario](./samples/branch-target-scenario/SCENARIO.md)
+in Mergentra.
 
 Mergentra checks GitHub Releases for a newer version about once a week when it starts, unless **Automatically check for updates** is turned off in Settings (it is off by default for MSI installs, which an administrator normally manages). Select **Check for updates** to check on demand. When a newer version is found, a dialog offers **Download and install**, **Download** (saved to your Downloads folder), **Release notes**, **Skip this version**, or **Remind me later**, with a **Don't check for updates automatically** checkbox. Downloads come only from the project's GitHub release page and are checked against the SHA-256 checksum GitHub publishes before they are run. Portable and MSI installs can download but not self-install.
 

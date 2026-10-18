@@ -67,6 +67,23 @@ describe('buildFilteredGraph', () => {
     expect(graph.commits.map(({ lane }) => lane)).toEqual([1, 1, 1]);
   });
 
+  it('simulates a parent branch past its tip when child branches continue from it', () => {
+    const graph = buildFilteredGraph(
+      graphOf(commits, [
+        { name: 'upgrade', hash: 'b2' },
+        { name: 'feature', hash: 'f2' },
+        { name: 'main', hash: 'm' }
+      ]),
+      new Set(['upgrade', 'feature', 'main']),
+      null
+    );
+
+    expect(graph.branchContinuations).toEqual([
+      expect.objectContaining({ targetHash: 'b2' })
+    ]);
+    expect(graph.branchContinuations[0].parent.name).toBe('upgrade');
+  });
+
   it('puts commits reached only through a merge second parent on a side lane', () => {
     const graph = buildFilteredGraph(graphOf(commits, references), new Set(['main']), null);
     const lane = Object.fromEntries(graph.commits.map((c) => [c.hash, c.lane]));

@@ -10,9 +10,10 @@ export const state = {
   rangeAdjusted: false,
   axisSelectedSpan: null,
   ownerFilter: '',
-  notes: { commits: {}, branches: {} },
+  notes: { commits: {}, branches: {}, colors: {} },
   zoomLevel: 1,
-  displayOptions: { tags: true, hashes: true, releases: true },
   compactedMembership: new Map(),
-  availableReferenceNames: null
+  availableReferenceNames: null,
+  targetBranchName: null,
+  visibleReferencesBeforeTarget: null
 };

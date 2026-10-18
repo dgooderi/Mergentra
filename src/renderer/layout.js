@@ -1,16 +1,4 @@
 // Row, level and column placement of the commits. Pure: depends only on the graph.
-export function branchLabelNames(commit) {
-  const branchNames = commit.references.filter((name) => !commit.tags.includes(name));
-  const shortNames = branchNames.filter(
-    (name) => !(name.includes('/') && branchNames.includes(name.slice(name.indexOf('/') + 1)))
-  );
-  return { branchNames, shortNames, hasPairedRemote: shortNames.length < branchNames.length };
-}
-
-export function truncateBranchName(name) {
-  return name.length > 22 ? `…${name.slice(-21)}` : name;
-}
-
 export function computeGraphLayout(graph) {
   const rowHeight = 56;
   const axisHeight = 46;
@@ -63,8 +51,8 @@ export function computeGraphLayout(graph) {
     rowByLane.set(lane, row);
   }
   const rowCount = Math.max(rowEnds.length, 1);
-  // A commit whose labels would overlap the previous commit in its row drops to a lower level,
-  // carrying its labels with it; rows grow to make room for the extra levels.
+  // History boundary labels can be wider than the hash beneath a commit, so reserve another
+  // level only when they would overlap the previous boundary marker.
   const cutMarkersByHash = new Map();
   for (const marker of graph.cutMarkers) {
     cutMarkersByHash.set(marker.commitHash, [
@@ -79,13 +67,8 @@ export function computeGraphLayout(graph) {
   graph.commits.forEach((commit, index) => {
     const row = rowByLane.get(commit.lane);
     const centre = leftPadding + index * columnWidth;
-    const names = branchLabelNames(commit).shortNames;
     const hasCut = cutMarkersByHash.has(commit.hash);
-    const textLength = Math.max(
-      7,
-      hasCut ? 'Earlier history continues'.length : 0,
-      ...names.map((name) => truncateBranchName(name).length + 2)
-    );
+    const textLength = Math.max(7, hasCut ? 'Earlier history continues'.length : 0);
     const half = (textLength * 7) / 2 + 6;
     const ends = levelEnds[row];
     let level = ends.findIndex((end) => end < centre - half);
@@ -95,7 +78,7 @@ export function computeGraphLayout(graph) {
     ends[level] = centre + half;
     commitLevels.set(commit.hash, level);
     rowMaxLevel[row] = Math.max(rowMaxLevel[row], level);
-    rowLabelHeight[row] = Math.max(rowLabelHeight[row], (hasCut ? 1 : 0) + names.length);
+    rowLabelHeight[row] = Math.max(rowLabelHeight[row], hasCut ? 1 : 0);
   });
   const levelStepByRow = rowLabelHeight.map((lines) => rowHeight + Math.max(lines - 1, 0) * 13);
   const rowTops = [];
