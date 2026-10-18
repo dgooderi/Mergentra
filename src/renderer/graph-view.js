@@ -294,6 +294,7 @@ export function drawEdges(ctx, actions) {
             ? `${hoverReference.name}\n${markdownToPlainText(note)}`
             : hoverReference.name;
         });
+        hit.addEventListener('click', () => actions.editBranchColor(hoverReference.name));
         if (isMergeIn) {
           hit.addEventListener('contextmenu', (event) =>
             actions.openGraphContextMenu(event, [
@@ -693,6 +694,7 @@ export function drawDivergenceMarkers({ graph, graphElement, commitPositions }) 
       'data-commit-hash': marker.commitHash,
       transform: `translate(${position.x} ${position.y - 27 - stackIndex * 12})`,
       role: 'img',
+      'pointer-events': 'none',
       'aria-label': `Branch diverges: ${marker.branchName}`
     });
     const label = createSvgElement('text', {

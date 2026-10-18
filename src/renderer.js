@@ -308,6 +308,19 @@ const graphActions = {
     const path = branchPathToMain(state.currentGraph, referenceName);
     referencePicker.showOnly(ancestors ? path : path.slice(0, 2));
   },
+  editBranchColor: (referenceName) => {
+    const colorInput = [...document.querySelectorAll('[data-testid="branch-color-input"]')].find(
+      (input) => input.closest('[data-testid="reference-lane"]')?.dataset.refName === referenceName
+    );
+    if (colorInput) {
+      document
+        .querySelectorAll('[data-testid="branch-color-input"]')
+        .forEach((input) => delete input.dataset.selectedFromBranchLine);
+      colorInput.dataset.selectedFromBranchLine = 'true';
+      colorInput.focus();
+      colorInput.scrollIntoView({ block: 'nearest' });
+    }
+  },
   openGraphContextMenu,
   openCompactedPopover: (summary, anchor) => openCompactedPopover(summary, anchor, selectCommit),
   registerCompactedMember: (hash, summaryHash) => state.compactedMembership.set(hash, summaryHash)

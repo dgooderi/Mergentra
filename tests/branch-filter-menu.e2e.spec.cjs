@@ -100,6 +100,14 @@ test.describe('branch filters in the commit context menu', () => {
     await expect(continuation).toHaveAttribute('stroke-dasharray', '2 8');
   });
 
+  test('clicking a branch line focuses its color control', async () => {
+    const edge = window.getByTestId('commit-edge-hover').first();
+    const branchName = await edge.getAttribute('data-ref-name');
+    const color = window.getByLabel(`Color for ${branchName}`);
+    await edge.dispatchEvent('click');
+    await expect(color).toHaveAttribute('data-selected-from-branch-line', 'true');
+  });
+
   test('filter to all branches from main to the selected node', async () => {
     await chooseFromNodeMenu('nested', 'Show branches from main to here');
     expect(await shownBranches()).toEqual(['feature', 'main', 'nested']);
