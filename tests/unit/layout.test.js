@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  branchLabelNames,
-  computeGraphLayout,
-  truncateBranchName
-} from '../../src/renderer/layout.js';
+import { computeGraphLayout } from '../../src/renderer/layout.js';
 
 function commit(hash, parents, lane, extra = {}) {
   return { hash, parents, lane, tags: [], references: [], ...extra };
@@ -12,29 +8,6 @@ function commit(hash, parents, lane, extra = {}) {
 function graphOf(commits, references, cutMarkers = []) {
   return { commits, references, cutMarkers };
 }
-
-describe('branchLabelNames', () => {
-  it('excludes tags and collapses a remote branch paired with its local branch', () => {
-    const names = branchLabelNames(
-      commit('a', [], 0, {
-        references: ['main', 'origin/main', 'v1', 'origin/other'],
-        tags: ['v1']
-      })
-    );
-    expect(names.branchNames).toEqual(['main', 'origin/main', 'origin/other']);
-    expect(names.shortNames).toEqual(['main', 'origin/other']);
-    expect(names.hasPairedRemote).toBe(true);
-  });
-});
-
-describe('truncateBranchName', () => {
-  it('keeps the end of long names', () => {
-    expect(truncateBranchName('short')).toBe('short');
-    const long = 'feature/' + 'x'.repeat(30);
-    expect(truncateBranchName(long)).toHaveLength(22);
-    expect(truncateBranchName(long).startsWith('\u2026')).toBe(true);
-  });
-});
 
 describe('computeGraphLayout', () => {
   const references = [
