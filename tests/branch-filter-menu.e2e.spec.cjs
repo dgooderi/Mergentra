@@ -88,9 +88,7 @@ test.describe('branch filters in the commit context menu', () => {
   });
 
   test('a parent branch with no later commits gets a dotted continuation', async () => {
-    const featureLane = window.locator(
-      '[data-testid="reference-lane"][data-ref-name="feature"]'
-    );
+    const featureLane = window.locator('[data-testid="reference-lane"][data-ref-name="feature"]');
     const featureColor = await featureLane.getAttribute('data-color');
     const continuation = window.locator(
       '[data-testid="branch-continuation"][data-branch="feature"]'
@@ -167,9 +165,7 @@ test.describe('branch filters in the commit context menu', () => {
     const edgePaths = await window
       .getByTestId('commit-edge')
       .evaluateAll((edges) => edges.map((edge) => edge.getAttribute('d')));
-    expect(
-      edgePaths.some((path) => /^M [\d.]+ [\d.]+ L [\d.]+ [\d.]+$/.test(path))
-    ).toBe(true);
+    expect(edgePaths.some((path) => /^M [\d.]+ [\d.]+ L [\d.]+ [\d.]+$/.test(path))).toBe(true);
     expect(edgePaths.some((path) => path.includes('C'))).toBe(true);
     await expect(window.getByTestId('commit-branch-label')).toHaveCount(0);
     await expect(window.getByTestId('commit-tag')).toHaveCount(0);
@@ -232,14 +228,12 @@ test('targeting a feature branched from main excludes an unrelated upgrade branc
     await window.getByRole('button', { name: 'Open repository' }).click();
     await window.getByLabel('Target branch').selectOption('feature-3');
 
-    const visibleBranches = await window
-      .getByTestId('reference-lane')
-      .evaluateAll((lanes) =>
-        lanes
-          .filter((lane) => lane.querySelector('input').checked)
-          .map((lane) => lane.dataset.refName)
-          .sort()
-      );
+    const visibleBranches = await window.getByTestId('reference-lane').evaluateAll((lanes) =>
+      lanes
+        .filter((lane) => lane.querySelector('input').checked)
+        .map((lane) => lane.dataset.refName)
+        .sort()
+    );
     expect(visibleBranches).toEqual(['feature-3', 'main']);
 
     const mainColor = await window
@@ -269,11 +263,11 @@ test('targeting a feature branched from main excludes an unrelated upgrade branc
           .sort()
       );
     expect(featureOneVisibleBranches).toEqual(['feature-1', 'main', 'upgrade']);
-      await expect(
-        window.locator(`[data-testid="commit-node"][data-commit-hash="${featureTwoHash}"]`)
-      ).toHaveCount(0);
+    await expect(
+      window.locator(`[data-testid="commit-node"][data-commit-hash="${featureTwoHash}"]`)
+    ).toHaveCount(0);
 
-      await expect(
+    await expect(
       window
         .locator(`[data-testid="commit-node"][data-commit-hash="${featureOneHash}"]`)
         .locator('circle:not(.selection-ring)')

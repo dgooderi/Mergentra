@@ -78,9 +78,7 @@ describe('buildFilteredGraph', () => {
       null
     );
 
-    expect(graph.branchContinuations).toEqual([
-      expect.objectContaining({ targetHash: 'b2' })
-    ]);
+    expect(graph.branchContinuations).toEqual([expect.objectContaining({ targetHash: 'b2' })]);
     expect(graph.branchContinuations[0].parent.name).toBe('upgrade');
   });
 

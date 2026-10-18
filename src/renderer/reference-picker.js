@@ -23,7 +23,9 @@ function hslToHex(color) {
     return p;
   };
   if (saturation === 0) {
-    const channel = Math.round(lightness * 255).toString(16).padStart(2, '0');
+    const channel = Math.round(lightness * 255)
+      .toString(16)
+      .padStart(2, '0');
     return `#${channel}${channel}${channel}`;
   }
   const q =

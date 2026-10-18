@@ -94,7 +94,12 @@ export function computeAvailableReferences(currentGraph, timeRange) {
   return new Set(names);
 }
 
-export function buildFilteredGraph(sourceGraph, visibleReferences, timeRange, targetBranchName = null) {
+export function buildFilteredGraph(
+  sourceGraph,
+  visibleReferences,
+  timeRange,
+  targetBranchName = null
+) {
   const references = sourceGraph.references
     .filter((reference) => visibleReferences.has(reference.name))
     .map((reference, lane) => ({ ...reference, lane }));
@@ -155,8 +160,7 @@ export function buildFilteredGraph(sourceGraph, visibleReferences, timeRange, ta
         }
         pending.push(
           ...commit.parents.filter(
-            (parentHash) =>
-              includeUnselectedMergeHistory || firstParentHashes.has(parentHash)
+            (parentHash) => includeUnselectedMergeHistory || firstParentHashes.has(parentHash)
           )
         );
       }
