@@ -64,6 +64,7 @@ export function parentReferenceName(graph, referenceName) {
   const targetTipOrder = tipOrder.get(reference.hash);
   let parent = null;
   let parentDistance = Infinity;
+  let parentIsDirectAncestor = false;
 
   for (const candidate of graph.references) {
     if (
@@ -76,12 +77,20 @@ export function parentReferenceName(graph, referenceName) {
     while (commit) {
       const distance = targetDistances.get(commit.hash);
       if (
-        distance !== undefined &&
-        (distance < parentDistance ||
-          (distance === parentDistance && candidate.name === main?.name))
+        distance !== undefined
       ) {
-        parent = candidate.name;
-        parentDistance = distance;
+        const candidateIsDirectAncestor = targetDistances.has(candidate.hash);
+        if (
+          !parent ||
+          (candidateIsDirectAncestor && !parentIsDirectAncestor) ||
+          (candidateIsDirectAncestor === parentIsDirectAncestor &&
+            (distance < parentDistance ||
+              (distance === parentDistance && candidate.name === main?.name)))
+        ) {
+          parent = candidate.name;
+          parentDistance = distance;
+          parentIsDirectAncestor = candidateIsDirectAncestor;
+        }
       }
       commit = commitsByHash.get(commit.parents[0]);
     }

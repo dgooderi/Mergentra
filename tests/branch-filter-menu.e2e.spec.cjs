@@ -205,6 +205,9 @@ test('targeting a feature branched from main excludes an unrelated upgrade branc
     const featureOneLane = window.locator(
       '[data-testid="reference-lane"][data-ref-name="feature-1"]'
     );
+    const featureTwoHash = await window
+      .locator('[data-testid="reference-lane"][data-ref-name="feature-2"]')
+      .getAttribute('data-target-hash');
     const featureOneColor = await featureOneLane.getAttribute('data-color');
     const featureOneHash = await featureOneLane.getAttribute('data-target-hash');
 
@@ -214,7 +217,20 @@ test('targeting a feature branched from main excludes an unrelated upgrade branc
 
     await window.getByLabel('Target branch').selectOption('feature-1');
 
-    await expect(
+    const featureOneVisibleBranches = await window
+      .getByTestId('reference-lane')
+      .evaluateAll((lanes) =>
+        lanes
+          .filter((lane) => lane.querySelector('input').checked)
+          .map((lane) => lane.dataset.refName)
+          .sort()
+      );
+    expect(featureOneVisibleBranches).toEqual(['feature-1', 'main', 'upgrade']);
+      await expect(
+        window.locator(`[data-testid="commit-node"][data-commit-hash="${featureTwoHash}"]`)
+      ).toHaveCount(0);
+
+      await expect(
       window
         .locator(`[data-testid="commit-node"][data-commit-hash="${featureOneHash}"]`)
         .locator('circle:not(.selection-ring)')
