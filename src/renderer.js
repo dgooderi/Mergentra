@@ -145,7 +145,7 @@ function renderGraph(graph) {
   document.getElementById('time-range-status').textContent = '';
   reviewDock.hide();
   renderWorktrees(graph.worktrees);
-  referencePicker.render(graph.references);
+  referencePicker.render(state.currentGraph.references);
   renderFilteredGraph();
 }
 

@@ -68,6 +68,7 @@ test.describe('branch filters in the commit context menu', () => {
   test('branch colors can be customized from the Branches picker', async () => {
     const mainLane = window.locator('[data-testid="reference-lane"][data-ref-name="main"]');
     const color = mainLane.getByLabel('Color for main');
+    const mainHash = await mainLane.getAttribute('data-target-hash');
 
     await color.evaluate((input) => {
       input.value = '#123456';
@@ -79,6 +80,11 @@ test.describe('branch filters in the commit context menu', () => {
       'stroke',
       '#123456'
     );
+    await expect(
+      window
+        .locator(`[data-testid="commit-node"][data-commit-hash="${mainHash}"]`)
+        .locator('circle:not(.selection-ring)')
+    ).toHaveAttribute('fill', '#123456');
   });
 
   test('a parent branch with no later commits gets a dotted continuation', async () => {
