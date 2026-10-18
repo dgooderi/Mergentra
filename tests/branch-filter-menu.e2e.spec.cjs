@@ -139,3 +139,69 @@ test.describe('branch filters in the commit context menu', () => {
     await expect(window.getByTestId('parent-branch-continuation')).toHaveCount(0);
   });
 });
+
+test('targeting a feature branched from main excludes an unrelated upgrade branch', async () => {
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
+  const repositoryPath = path.join(testDirectory, 'sample-repository');
+  const userDataPath = path.join(testDirectory, 'user-data');
+  fs.mkdirSync(repositoryPath);
+  const git = (...args) => execFileSync('git', args, { cwd: repositoryPath, stdio: 'ignore' });
+  const commit = (file) => {
+    fs.writeFileSync(path.join(repositoryPath, file), file);
+    git('add', '.');
+    git('commit', '-m', file);
+  };
+  let app;
+
+  try {
+    git('-c', 'init.defaultBranch=main', 'init');
+    git('config', 'user.name', 'Mergentra E2e');
+    git('config', 'user.email', 'mergentra-e2e@example.invalid');
+    commit('initial');
+    for (let index = 1; index <= 10; index += 1) {
+      commit(`main-${index}`);
+    }
+    git('checkout', '-b', 'upgrade');
+    for (let index = 1; index <= 10; index += 1) {
+      commit(`upgrade-${index}`);
+    }
+    git('checkout', '-b', 'feature-1');
+    for (let index = 1; index <= 5; index += 1) {
+      commit(`feature-1-${index}`);
+    }
+    git('checkout', 'main');
+    commit('main-integration-preparation');
+    git('merge', '--no-ff', 'feature-1', '-m', 'merge-feature-1');
+    git('checkout', 'upgrade');
+    git('checkout', '-b', 'feature-2');
+    for (let index = 1; index <= 5; index += 1) {
+      commit(`feature-2-${index}`);
+    }
+    git('checkout', 'main');
+    git('checkout', '-b', 'feature-3');
+    for (let index = 1; index <= 4; index += 1) {
+      commit(`feature-3-${index}`);
+    }
+
+    app = await launchMergentra(userDataPath);
+    const window = await app.firstWindow();
+    await window.getByLabel('Repository folder').fill(repositoryPath);
+    await window.getByRole('button', { name: 'Open repository' }).click();
+    await window.getByLabel('Target branch').selectOption('feature-3');
+
+    const visibleBranches = await window
+      .getByTestId('reference-lane')
+      .evaluateAll((lanes) =>
+        lanes
+          .filter((lane) => lane.querySelector('input').checked)
+          .map((lane) => lane.dataset.refName)
+          .sort()
+      );
+    expect(visibleBranches).toEqual(['feature-3', 'main']);
+  } finally {
+    if (app) {
+      await app.close();
+    }
+    fs.rmSync(testDirectory, { recursive: true, force: true });
+  }
+});
