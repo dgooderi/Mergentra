@@ -95,9 +95,8 @@ function renderGraph(graph) {
       .filter((reference) => !hidden.has(reference.name))
       .map((reference) => reference.name)
   );
-  state.targetBranchName =
-    graph.references.some((reference) => reference.name === saved?.target) ?
-      saved.target
+  state.targetBranchName = graph.references.some((reference) => reference.name === saved?.target)
+    ? saved.target
     : null;
   state.visibleReferencesBeforeTarget = null;
   state.selectedTimePreset = 'all';

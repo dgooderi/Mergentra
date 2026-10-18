@@ -104,10 +104,7 @@ describe('reference ordering', () => {
       orderReferences([
         { name: 'main', hash: 'm', remote: false },
         { name: 'feature-3', hash: 'f3', remote: false }
-      ]).map((reference) => [
-        reference.name,
-        Number(reference.color.match(/hsl\((\d+)/)[1])
-      ])
+      ]).map((reference) => [reference.name, Number(reference.color.match(/hsl\((\d+)/)[1])])
     );
     const difference = Math.abs(colors.get('main') - colors.get('feature-3'));
 
