@@ -1,0 +1,38 @@
+<header class="site-header">
+  <div class="shell header-inner">
+    <a class="brand" routerLink="/" aria-label="Mergentra home">
+      <img src="assets/mergentra-256.svg" alt="" width="40" height="40" />
+      <span>Mergentra</span>
+    </a>
+    <nav class="site-nav" aria-label="Primary navigation">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
+        >Home</a
+      >
+      <a routerLink="/documentation" routerLinkActive="active">Documentation</a>
+      <a routerLink="/release-notes" routerLinkActive="active">Release notes</a>
+      <a routerLink="/download" routerLinkActive="active">Download</a>
+      <a class="github-link" href="https://github.com/dgooderi/Mergentra"
+        >GitHub <span aria-hidden="true">↗</span></a
+      >
+    </nav>
+  </div>
+</header>
+
+<main>
+  <router-outlet />
+</main>
+
+<footer class="site-footer">
+  <div class="shell footer-inner">
+    <a class="brand" routerLink="/">
+      <img src="assets/mergentra-256.svg" alt="" width="30" height="30" />
+      <span>Mergentra</span>
+    </a>
+    <p>Visualize GitHub and local Git history.</p>
+    <div class="footer-links">
+      <a routerLink="/documentation">Documentation</a>
+      <a routerLink="/release-notes">Release notes</a>
+      <a href="https://github.com/dgooderi/Mergentra/blob/main/LICENSE">License</a>
+    </div>
+  </div>
+</footer>
