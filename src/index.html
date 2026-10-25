@@ -638,6 +638,36 @@
               </div>
             </div>
           </div>
+          <section class="blame-panel" data-testid="blame-panel" aria-labelledby="blame-heading">
+            <h3 id="blame-heading">Blame</h3>
+            <form id="blame-form" class="blame-form">
+              <label for="blame-path">File path</label>
+              <input
+                id="blame-path"
+                data-testid="blame-path"
+                type="text"
+                spellcheck="false"
+                autocomplete="off"
+                placeholder="src/example.js"
+              />
+              <button type="submit" data-testid="blame-submit">Blame at selected commit</button>
+            </form>
+            <p
+              id="blame-status"
+              class="blame-status"
+              data-testid="blame-status"
+              role="status"
+              hidden
+            ></p>
+            <div id="blame-result" data-testid="blame-result" hidden>
+              <p id="blame-caption" class="blame-caption" data-testid="blame-caption"></p>
+              <div class="blame-scroll">
+                <table class="blame-table">
+                  <tbody id="blame-lines" data-testid="blame-lines"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
         </section>
       </section>
     </main>

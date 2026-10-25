@@ -7,6 +7,7 @@ const {
   loadFilePatch: defaultLoadFilePatch
 } = require('./commit-diff');
 const { loadFileHistory: loadFileHistoryFromGit } = require('./file-history');
+const { readBlame } = require('./blame');
 
 function isExistingDirectory(directory) {
   try {
@@ -189,6 +190,19 @@ function registerIpcHandlers({
       activeRepositoryPath,
       historyPath
     );
+  ipcMain.handle('repository:blame', async (_event, revision, filePath) => {
+    const repositoryPath = getActiveRepositoryPath();
+    if (!repositoryPath) {
+      return { status: 'error', message: 'Open a repository first.' };
+    }
+    try {
+      return await readBlame({ runGit }, getSettings().gitPath || 'git', repositoryPath, {
+        revision,
+        path: filePath
+      });
+    } catch (error) {
+      return { status: 'error', message: `Git could not blame this file: ${error.message}` };
+    }
   });
   ipcMain.handle('repository:recent', () => getSettings().recentRepositories);
   ipcMain.handle('repository:forget-recent', async (_event, repositoryPath) => {

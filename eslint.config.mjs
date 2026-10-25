@@ -9,6 +9,7 @@ export default [
   {
     files: [
       'src/main.js',
+      'src/blame.js',
       'src/commit-graph.js',
       'src/history-boundaries.js',
       'src/preload.js',

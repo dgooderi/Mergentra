@@ -4,6 +4,7 @@ import { inferBranchContext } from './branch-context.js';
 import { enhanceNoteField } from './note-field.js';
 import { explainHistoryBoundary } from './history-boundary-explanation.js';
 import { createDiffViewer } from './diff-viewer.js';
+import { createBlamePanel } from './blame-panel.js';
 
 export function createReviewDock({ updateTimeNavigation }) {
   const dock = document.getElementById('review-dock');
@@ -35,6 +36,12 @@ export function createReviewDock({ updateTimeNavigation }) {
     previewTestId: 'selected-commit-note-preview'
   });
 
+  const blamePanel = createBlamePanel({
+    getSelectedCommit: () => state.selectedCommit,
+    findCommit: (hash) => state.currentGraph?.commits.find((commit) => commit.hash === hash),
+    selectCommit: (commit) => selectCommit(commit)
+  });
+
   function selectCommit(commit, { boundaryType } = {}) {
     if (diffViewer.consumeComparisonTarget(commit)) {
       return;
@@ -60,6 +67,7 @@ export function createReviewDock({ updateTimeNavigation }) {
     if (!state.selectedCommit) {
       boundaryPanel.hidden = true;
       dock.hidden = true;
+      blamePanel.clear();
       renderSelectedBranchNotes();
       return;
     }
@@ -119,6 +127,7 @@ export function createReviewDock({ updateTimeNavigation }) {
     hide() {
       boundaryPanel.hidden = true;
       dock.hidden = true;
+      blamePanel.clear();
     },
     selectCommit,
     selectBoundary(type, hash) {
