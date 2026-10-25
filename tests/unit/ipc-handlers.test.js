@@ -199,6 +199,7 @@ describe('IPC handlers', () => {
       'external:open-release',
       'diagnostics:copy',
       'repository:open-in-explorer',
+      'repository:blame',
       'repository:recent',
       'repository:forget-recent',
       'repository:rename-recent',
@@ -298,5 +299,73 @@ describe('IPC handlers', () => {
     await expect(handlers.get('settings:save-git-path')(null, '  ')).resolves.toBe('');
     expect(dependencies.runGit).not.toHaveBeenCalled();
     expect(currentSettings.gitPath).toBe('');
+  });
+
+  describe('repository:blame', () => {
+    const commit = '1111111111111111111111111111111111111111';
+    const blameOutput = [
+      `${commit} 1 1 1`,
+      'author Ada Lovelace',
+      'author-time 1790000000',
+      'summary First draft',
+      'filename notes.txt',
+      '\talpha',
+      ''
+    ].join('\n');
+
+    function gitStub(overrides = {}) {
+      return vi.fn(async (_gitPath, args) => {
+        const command = ['rev-parse', 'ls-tree', 'cat-file', 'blame'].find((name) =>
+          args.includes(name)
+        );
+        const handler = overrides[command];
+        if (handler) {
+          return handler();
+        }
+        return {
+          'rev-parse': { stdout: `${commit}\n` },
+          'ls-tree': {
+            stdout: `100644 blob 3333333333333333333333333333333333333333       6\tnotes.txt\0`
+          },
+          'cat-file': { stdout: 'alpha\n' },
+          blame: { stdout: blameOutput }
+        }[command];
+      });
+    }
+
+    it('returns line attribution for a hash and path in the active repository', async () => {
+      const { handlers } = makeIpcDependencies({ runGit: gitStub() });
+
+      await expect(handlers.get('repository:blame')(null, commit, 'notes.txt')).resolves.toEqual({
+        status: 'ok',
+        incompleteHistory: false,
+        lines: [
+          {
+            line: 1,
+            commit,
+            author: 'Ada Lovelace',
+            date: '2026-09-21T14:13:20.000Z',
+            summary: 'First draft',
+            text: 'alpha',
+            boundary: false
+          }
+        ]
+      });
+    });
+
+    it('reports a Git failure as an error payload instead of rejecting', async () => {
+      const { handlers } = makeIpcDependencies({
+        runGit: gitStub({
+          blame: () => {
+            throw new Error('fatal: unable to read tree');
+          }
+        })
+      });
+
+      await expect(handlers.get('repository:blame')(null, commit, 'notes.txt')).resolves.toEqual({
+        status: 'error',
+        message: 'Git could not blame this file: fatal: unable to read tree'
+      });
+    });
   });
 });

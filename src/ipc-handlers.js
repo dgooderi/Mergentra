@@ -2,6 +2,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 const { forgetRepository, renameRepository } = require('./recent-repositories');
 const { isAutoCheckEnabled } = require('./update-policy');
+const { readBlame } = require('./blame');
 
 function isExistingDirectory(directory) {
   try {
@@ -141,6 +142,20 @@ function registerIpcHandlers({
     const failure = await shell.openPath(activeRepositoryPath);
     if (failure) {
       throw new Error(failure);
+    }
+  });
+  ipcMain.handle('repository:blame', async (_event, revision, filePath) => {
+    const repositoryPath = getActiveRepositoryPath();
+    if (!repositoryPath) {
+      return { status: 'error', message: 'Open a repository first.' };
+    }
+    try {
+      return await readBlame({ runGit }, getSettings().gitPath || 'git', repositoryPath, {
+        revision,
+        path: filePath
+      });
+    } catch (error) {
+      return { status: 'error', message: `Git could not blame this file: ${error.message}` };
     }
   });
   ipcMain.handle('repository:recent', () => getSettings().recentRepositories);
