@@ -19,6 +19,7 @@ export default [
       'src/main-window.js',
       'src/repository-output.js',
       'src/settings-store.js',
+      'src/fetch-guard-log.js',
       'src/recent-repositories.js',
       'src/main-line.js',
       'src/clone.js',

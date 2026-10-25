@@ -108,6 +108,16 @@
           <p id="update-status" role="status" aria-live="polite"></p>
           <a id="update-release-link" hidden target="_blank" rel="noopener noreferrer"></a>
         </div>
+        <details id="fetch-guard-log" class="license-summary">
+          <summary>Fetch guard log</summary>
+          <p>
+            Stored only on this computer and never sent anywhere. It lists the names of risky
+            settings, never their values.
+          </p>
+          <p id="fetch-guard-log-status" role="status" aria-live="polite"></p>
+          <ul id="fetch-guard-log-entries"></ul>
+          <button id="clear-fetch-guard-log" class="secondary" type="button">Clear log</button>
+        </details>
         <details class="license-summary">
           <summary id="license-summary">License agreement</summary>
           <pre id="license-settings-text" class="license-text"></pre>
@@ -393,6 +403,7 @@
             <p id="time-range-status" role="alert" aria-live="polite"></p>
           </div>
           <p id="fetch-status" role="status" aria-live="polite"></p>
+          <p id="fetch-audit-status" role="alert"></p>
           <section
             id="fetch-diagnostics-panel"
             class="fetch-diagnostics-panel"

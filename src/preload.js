@@ -32,5 +32,7 @@ contextBridge.exposeInMainWorld('mergentra', {
   getDefaultDirectory: () => ipcRenderer.invoke('settings:get-default-directory'),
   saveDefaultDirectory: (directory) =>
     ipcRenderer.invoke('settings:save-default-directory', directory),
-  chooseDefaultDirectory: () => ipcRenderer.invoke('settings:choose-default-directory')
+  chooseDefaultDirectory: () => ipcRenderer.invoke('settings:choose-default-directory'),
+  getFetchGuardLog: () => ipcRenderer.invoke('fetch-guard-log:list'),
+  clearFetchGuardLog: () => ipcRenderer.invoke('fetch-guard-log:clear')
 });
