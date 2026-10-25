@@ -9,6 +9,7 @@ const {
 } = require('./repository-output');
 const { computeDivergenceMarkers } = require('./divergence-markers');
 const { orderReferences } = require('./reference-order');
+const { inspectHistoryBoundaryFacts } = require('./history-boundaries');
 
 const LOG_LIMITS = { timeout: 300_000, maxBuffer: 400 * 1024 * 1024 };
 
@@ -161,6 +162,7 @@ async function loadCommitGraph(git, gitPath, repositoryPath, branchName, current
     repositoryPath,
     commits
   );
+  const historyBoundaryFacts = await inspectHistoryBoundaryFacts(git, gitPath, repositoryPath);
 
   assignLanes(commits, commitsByHash, orderedReferences);
   labelCommits(commits, commitsByHash, orderedReferences, tagsResult.stdout);
@@ -179,6 +181,7 @@ async function loadCommitGraph(git, gitPath, repositoryPath, branchName, current
     worktrees,
     shallowBoundaries,
     missingObjectBoundaries,
+    historyBoundaryFacts,
     headHash,
     headDetached: Boolean(headHash && !branchName),
     divergenceMarkers: computeDivergenceMarkers(commits, orderedReferences),

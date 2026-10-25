@@ -177,6 +177,23 @@ button:disabled {
   align-items: start;
 }
 
+.boundary-explanation-panel {
+  grid-column: 1 / -1;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-background);
+}
+
+.boundary-explanation-panel h3 {
+  margin: 0 0 6px;
+  color: var(--heading);
+}
+
+.boundary-explanation-panel p {
+  margin: 6px 0 0;
+}
+
 .review-note {
   min-width: 0;
 }

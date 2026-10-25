@@ -361,6 +361,7 @@ const graphActions = {
   getNotes: () => state.notes,
   getSelectedCommit: () => state.selectedCommit,
   selectCommit: (commit) => selectCommit(commit),
+  selectBoundary: (type, hash) => reviewDock.selectBoundary(type, hash),
   focusOnCommit,
   showBranchPath: (referenceName, ancestors) => {
     const path = branchPathToMain(state.currentGraph, referenceName);
@@ -431,7 +432,7 @@ function renderGraphContents(graph) {
   drawCommits(ctx, graphActions);
   drawCheckedOutMarker(ctx);
   drawDetachedHeadMarker(ctx);
-  drawHistoryBoundaries(ctx);
+  drawHistoryBoundaries(ctx, graphActions);
   drawDivergenceMarkers(ctx);
   drawCutMarkers(ctx);
 

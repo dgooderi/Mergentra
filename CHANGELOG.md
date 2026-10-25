@@ -16,6 +16,7 @@ All notable changes to Mergentra are recorded here. The format follows
   and can be cleared.
 - Commit search above the graph, matching message, author, hash prefix, author date, and
   reference or tag names, with selection that reveals commits hidden by filters.
+- Explanations and manual next steps for shallow and missing-object history boundaries (#93).
 
 ## [1.0.0] - 2026-10-18
 
