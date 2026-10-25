@@ -22,6 +22,8 @@ contextBridge.exposeInMainWorld('mergentra', {
   forgetRecentRepository: (repositoryPath) =>
     ipcRenderer.invoke('repository:forget-recent', repositoryPath),
   getGitPath: () => ipcRenderer.invoke('settings:get-git-path'),
+  listStashes: () => ipcRenderer.invoke('stashes:list'),
+  inspectStash: (stashIndex) => ipcRenderer.invoke('stashes:inspect', stashIndex),
   saveGitPath: (gitPath) => ipcRenderer.invoke('settings:save-git-path', gitPath),
   getLicense: () => ipcRenderer.invoke('license:get'),
   acceptLicense: () => ipcRenderer.invoke('license:accept'),

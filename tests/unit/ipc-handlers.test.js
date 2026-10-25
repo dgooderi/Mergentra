@@ -202,6 +202,8 @@ describe('IPC handlers', () => {
       'repository:recent',
       'repository:forget-recent',
       'repository:rename-recent',
+      'stashes:list',
+      'stashes:inspect',
       'settings:get-git-path',
       'settings:save-git-path',
       'settings:get-default-directory',
@@ -298,5 +300,81 @@ describe('IPC handlers', () => {
     await expect(handlers.get('settings:save-git-path')(null, '  ')).resolves.toBe('');
     expect(dependencies.runGit).not.toHaveBeenCalled();
     expect(currentSettings.gitPath).toBe('');
+  });
+
+  describe('Stashes', () => {
+    const stashHash = 'a'.repeat(40);
+    const baseHash = 'b'.repeat(40);
+    function stashGit(overrides = {}) {
+      return vi.fn(async (_gitPath, args) => {
+        const command = args[2];
+        if (overrides[command]) {
+          return overrides[command](args);
+        }
+        if (command === 'for-each-ref') {
+          return { stdout: `${stashHash}\n` };
+        }
+        return {
+          stdout: `${stashHash}\0${baseHash}\x002026-10-20T10:00:00+10:00\x00WIP on main: 1234567 Base\x1e`
+        };
+      });
+    }
+
+    it('lists the active repository stashes using the configured Git executable', async () => {
+      const runGit = stashGit();
+      const { handlers, currentSettings } = makeIpcDependencies({ runGit });
+      currentSettings.gitPath = 'C:\\Git\\git.exe';
+
+      const result = await handlers.get('stashes:list')();
+
+      expect(result).toEqual({
+        stashes: [
+          {
+            index: 0,
+            ref: 'stash@{0}',
+            hash: stashHash,
+            baseHash,
+            date: '2026-10-20T10:00:00+10:00',
+            branch: 'main',
+            message: '1234567 Base'
+          }
+        ]
+      });
+      expect(runGit.mock.calls[0][0]).toBe('C:\\Git\\git.exe');
+      expect(runGit.mock.calls[0][1].slice(0, 2)).toEqual(['-C', 'C:\\repo']);
+    });
+
+    it('reports unreadable stashes as an error with no entries', async () => {
+      const runGit = stashGit({
+        log: () => Promise.reject(new Error('bad object'))
+      });
+      const { handlers } = makeIpcDependencies({ runGit });
+
+      await expect(handlers.get('stashes:list')()).resolves.toEqual({
+        stashes: [],
+        error: 'Stashes are unavailable: Git could not read a saved stash object (missing objects).'
+      });
+    });
+
+    it('inspects a stash by index and rejects anything that is not a list index', async () => {
+      const runGit = stashGit({
+        'rev-parse': () => ({ stdout: `${stashHash}\n` }),
+        'rev-list': () => ({ stdout: `${stashHash} ${baseHash} ${'d'.repeat(40)} ${'c'.repeat(40)}\n` }),
+        'diff-tree': () => ({ stdout: 'M\0src/app.js\0' }),
+        'ls-tree': () => ({ stdout: 'notes.txt\0' })
+      });
+      const { handlers } = makeIpcDependencies({ runGit });
+
+      await expect(handlers.get('stashes:inspect')(null, 0)).resolves.toEqual({
+        available: true,
+        changes: [
+          { status: 'M', path: 'src/app.js' },
+          { status: 'A', path: 'notes.txt' }
+        ]
+      });
+      await expect(handlers.get('stashes:inspect')(null, '0')).rejects.toThrow(
+        'Choose a stash from the list.'
+      );
+    });
   });
 });

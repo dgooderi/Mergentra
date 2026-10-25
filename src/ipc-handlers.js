@@ -2,6 +2,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 const { forgetRepository, renameRepository } = require('./recent-repositories');
 const { isAutoCheckEnabled } = require('./update-policy');
+const { listStashes, inspectStash } = require('./stashes');
 
 function isExistingDirectory(directory) {
   try {
@@ -166,6 +167,29 @@ function registerIpcHandlers({
     );
     saveSettings({ ...getSettings(), recentRepositories });
     return recentRepositories;
+  });
+  ipcMain.handle('stashes:list', async () => {
+    const repositoryPath = getActiveRepositoryPath();
+    if (!repositoryPath) {
+      throw new Error('Open a repository first.');
+    }
+    try {
+      const stashes = await listStashes(
+        { runGit },
+        getSettings().gitPath || 'git',
+        repositoryPath
+      );
+      return { stashes };
+    } catch (error) {
+      return { stashes: [], error: error.message };
+    }
+  });
+  ipcMain.handle('stashes:inspect', (_event, stashIndex) => {
+    const repositoryPath = getActiveRepositoryPath();
+    if (!repositoryPath) {
+      throw new Error('Open a repository first.');
+    }
+    return inspectStash({ runGit }, getSettings().gitPath || 'git', repositoryPath, stashIndex);
   });
   ipcMain.handle('settings:get-git-path', () => getSettings().gitPath);
   ipcMain.handle('settings:save-git-path', async (_event, gitPath) => {
