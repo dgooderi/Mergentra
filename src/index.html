@@ -451,6 +451,30 @@
                   <h3 id="stash-details-heading"></h3>
                   <p id="stash-details-status"></p>
                   <ul id="stash-changes"></ul>
+              <details id="reflog-panel" class="worktrees-panel reflog-panel">
+                <summary id="reflog-heading">Reflog</summary>
+                <p class="hint">
+                  Read-only record of where a reference pointed before. Git keeps it only on this
+                  computer and removes old entries over time.
+                </p>
+                <label class="reflog-reference">
+                  Reference
+                  <select id="reflog-reference"></select>
+                </label>
+                <p id="reflog-status" role="status" aria-live="polite"></p>
+                <ol id="reflog-list"></ol>
+                <section id="reflog-detail" aria-label="Selected reflog entry" hidden>
+                  <dl>
+                    <dt>Selector</dt>
+                    <dd id="reflog-detail-selector"></dd>
+                    <dt>Commit</dt>
+                    <dd id="reflog-detail-hash"></dd>
+                    <dt>Action</dt>
+                    <dd id="reflog-detail-message"></dd>
+                    <dt>When</dt>
+                    <dd id="reflog-detail-time"></dd>
+                  </dl>
+                  <p id="reflog-detail-note"></p>
                 </section>
               </details>
             </div>

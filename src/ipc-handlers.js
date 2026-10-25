@@ -27,6 +27,7 @@ function registerIpcHandlers({
   window,
   openAndRememberRepository,
   fetchRemoteReferences,
+  readReflog,
   cloneRepository,
   cancelClone,
   getSettings,
@@ -181,6 +182,7 @@ function registerIpcHandlers({
     if (typeof historyPath !== 'string') {
       throw new Error('Enter a path inside the repository.');
     }
+  ipcMain.handle('reflog:read', async (_event, ref) => {
     const activeRepositoryPath = getActiveRepositoryPath();
     if (!activeRepositoryPath) {
       throw new Error('Open a repository first.');
@@ -204,6 +206,7 @@ function registerIpcHandlers({
     } catch (error) {
       return { status: 'error', message: `Git could not blame this file: ${error.message}` };
     }
+    return readReflog(activeRepositoryPath, ref);
   });
   ipcMain.handle('repository:recent', () => getSettings().recentRepositories);
   ipcMain.handle('repository:forget-recent', async (_event, repositoryPath) => {

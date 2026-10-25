@@ -22,6 +22,10 @@ All notable changes to Mergentra are recorded here. The format follows
   changed it, following renames, with notes for missing paths and shallow history.
 - Read-only blame view in the Review dock: enter a file path to see which commit and author last changed each line at the selected commit, and select an attributed commit to jump to it in the graph.
 - A read-only Stashes panel listing each stash with its message, originating branch, date, and base commit. Selecting a stash shows its changed paths; unreadable or missing stash objects are reported clearly.
+- Read-only Reflog panel listing the entries of `HEAD` or a local branch with their
+  action, time and commit, including commits no longer reachable from any reference.
+  Entries can be shown in the graph when the commit is in it, and entries for
+  unreachable, expired or missing commits are explained.
 
 ## [1.0.0] - 2026-10-18
 

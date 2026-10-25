@@ -203,6 +203,7 @@ describe('IPC handlers', () => {
       'repository:open-in-explorer',
       'repository:file-history',
       'repository:blame',
+      'reflog:read',
       'repository:recent',
       'repository:forget-recent',
       'repository:rename-recent',
@@ -558,6 +559,24 @@ describe('IPC handlers', () => {
       await expect(handlers.get('stashes:inspect')(null, '0')).rejects.toThrow(
         'Choose a stash from the list.'
       );
+  describe('reflog:read', () => {
+    it('reads the reflog of the active repository for the requested reference', async () => {
+      const reflog = { ref: 'feature', entries: [], truncated: false };
+      const readReflog = vi.fn().mockResolvedValue(reflog);
+      const { handlers } = makeIpcDependencies({ readReflog });
+
+      await expect(handlers.get('reflog:read')(null, 'feature')).resolves.toEqual(reflog);
+      expect(readReflog).toHaveBeenCalledWith('C:\\repo', 'feature');
+    });
+
+    it('refuses to read without an open repository', async () => {
+      const readReflog = vi.fn();
+      const { handlers } = makeIpcDependencies({ readReflog, getActiveRepositoryPath: () => null });
+
+      await expect(handlers.get('reflog:read')(null, 'HEAD')).rejects.toThrow(
+        'Open a repository first.'
+      );
+      expect(readReflog).not.toHaveBeenCalled();
     });
   });
 });

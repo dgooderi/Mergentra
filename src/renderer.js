@@ -46,10 +46,13 @@ import { saveViewState } from './renderer/view-state.js';
 import { localDateString } from './renderer/time-range.js';
 import { createFileHistoryPanel } from './renderer/file-history-ui.js';
 import { createStashPanel } from './renderer/stashes-panel.js';
+import { createReflogPanel } from './renderer/reflog-panel.js';
 const reviewDock = createReviewDock({ updateTimeNavigation });
 const stashPanel = createStashPanel();
 const selectCommit = reviewDock.selectCommit;
 const branchHealthPanel = createBranchHealthPanel({ revealCommit });
+const reflogPanel = createReflogPanel({ selectCommit });
+reflogPanel.init();
 const picker = document.getElementById('repository-picker');
 const repositoryView = document.getElementById('repository-view');
 function focusOnCommit(commit, position) {
@@ -207,6 +210,7 @@ function renderGraph(graph) {
   reviewDock.hide();
   renderWorktrees(graph.worktrees);
   void stashPanel.refresh();
+  reflogPanel.reset(state.currentGraph);
   referencePicker.render(state.currentGraph.references);
   renderFilteredGraph();
 }
@@ -232,6 +236,7 @@ function refreshRepositoryGraph(repository) {
   state.visibleReferencesBeforeTarget = null;
   renderWorktrees(state.currentGraph.worktrees);
   void stashPanel.refresh();
+  reflogPanel.reset(state.currentGraph);
   referencePicker.render(state.currentGraph.references);
   renderFilteredGraph();
 }

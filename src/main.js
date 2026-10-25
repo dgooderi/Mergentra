@@ -16,6 +16,7 @@ const licenseRules = require('./license');
 const { detectInstallChannel } = require('./update-policy');
 const { rememberRepository } = require('./recent-repositories');
 const { validateCloneUrl, checkDestination, runClone } = require('./clone');
+const { readReflog } = require('./reflog');
 const { runGit, runGitWithInput } = createGitRunner();
 // Created once the app is ready, because the settings folder is only known then.
 let state;
@@ -392,6 +393,13 @@ app.whenReady().then(() => {
     window,
     openAndRememberRepository,
     fetchRemoteReferences,
+    readReflog: (repositoryPath, ref) =>
+      readReflog(
+        { runGit, runGitWithInput },
+        state.getSettings().gitPath || 'git',
+        repositoryPath,
+        ref
+      ),
     cloneRepository,
     cancelClone,
     getSettings: state.getSettings,

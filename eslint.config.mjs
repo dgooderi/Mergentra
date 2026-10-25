@@ -22,6 +22,7 @@ export default [
       'src/stashes.js',
       'src/main-window.js',
       'src/repository-output.js',
+      'src/reflog.js',
       'src/settings-store.js',
       'src/fetch-guard-log.js',
       'src/recent-repositories.js',

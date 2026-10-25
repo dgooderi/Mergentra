@@ -16,6 +16,7 @@ contextBridge.exposeInMainWorld('mergentra', {
   fetchRemoteReferences: () => ipcRenderer.invoke('repository:fetch'),
   loadChangedFiles: (request) => ipcRenderer.invoke('diff:files', request),
   loadFilePatch: (request) => ipcRenderer.invoke('diff:patch', request),
+  readReflog: (ref) => ipcRenderer.invoke('reflog:read', ref),
   copyDiagnostics: (diagnostics) => ipcRenderer.invoke('diagnostics:copy', diagnostics),
   openInExplorer: () => ipcRenderer.invoke('repository:open-in-explorer'),
   getFileHistory: (historyPath) => ipcRenderer.invoke('repository:file-history', historyPath),
