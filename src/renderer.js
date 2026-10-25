@@ -45,7 +45,9 @@ import { createCommitSearch } from './renderer/commit-search-ui.js';
 import { saveViewState } from './renderer/view-state.js';
 import { localDateString } from './renderer/time-range.js';
 import { createFileHistoryPanel } from './renderer/file-history-ui.js';
+import { createStashPanel } from './renderer/stashes-panel.js';
 const reviewDock = createReviewDock({ updateTimeNavigation });
+const stashPanel = createStashPanel();
 const selectCommit = reviewDock.selectCommit;
 const branchHealthPanel = createBranchHealthPanel({ revealCommit });
 const picker = document.getElementById('repository-picker');
@@ -204,6 +206,7 @@ function renderGraph(graph) {
   document.getElementById('time-range-status').textContent = '';
   reviewDock.hide();
   renderWorktrees(graph.worktrees);
+  void stashPanel.refresh();
   referencePicker.render(state.currentGraph.references);
   renderFilteredGraph();
 }
@@ -228,6 +231,7 @@ function refreshRepositoryGraph(repository) {
     null;
   state.visibleReferencesBeforeTarget = null;
   renderWorktrees(state.currentGraph.worktrees);
+  void stashPanel.refresh();
   referencePicker.render(state.currentGraph.references);
   renderFilteredGraph();
 }

@@ -30,6 +30,9 @@ A named reference to a commit, commonly used to mark a release. Unlike a branch,
 **Worktree**:
 A working directory linked to a repository's shared Git history. A repository can have multiple worktrees checked out at different branches or commits.
 
+**Stash**:
+Saved work-in-progress changes kept by Git outside any branch's history. A stash records the commit it was based on; it is not a branch or a commit in the commit graph.
+
 **Shallow clone**:
 A clone whose recorded history intentionally stops before the full ancestry of its commits.
 

@@ -21,6 +21,7 @@ All notable changes to Mergentra are recorded here. The format follows
 - File history: enter a file or folder path to highlight and list the commits that
   changed it, following renames, with notes for missing paths and shallow history.
 - Read-only blame view in the Review dock: enter a file path to see which commit and author last changed each line at the selected commit, and select an attributed commit to jump to it in the graph.
+- A read-only Stashes panel listing each stash with its message, originating branch, date, and base commit. Selecting a stash shows its changed paths; unreadable or missing stash objects are reported clearly.
 
 ## [1.0.0] - 2026-10-18
 

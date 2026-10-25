@@ -19,6 +19,7 @@ export default [
       'src/divergence-markers.js',
       'src/ipc-handlers.js',
       'src/commit-diff.js',
+      'src/stashes.js',
       'src/main-window.js',
       'src/repository-output.js',
       'src/settings-store.js',

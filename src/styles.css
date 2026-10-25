@@ -831,6 +831,62 @@ button:focus-visible {
   max-width: 520px;
 }
 
+#stash-list {
+  display: grid;
+  gap: 8px;
+  overflow-y: auto;
+  max-height: 240px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+#stash-list button {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+#stash-list button[aria-pressed='true'] {
+  border-color: var(--text);
+}
+
+#stash-list small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.stash-details h3 {
+  margin: 8px 0 4px;
+  font-size: 13px;
+}
+
+.stash-details p {
+  margin: 4px 0;
+  font-size: 12px;
+}
+
+#stash-changes {
+  overflow-y: auto;
+  max-height: 200px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: Consolas, monospace;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
 .worktrees-panel .hint {
   margin: 8px 0;
   color: var(--muted);
