@@ -199,6 +199,7 @@ describe('IPC handlers', () => {
       'external:open-release',
       'diagnostics:copy',
       'repository:open-in-explorer',
+      'repository:file-history',
       'repository:recent',
       'repository:forget-recent',
       'repository:rename-recent',
@@ -298,5 +299,42 @@ describe('IPC handlers', () => {
     await expect(handlers.get('settings:save-git-path')(null, '  ')).resolves.toBe('');
     expect(dependencies.runGit).not.toHaveBeenCalled();
     expect(currentSettings.gitPath).toBe('');
+  });
+
+  describe('File history', () => {
+    it('answers repository:file-history with the history of the path in the open repository', async () => {
+      const history = { path: 'src/a.js', hashes: ['abc'], renames: [], shallow: false };
+      const loadFileHistory = vi.fn().mockResolvedValue(history);
+      const { handlers, dependencies } = makeIpcDependencies({ loadFileHistory });
+
+      const payload = await handlers.get('repository:file-history')(null, 'src/a.js');
+
+      expect(payload).toEqual(history);
+      expect(loadFileHistory).toHaveBeenCalledWith(
+        { runGit: dependencies.runGit },
+        'git',
+        'C:\\repo',
+        'src/a.js'
+      );
+    });
+
+    it('rejects a path that is not text', async () => {
+      const { handlers } = makeIpcDependencies({ loadFileHistory: vi.fn() });
+
+      await expect(handlers.get('repository:file-history')(null, 42)).rejects.toThrow(
+        'Enter a path inside the repository.'
+      );
+    });
+
+    it('requires an open repository', async () => {
+      const { handlers } = makeIpcDependencies({
+        loadFileHistory: vi.fn(),
+        getActiveRepositoryPath: () => null
+      });
+
+      await expect(handlers.get('repository:file-history')(null, 'a.js')).rejects.toThrow(
+        'Open a repository first.'
+      );
+    });
   });
 });

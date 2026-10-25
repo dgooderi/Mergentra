@@ -2,6 +2,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 const { forgetRepository, renameRepository } = require('./recent-repositories');
 const { isAutoCheckEnabled } = require('./update-policy');
+const { loadFileHistory: loadFileHistoryFromGit } = require('./file-history');
 
 function isExistingDirectory(directory) {
   try {
@@ -29,7 +30,8 @@ function registerIpcHandlers({
   installChannel = 'installer',
   license,
   checkForUpdates,
-  directoryExists = isExistingDirectory
+  directoryExists = isExistingDirectory,
+  loadFileHistory = loadFileHistoryFromGit
 }) {
   // The last folder used wins; the default directory only applies when there is none.
   function browseStartDirectory() {
@@ -142,6 +144,21 @@ function registerIpcHandlers({
     if (failure) {
       throw new Error(failure);
     }
+  });
+  ipcMain.handle('repository:file-history', async (_event, historyPath) => {
+    if (typeof historyPath !== 'string') {
+      throw new Error('Enter a path inside the repository.');
+    }
+    const activeRepositoryPath = getActiveRepositoryPath();
+    if (!activeRepositoryPath) {
+      throw new Error('Open a repository first.');
+    }
+    return loadFileHistory(
+      { runGit },
+      getSettings().gitPath || 'git',
+      activeRepositoryPath,
+      historyPath
+    );
   });
   ipcMain.handle('repository:recent', () => getSettings().recentRepositories);
   ipcMain.handle('repository:forget-recent', async (_event, repositoryPath) => {
