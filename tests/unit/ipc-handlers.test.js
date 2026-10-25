@@ -183,6 +183,8 @@ describe('IPC handlers', () => {
     const { handlers } = makeIpcDependencies();
 
     expect([...handlers.keys()]).toEqual([
+      'diff:files',
+      'diff:patch',
       'repository:choose',
       'repository:open',
       'repository:fetch',
@@ -298,5 +300,47 @@ describe('IPC handlers', () => {
     await expect(handlers.get('settings:save-git-path')(null, '  ')).resolves.toBe('');
     expect(dependencies.runGit).not.toHaveBeenCalled();
     expect(currentSettings.gitPath).toBe('');
+  });
+
+  describe('Commit diff', () => {
+    it('returns the changed files of the selected commit from the active repository', async () => {
+      const diff = { from: 'p', to: 'c', files: [] };
+      const loadChangedFiles = vi.fn().mockResolvedValue(diff);
+      const { handlers, dependencies, currentSettings } = makeIpcDependencies({ loadChangedFiles });
+      currentSettings.gitPath = 'C:\\Git\\git.exe';
+
+      await expect(
+        handlers.get('diff:files')(null, { commit: 'abc1234', compareWith: 'def5678', extra: 1 })
+      ).resolves.toEqual(diff);
+      expect(loadChangedFiles).toHaveBeenCalledWith(
+        dependencies.runGit,
+        'C:\\Git\\git.exe',
+        'C:\\repo',
+        { commit: 'abc1234', compareWith: 'def5678' }
+      );
+    });
+
+    it('returns the patch of one path and refuses requests without a repository', async () => {
+      const patch = { binary: false, truncated: false, patch: '@@' };
+      const loadFilePatch = vi.fn().mockResolvedValue(patch);
+      const { handlers } = makeIpcDependencies({ loadFilePatch });
+
+      await expect(
+        handlers.get('diff:patch')(null, { commit: 'abc1234', path: 'src/a.js' })
+      ).resolves.toEqual(patch);
+      expect(loadFilePatch).toHaveBeenCalledWith(expect.any(Function), 'git', 'C:\\repo', {
+        commit: 'abc1234',
+        compareWith: undefined,
+        path: 'src/a.js'
+      });
+
+      const closed = makeIpcDependencies({ loadFilePatch, getActiveRepositoryPath: () => null });
+      await expect(
+        closed.handlers.get('diff:patch')(null, { commit: 'abc1234', path: 'a' })
+      ).rejects.toThrow('Open a repository first.');
+      await expect(handlers.get('diff:files')(null, 'abc1234')).rejects.toThrow(
+        'Choose a commit from the graph.'
+      );
+    });
   });
 });

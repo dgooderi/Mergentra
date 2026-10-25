@@ -2,6 +2,10 @@ const path = require('node:path');
 const fs = require('node:fs');
 const { forgetRepository, renameRepository } = require('./recent-repositories');
 const { isAutoCheckEnabled } = require('./update-policy');
+const {
+  loadChangedFiles: defaultLoadChangedFiles,
+  loadFilePatch: defaultLoadFilePatch
+} = require('./commit-diff');
 
 function isExistingDirectory(directory) {
   try {
@@ -29,8 +33,32 @@ function registerIpcHandlers({
   installChannel = 'installer',
   license,
   checkForUpdates,
+  loadChangedFiles = defaultLoadChangedFiles,
+  loadFilePatch = defaultLoadFilePatch,
   directoryExists = isExistingDirectory
 }) {
+  function diffRequest(request, extraKeys = []) {
+    if (typeof request !== 'object' || request === null) {
+      throw new Error('Choose a commit from the graph.');
+    }
+    const repositoryPath = getActiveRepositoryPath();
+    if (!repositoryPath) {
+      throw new Error('Open a repository first.');
+    }
+    const picked = { commit: request.commit, compareWith: request.compareWith };
+    for (const key of extraKeys) {
+      picked[key] = request[key];
+    }
+    return [runGit, getSettings().gitPath || 'git', repositoryPath, picked];
+  }
+
+  ipcMain.handle('diff:files', async (_event, request) =>
+    loadChangedFiles(...diffRequest(request))
+  );
+  ipcMain.handle('diff:patch', async (_event, request) =>
+    loadFilePatch(...diffRequest(request, ['path']))
+  );
+
   // The last folder used wins; the default directory only applies when there is none.
   function browseStartDirectory() {
     const { lastBrowsedDirectory, defaultDirectory } = getSettings();
