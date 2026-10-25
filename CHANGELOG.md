@@ -10,6 +10,7 @@ All notable changes to Mergentra are recorded here. The format follows
 
 - The compacted-commit popover summarizes the hidden run: date span, ordinary and merge
   commit counts, and distinct authors, computed from the commits currently shown.
+- Read-only Branch health report comparing each local branch with the target branch (or the main line): unique and behind commit counts, last commit date, and an inferred divergence point that selects the commit in the graph. Shallow or partial history is flagged as uncertain, and branches with no meaningful comparison are explained (#91).
 
 ## [1.0.0] - 2026-10-18
 

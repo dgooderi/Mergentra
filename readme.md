@@ -102,6 +102,8 @@ The Worktrees list identifies the current and linked working directories; local 
 
 Merge commits use a distinct diamond with arrows from each parent, and tags are grouped beside their target commit. For local branches that diverge from `main` (or the first local branch when `main` is absent), the graph marks the first unique branch commit and labels it as an inferred divergence; Git does not record branch-creation events.
 
+The Branch health panel summarises every local branch against the selected target branch (or `main`): commits unique to the branch, commits it lacks, its last commit date, and the inferred divergence point, which selects that commit in the graph. When shallow or missing-object history is reachable, the row is marked uncertain rather than definitive; the target itself, branches already contained in the target, identical branches, and branches with no shared history are explained instead of compared. It only reads the loaded graph and changes no references.
+
 Select a commit in the graph with the mouse, or focus it and press Enter or Space, to inspect its message, author, author date, full hash, parents, and references in the Review dock below the graph.
 
 Use the checkboxes beside references to filter local branches and remote-tracking references independently. The graph retains each commit reachable from at least one enabled reference, including shared ancestors; disabling all references shows an empty graph without changing repository data.
