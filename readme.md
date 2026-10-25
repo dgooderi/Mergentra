@@ -104,6 +104,8 @@ Merge commits use a distinct diamond with arrows from each parent, and tags are 
 
 Select a commit in the graph with the mouse, or focus it and press Enter or Space, to inspect its message, author, author date, full hash, parents, and references in the Review dock below the graph.
 
+Open the Reflog panel to browse the reflog of `HEAD` or a chosen local branch (the 200 most recent entries): each entry shows its selector, action and message, time, and commit. Selecting an entry whose commit is in the graph selects that commit; otherwise the panel shows what is known and explains whether the commit is unreachable from every reference, or its object is no longer in the repository because the entry expired and Git removed it (or a partial clone never downloaded it). The reflog is read directly from the repository and never changed: Mergentra cannot reset references or restore commits.
+
 Use the checkboxes beside references to filter local branches and remote-tracking references independently. The graph retains each commit reachable from at least one enabled reference, including shared ancestors; disabling all references shows an empty graph without changing repository data.
 
 Use the time-range selector to choose a rolling preset, all history, or a custom local-date range. Day and week presets are elapsed durations; month and year presets roll back by calendar periods. Custom ranges include both selected local dates. Commits outside the selected window are clipped and history continuation is marked at range boundaries. Ordinary commits on a linear path between important commits are summarized by an endpoint-exclusive count.

@@ -4,6 +4,15 @@ All notable changes to Mergentra are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- Read-only Reflog panel listing the entries of `HEAD` or a local branch with their
+  action, time and commit, including commits no longer reachable from any reference.
+  Entries can be shown in the graph when the commit is in it, and entries for
+  unreachable, expired or missing commits are explained.
+
 ## [1.0.0] - 2026-10-18
 
 ### Added

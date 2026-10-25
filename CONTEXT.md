@@ -42,6 +42,10 @@ A state where `HEAD` points directly to a commit instead of naming a local branc
 **Unborn branch**:
 The named branch for an empty repository before its first commit, when the branch reference does not yet point to a commit.
 
+**Reflog**:
+A local record of where a reference, such as `HEAD` or a branch, pointed before each update. It lists commits that may no longer be reachable from any reference, and Git removes old entries over time, so it is not a complete history.
+_Avoid_: History (when the commit graph is meant)
+
 ## Implementation map
 
 The Electron main process owns Git execution, settings-file access, and IPC. `src/main.js` wires modules for the Git runner, settings store, Git-output parsing, reference ordering, divergence markers, IPC handlers, and window creation. The preload script remains the only bridge to the renderer; its channel names and payloads are part of the process boundary.
