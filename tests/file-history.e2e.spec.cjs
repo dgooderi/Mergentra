@@ -30,6 +30,7 @@ test.describe('file history', () => {
     window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
+    await window.locator('#tools-panel > summary').click();
     await expect(window.getByTestId('commit-node')).toHaveCount(1);
   });
 

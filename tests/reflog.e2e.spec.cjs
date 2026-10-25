@@ -38,6 +38,7 @@ test('the reflog panel browses entries read-only and explains unreachable and mi
     const window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
+    await window.locator('#tools-panel > summary').click();
 
     await window.locator('#reflog-panel > summary').click();
     const entry = (hash, selector) =>

@@ -346,6 +346,8 @@ describe('IPC handlers', () => {
     });
 
     await expect(handlers.get('fetch-guard-log:clear')()).rejects.toThrow('disk full');
+  });
+
   describe('Commit diff', () => {
     it('returns the changed files of the selected commit from the active repository', async () => {
       const diff = { from: 'p', to: 'c', files: [] };
@@ -384,6 +386,10 @@ describe('IPC handlers', () => {
       ).rejects.toThrow('Open a repository first.');
       await expect(handlers.get('diff:files')(null, 'abc1234')).rejects.toThrow(
         'Choose a commit from the graph.'
+      );
+    });
+  });
+
   describe('File history', () => {
     it('answers repository:file-history with the history of the path in the open repository', async () => {
       const history = { path: 'src/a.js', hashes: ['abc'], renames: [], shallow: false };
@@ -418,6 +424,9 @@ describe('IPC handlers', () => {
       await expect(handlers.get('repository:file-history')(null, 'a.js')).rejects.toThrow(
         'Open a repository first.'
       );
+    });
+  });
+
   describe('repository:blame', () => {
     const commit = '1111111111111111111111111111111111111111';
     const blameOutput = [
@@ -484,6 +493,8 @@ describe('IPC handlers', () => {
         message: 'Git could not blame this file: fatal: unable to read tree'
       });
     });
+  });
+
   describe('Stashes', () => {
     const stashHash = 'a'.repeat(40);
     const baseHash = 'b'.repeat(40);
@@ -559,6 +570,9 @@ describe('IPC handlers', () => {
       await expect(handlers.get('stashes:inspect')(null, '0')).rejects.toThrow(
         'Choose a stash from the list.'
       );
+    });
+  });
+
   describe('reflog:read', () => {
     it('reads the reflog of the active repository for the requested reference', async () => {
       const reflog = { ref: 'feature', entries: [], truncated: false };

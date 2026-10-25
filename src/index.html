@@ -419,82 +419,93 @@
         </div>
         <div class="graph-layout">
           <div class="graph-column">
-            <div class="graph-filters">
-              <details id="worktrees-panel" class="worktrees-panel" hidden>
-                <summary id="worktrees-heading">Worktrees</summary>
-                <p class="hint">
-                  This repository is checked out in several folders at once. Each folder (worktree)
-                  has its own branch.
-                </p>
-                <ul id="worktree-list"></ul>
-              </details>
-              <details id="branch-health-panel" class="worktrees-panel branch-health-panel" hidden>
-                <summary id="branch-health-heading" data-testid="branch-health-toggle">
-                  Branch health
-                </summary>
-                <p class="hint">
-                  Local branches compared with the target branch (or the main line when none is
-                  selected). Read-only: nothing in the repository is changed. Divergence points are
-                  inferred from history, because Git does not record when a branch was created.
-                </p>
-                <p id="branch-health-note" class="hint" data-testid="branch-health-note"></p>
-                <ul id="branch-health-list" data-testid="branch-health-list"></ul>
-              <details id="stashes-panel" class="worktrees-panel stashes-panel" hidden>
-                <summary id="stashes-heading">Stashes</summary>
-                <p class="hint">
-                  Stashes are saved work kept apart from branches and commits. Mergentra only shows
-                  them; it never applies, pops or drops a stash.
-                </p>
-                <p id="stashes-status" class="hint" role="status"></p>
-                <ul id="stash-list"></ul>
-                <section id="stash-details" class="stash-details" aria-live="polite" hidden>
-                  <h3 id="stash-details-heading"></h3>
-                  <p id="stash-details-status"></p>
-                  <ul id="stash-changes"></ul>
-              <details id="reflog-panel" class="worktrees-panel reflog-panel">
-                <summary id="reflog-heading">Reflog</summary>
-                <p class="hint">
-                  Read-only record of where a reference pointed before. Git keeps it only on this
-                  computer and removes old entries over time.
-                </p>
-                <label class="reflog-reference">
-                  Reference
-                  <select id="reflog-reference"></select>
-                </label>
-                <p id="reflog-status" role="status" aria-live="polite"></p>
-                <ol id="reflog-list"></ol>
-                <section id="reflog-detail" aria-label="Selected reflog entry" hidden>
-                  <dl>
-                    <dt>Selector</dt>
-                    <dd id="reflog-detail-selector"></dd>
-                    <dt>Commit</dt>
-                    <dd id="reflog-detail-hash"></dd>
-                    <dt>Action</dt>
-                    <dd id="reflog-detail-message"></dd>
-                    <dt>When</dt>
-                    <dd id="reflog-detail-time"></dd>
-                  </dl>
-                  <p id="reflog-detail-note"></p>
-                </section>
-              </details>
-            </div>
-            <form id="file-history-form" class="file-history" data-testid="file-history-form">
-              <label for="file-history-path">File or folder history</label>
-              <div class="path-controls">
-                <input
-                  id="file-history-path"
-                  type="text"
-                  autocomplete="off"
-                  placeholder="src/app.js or src/lib"
-                />
-                <button class="secondary" type="submit">Show history</button>
-                <button id="file-history-clear" class="secondary" type="button" hidden>
-                  Clear
-                </button>
+            <details id="tools-panel" class="tools-panel" data-testid="tools-panel">
+              <summary id="tools-heading">Tools</summary>
+              <div class="graph-filters">
+                <details id="worktrees-panel" class="worktrees-panel" hidden>
+                  <summary id="worktrees-heading">Worktrees</summary>
+                  <p class="hint">
+                    This repository is checked out in several folders at once. Each folder
+                    (worktree) has its own branch.
+                  </p>
+                  <ul id="worktree-list"></ul>
+                </details>
+                <details
+                  id="branch-health-panel"
+                  class="worktrees-panel branch-health-panel"
+                  hidden
+                >
+                  <summary id="branch-health-heading" data-testid="branch-health-toggle">
+                    Branch health
+                  </summary>
+                  <p class="hint">
+                    Local branches compared with the target branch (or the main line when none is
+                    selected). Read-only: nothing in the repository is changed. Divergence points
+                    are inferred from history, because Git does not record when a branch was
+                    created.
+                  </p>
+                  <p id="branch-health-note" class="hint" data-testid="branch-health-note"></p>
+                  <ul id="branch-health-list" data-testid="branch-health-list"></ul>
+                </details>
+                <details id="stashes-panel" class="worktrees-panel stashes-panel" hidden>
+                  <summary id="stashes-heading">Stashes</summary>
+                  <p class="hint">
+                    Stashes are saved work kept apart from branches and commits. Mergentra only
+                    shows them; it never applies, pops or drops a stash.
+                  </p>
+                  <p id="stashes-status" class="hint" role="status"></p>
+                  <ul id="stash-list"></ul>
+                  <section id="stash-details" class="stash-details" aria-live="polite" hidden>
+                    <h3 id="stash-details-heading"></h3>
+                    <p id="stash-details-status"></p>
+                    <ul id="stash-changes"></ul>
+                  </section>
+                </details>
+                <details id="reflog-panel" class="worktrees-panel reflog-panel">
+                  <summary id="reflog-heading">Reflog</summary>
+                  <p class="hint">
+                    Read-only record of where a reference pointed before. Git keeps it only on this
+                    computer and removes old entries over time.
+                  </p>
+                  <label class="reflog-reference">
+                    Reference
+                    <select id="reflog-reference"></select>
+                  </label>
+                  <p id="reflog-status" role="status" aria-live="polite"></p>
+                  <ol id="reflog-list"></ol>
+                  <section id="reflog-detail" aria-label="Selected reflog entry" hidden>
+                    <dl>
+                      <dt>Selector</dt>
+                      <dd id="reflog-detail-selector"></dd>
+                      <dt>Commit</dt>
+                      <dd id="reflog-detail-hash"></dd>
+                      <dt>Action</dt>
+                      <dd id="reflog-detail-message"></dd>
+                      <dt>When</dt>
+                      <dd id="reflog-detail-time"></dd>
+                    </dl>
+                    <p id="reflog-detail-note"></p>
+                  </section>
+                </details>
               </div>
-              <p id="file-history-status" role="status" aria-live="polite"></p>
-              <ul id="file-history-list" data-testid="file-history-list" hidden></ul>
-            </form>
+              <form id="file-history-form" class="file-history" data-testid="file-history-form">
+                <label for="file-history-path">File or folder history</label>
+                <div class="path-controls">
+                  <input
+                    id="file-history-path"
+                    type="text"
+                    autocomplete="off"
+                    placeholder="src/app.js or src/lib"
+                  />
+                  <button class="secondary" type="submit">Show history</button>
+                  <button id="file-history-clear" class="secondary" type="button" hidden>
+                    Clear
+                  </button>
+                </div>
+                <p id="file-history-status" role="status" aria-live="polite"></p>
+                <ul id="file-history-list" data-testid="file-history-list" hidden></ul>
+              </form>
+            </details>
             <div class="graph-heading">
               <h2>Commit graph</h2>
               <div class="commit-search" role="search">

@@ -27,6 +27,7 @@ test('stashes are listed read-only, can be inspected, and are left untouched', a
     const window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
+    await window.locator('#tools-panel > summary').click();
 
     await expect(window.locator('#stashes-heading')).toHaveText('Stashes (2)');
     const entries = window.getByTestId('stash');

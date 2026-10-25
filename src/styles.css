@@ -781,6 +781,22 @@ button:focus-visible {
   display: none !important;
 }
 
+.tools-panel {
+  margin-bottom: 12px;
+}
+
+.tools-panel > summary {
+  width: max-content;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.tools-panel[open] > summary {
+  margin-bottom: 12px;
+}
+
 .graph-filters {
   display: flex;
   flex-wrap: wrap;
@@ -924,6 +940,8 @@ button:focus-visible {
 
 #branch-health-list li button {
   justify-self: start;
+}
+
 .reflog-panel[open] {
   max-width: 640px;
 }
@@ -1792,6 +1810,8 @@ main:not(:has(#repository-view:not([hidden]))) {
 }
 #commit-search-results button[aria-pressed='true'] {
   outline: 2px solid #38bdf8;
+}
+
 .diff-viewer {
   margin-top: 16px;
   padding-top: 12px;
@@ -1879,6 +1899,8 @@ main:not(:has(#repository-view:not([hidden]))) {
 .diff-line-hunk,
 .diff-line-header {
   color: var(--muted);
+}
+
 .file-history {
   margin-bottom: 12px;
 }

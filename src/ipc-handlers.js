@@ -40,7 +40,6 @@ function registerIpcHandlers({
   fetchGuardLog,
   loadChangedFiles = defaultLoadChangedFiles,
   loadFilePatch = defaultLoadFilePatch,
-  directoryExists = isExistingDirectory
   directoryExists = isExistingDirectory,
   loadFileHistory = loadFileHistoryFromGit
 }) {
@@ -182,7 +181,6 @@ function registerIpcHandlers({
     if (typeof historyPath !== 'string') {
       throw new Error('Enter a path inside the repository.');
     }
-  ipcMain.handle('reflog:read', async (_event, ref) => {
     const activeRepositoryPath = getActiveRepositoryPath();
     if (!activeRepositoryPath) {
       throw new Error('Open a repository first.');
@@ -193,6 +191,7 @@ function registerIpcHandlers({
       activeRepositoryPath,
       historyPath
     );
+  });
   ipcMain.handle('repository:blame', async (_event, revision, filePath) => {
     const repositoryPath = getActiveRepositoryPath();
     if (!repositoryPath) {
@@ -205,6 +204,12 @@ function registerIpcHandlers({
       });
     } catch (error) {
       return { status: 'error', message: `Git could not blame this file: ${error.message}` };
+    }
+  });
+  ipcMain.handle('reflog:read', async (_event, ref) => {
+    const activeRepositoryPath = getActiveRepositoryPath();
+    if (!activeRepositoryPath) {
+      throw new Error('Open a repository first.');
     }
     return readReflog(activeRepositoryPath, ref);
   });

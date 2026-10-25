@@ -26,6 +26,7 @@ test('the branch health report compares branches with main and links to the dive
     const window = await app.firstWindow();
     await window.getByLabel('Repository folder').fill(repositoryPath);
     await window.getByRole('button', { name: 'Open repository' }).click();
+    await window.locator('#tools-panel > summary').click();
 
     await window.getByTestId('branch-health-toggle').click();
     const rows = window.getByTestId('branch-health-row');
