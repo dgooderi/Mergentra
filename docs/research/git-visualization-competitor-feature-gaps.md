@@ -33,7 +33,7 @@ with search, filtering, and direct Git actions from the graph itself:
 > changes, or even with natural language using AI. Filter by author or team,
 > show or hide tags, branches, or stashes, and dim the noise of merge
 > commits to keep your focus sharp."
-— https://gitkraken.com/features/commit-graph
+> — https://gitkraken.com/features/commit-graph
 
 The GitKraken features index (https://gitkraken.com/features) additionally
 documents a "Merge Tool" ("View side by side changes, prevent merge
@@ -60,7 +60,7 @@ documented capabilities:
 >
 > "With history view you can find all commits where a particular file or
 > directory was changed."
-— https://git-fork.com/
+> — https://git-fork.com/
 
 Fork's own page also documents resolving merge conflicts ("Resolve your
 merge-conflicts easily using the merge-conflict helper and built-in
@@ -84,7 +84,7 @@ spans both working-copy and history-mutating operations:
 >
 > "In Tower, you can undo: saving a stash; deleting a stash; applying a
 > stash."
-— https://www.git-tower.com/features/undo
+> — https://www.git-tower.com/features/undo
 
 Tower's features overview (https://www.git-tower.com/features/easy)
 explicitly frames its value proposition as visualization paired with
@@ -107,7 +107,7 @@ https://docs.gitbutler.com/features/branch-management/virtual-branches:
 > independently and simultaneously... Each branch is represented as a
 > vertical lane, and you can drag changes between these lanes to commit
 > them independently."
-— https://docs.gitbutler.com/features/branch-management/virtual-branches
+> — https://docs.gitbutler.com/features/branch-management/virtual-branches
 
 GitButler's "Operations History" / timeline feature
 (https://docs.gitbutler.com/features/timeline) documents automatic
@@ -119,7 +119,7 @@ before-action snapshots and point-in-time restore:
 > can hit the 'revert' button on any of the entries and it will restore the
 > state of all of these things to what they looked like when they were
 > recorded, letting you go back in time."
-— https://docs.gitbutler.com/features/timeline
+> — https://docs.gitbutler.com/features/timeline
 
 GitButler's conflict-handling docs
 (https://docs.gitbutler.com/features/branch-management/merging) describe a
@@ -129,7 +129,7 @@ distinctive non-blocking rebase-with-conflicts model:
 > conflicted commit and make you fix it before moving on. Instead, it will
 > apply the changes that it can and store the commit as a 'conflicted'
 > commit and continue the rebasing process."
-— https://docs.gitbutler.com/features/branch-management/merging
+> — https://docs.gitbutler.com/features/branch-management/merging
 
 All three GitButler features above are fundamentally working-directory and
 history-mutation features (multiple simultaneous branches, snapshot/restore
@@ -163,13 +163,13 @@ local commit-graph view with:
 > "Code Review - Keep track of which files you have reviewed in the Commit
 > Details & Comparison Views... Code Reviews persist across Visual Studio
 > Code sessions."
-— https://github.com/mhutchie/vscode-git-graph
+> — https://github.com/mhutchie/vscode-git-graph
 
-Unlike the other four products, Git Graph's *viewing* features (hover
+Unlike the other four products, Git Graph's _viewing_ features (hover
 tooltips for ref membership, Find Widget text/date/author/hash search,
 commit-to-commit diff comparison, issue-number hyperlinking, persistent
 per-file code-review checklists) are read-compatible with Mergentra's
-scope — it is Git Graph's *action* features (the extensive right-click menu
+scope — it is Git Graph's _action_ features (the extensive right-click menu
 documented in the same README: "Create, Checkout, Delete, Fetch, Merge,
 Pull, Push, Rebase, Rename & Reset Branches... Stash... Cherry Pick, Drop,
 Merge & Revert Commits") that are write operations outside Mergentra's
@@ -177,27 +177,27 @@ read-only design.
 
 ## Features Mergentra does not have, documented by competitors
 
-| Feature | Description | Documented by | Fits read-only/single-repo scope? |
-|---|---|---|---|
-| Inline diff viewer (text + image) | View file changes for a commit or between two commits directly in the graph UI | Fork (https://git-fork.com/), Git Graph (https://github.com/mhutchie/vscode-git-graph) | **Fits.** Reading a diff from an already-committed object is read-only; would be a pure addition, not a scope change. |
-| Commit message/author/hash/date full-text search ("Find Widget") | Quickly locate commits by phrase across message, date, author, hash, branch/tag name | Git Graph (https://github.com/mhutchie/vscode-git-graph), GitKraken (https://gitkraken.com/features/commit-graph) | **Fits.** Pure read/query over history already loaded; no write involved. |
-| File-history view ("find all commits where a file changed") | Filter/trace the commit graph to only commits touching a given path | Fork (https://git-fork.com/) | **Fits.** Derivable from existing commit/parent/tree data without writing anything. |
-| Commit-to-commit comparison view | Pick any two commits and view the diff of everything that changed between them | Git Graph (https://github.com/mhutchie/vscode-git-graph) | **Fits.** Read-only comparison of two already-resolved trees. |
-| Issue-number hyperlinking in commit messages | Auto-convert issue references like `#123` in commit messages into clickable links to a configured tracker | Git Graph (https://github.com/mhutchie/vscode-git-graph) | **Fits.** Purely cosmetic/read-only text transform in the Review dock; no repo writes. |
-| Blame / annotate view | Show the last commit that touched each line of a file at a given revision | Fork (https://git-fork.com/) | **Fits.** `git blame` is read-only; would be a new view, not a scope change. |
-| AI-assisted natural-language commit search | Search commits using natural-language queries, not just literal text | GitKraken (https://gitkraken.com/features/commit-graph) | **Fits in principle** (read-only query) but requires either bundling/calling an AI model, a new dependency/scope question beyond "local Git only." |
-| Interactive rebase UI (reorder/edit/squash commits) | Visually reorder, edit, squash, or drop commits before replaying them | Fork (https://git-fork.com/), Tower (https://www.git-tower.com/features/undo), Git Graph (https://github.com/mhutchie/vscode-git-graph), GitKraken (https://gitkraken.com/features/commit-graph) | **Scope departure.** Rewrites history/refs — directly contradicts Mergentra's "never commits, checks out, merges, or edits" design. |
-| Stash visualization and management (apply/pop/drop/create-branch-from) | Show stashes inline with the commit list and act on them | Fork (https://git-fork.com/, "See your stashes right in the commit list"), Git Graph (https://github.com/mhutchie/vscode-git-graph) | **Partially fits as view-only.** Listing existing stashes alongside the graph is read-only; apply/pop/drop/create are writes and are a scope departure. |
-| Merge-conflict resolution UI | Guided, visual resolution of merge/rebase conflicts | Fork (https://git-fork.com/), Tower (https://www.git-tower.com/features/easy), GitButler (https://docs.gitbutler.com/features/branch-management/merging) | **Scope departure.** Only possible when actually running a merge/rebase, which Mergentra does not do. |
-| Cherry-pick / revert / reset from the graph | Right-click a commit to cherry-pick, revert, or reset to it | Git Graph (https://github.com/mhutchie/vscode-git-graph), GitKraken (https://gitkraken.com/features/commit-graph), Fork (https://git-fork.com/) | **Scope departure.** All three write new commits or move refs. |
-| Branch/tag/remote create-delete-rename-push-pull from the graph | Full branch and remote lifecycle management inline | Git Graph (https://github.com/mhutchie/vscode-git-graph), Fork (https://git-fork.com/) | **Scope departure** beyond Mergentra's single explicit Fetch action; create/delete/push/pull all write to the repo or remote. |
-| Reflog-based recovery of lost commits | Browse the reflog to restore commits no longer reachable from any ref | Fork (https://git-fork.com/, "Restore lost commits with Reflog") | **Partially fits as view-only.** Displaying reflog entries is read-only; the "restore" action itself is a write and a scope departure. |
-| Undo-anything action log for Git operations | A keystroke-undoable history of every mutating action (commit, branch, merge, rebase, stash, push) | Tower (https://www.git-tower.com/features/undo) | **Scope departure.** Presupposes the app performs those mutating actions in the first place; not applicable to a read-only viewer. |
-| Virtual/parallel branches (multiple branches applied to one working directory at once) | Stage and commit changes to several independent branches simultaneously from one working tree | GitButler (https://docs.gitbutler.com/features/branch-management/virtual-branches) | **Scope departure.** Fundamentally a working-directory/commit-creation feature; no read-only analog. |
-| Operations-history snapshot/restore (oplog) | Automatic before-action snapshots of branch + working-copy state, revertible per entry | GitButler (https://docs.gitbutler.com/features/timeline) | **Scope departure.** Exists only because GitButler performs mutating actions to snapshot around. |
-| Conflict-tolerant rebase (keep going, mark conflicted commits, resolve later) | Don't halt a rebase on first conflict; mark the commit conflicted and continue | GitButler (https://docs.gitbutler.com/features/branch-management/merging) | **Scope departure.** Requires actually performing a rebase. |
-| PR/issue dashboard across repos ("Launchpad", "Workspaces") | Track pull requests, issues, and work-in-progress across multiple repositories/providers in one view | GitKraken (https://gitkraken.com/features) | **Scope departure** from "single local repository" — would require multi-repo and network/API integration beyond local Git. |
-| Side-by-side visual merge tool | Resolve merge conflicts with a dedicated side-by-side merge UI, including AI-suggested resolutions | GitKraken (https://gitkraken.com/features) | **Scope departure.** Only meaningful mid-merge, which Mergentra never initiates. |
+| Feature                                                                                | Description                                                                                               | Documented by                                                                                                                                                                                    | Fits read-only/single-repo scope?                                                                                                                       |
+| -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Inline diff viewer (text + image)                                                      | View file changes for a commit or between two commits directly in the graph UI                            | Fork (https://git-fork.com/), Git Graph (https://github.com/mhutchie/vscode-git-graph)                                                                                                           | **Fits.** Reading a diff from an already-committed object is read-only; would be a pure addition, not a scope change.                                   |
+| Commit message/author/hash/date full-text search ("Find Widget")                       | Quickly locate commits by phrase across message, date, author, hash, branch/tag name                      | Git Graph (https://github.com/mhutchie/vscode-git-graph), GitKraken (https://gitkraken.com/features/commit-graph)                                                                                | **Fits.** Pure read/query over history already loaded; no write involved.                                                                               |
+| File-history view ("find all commits where a file changed")                            | Filter/trace the commit graph to only commits touching a given path                                       | Fork (https://git-fork.com/)                                                                                                                                                                     | **Fits.** Derivable from existing commit/parent/tree data without writing anything.                                                                     |
+| Commit-to-commit comparison view                                                       | Pick any two commits and view the diff of everything that changed between them                            | Git Graph (https://github.com/mhutchie/vscode-git-graph)                                                                                                                                         | **Fits.** Read-only comparison of two already-resolved trees.                                                                                           |
+| Issue-number hyperlinking in commit messages                                           | Auto-convert issue references like `#123` in commit messages into clickable links to a configured tracker | Git Graph (https://github.com/mhutchie/vscode-git-graph)                                                                                                                                         | **Fits.** Purely cosmetic/read-only text transform in the Review dock; no repo writes.                                                                  |
+| Blame / annotate view                                                                  | Show the last commit that touched each line of a file at a given revision                                 | Fork (https://git-fork.com/)                                                                                                                                                                     | **Fits.** `git blame` is read-only; would be a new view, not a scope change.                                                                            |
+| AI-assisted natural-language commit search                                             | Search commits using natural-language queries, not just literal text                                      | GitKraken (https://gitkraken.com/features/commit-graph)                                                                                                                                          | **Fits in principle** (read-only query) but requires either bundling/calling an AI model, a new dependency/scope question beyond "local Git only."      |
+| Interactive rebase UI (reorder/edit/squash commits)                                    | Visually reorder, edit, squash, or drop commits before replaying them                                     | Fork (https://git-fork.com/), Tower (https://www.git-tower.com/features/undo), Git Graph (https://github.com/mhutchie/vscode-git-graph), GitKraken (https://gitkraken.com/features/commit-graph) | **Scope departure.** Rewrites history/refs — directly contradicts Mergentra's "never commits, checks out, merges, or edits" design.                     |
+| Stash visualization and management (apply/pop/drop/create-branch-from)                 | Show stashes inline with the commit list and act on them                                                  | Fork (https://git-fork.com/, "See your stashes right in the commit list"), Git Graph (https://github.com/mhutchie/vscode-git-graph)                                                              | **Partially fits as view-only.** Listing existing stashes alongside the graph is read-only; apply/pop/drop/create are writes and are a scope departure. |
+| Merge-conflict resolution UI                                                           | Guided, visual resolution of merge/rebase conflicts                                                       | Fork (https://git-fork.com/), Tower (https://www.git-tower.com/features/easy), GitButler (https://docs.gitbutler.com/features/branch-management/merging)                                         | **Scope departure.** Only possible when actually running a merge/rebase, which Mergentra does not do.                                                   |
+| Cherry-pick / revert / reset from the graph                                            | Right-click a commit to cherry-pick, revert, or reset to it                                               | Git Graph (https://github.com/mhutchie/vscode-git-graph), GitKraken (https://gitkraken.com/features/commit-graph), Fork (https://git-fork.com/)                                                  | **Scope departure.** All three write new commits or move refs.                                                                                          |
+| Branch/tag/remote create-delete-rename-push-pull from the graph                        | Full branch and remote lifecycle management inline                                                        | Git Graph (https://github.com/mhutchie/vscode-git-graph), Fork (https://git-fork.com/)                                                                                                           | **Scope departure** beyond Mergentra's single explicit Fetch action; create/delete/push/pull all write to the repo or remote.                           |
+| Reflog-based recovery of lost commits                                                  | Browse the reflog to restore commits no longer reachable from any ref                                     | Fork (https://git-fork.com/, "Restore lost commits with Reflog")                                                                                                                                 | **Partially fits as view-only.** Displaying reflog entries is read-only; the "restore" action itself is a write and a scope departure.                  |
+| Undo-anything action log for Git operations                                            | A keystroke-undoable history of every mutating action (commit, branch, merge, rebase, stash, push)        | Tower (https://www.git-tower.com/features/undo)                                                                                                                                                  | **Scope departure.** Presupposes the app performs those mutating actions in the first place; not applicable to a read-only viewer.                      |
+| Virtual/parallel branches (multiple branches applied to one working directory at once) | Stage and commit changes to several independent branches simultaneously from one working tree             | GitButler (https://docs.gitbutler.com/features/branch-management/virtual-branches)                                                                                                               | **Scope departure.** Fundamentally a working-directory/commit-creation feature; no read-only analog.                                                    |
+| Operations-history snapshot/restore (oplog)                                            | Automatic before-action snapshots of branch + working-copy state, revertible per entry                    | GitButler (https://docs.gitbutler.com/features/timeline)                                                                                                                                         | **Scope departure.** Exists only because GitButler performs mutating actions to snapshot around.                                                        |
+| Conflict-tolerant rebase (keep going, mark conflicted commits, resolve later)          | Don't halt a rebase on first conflict; mark the commit conflicted and continue                            | GitButler (https://docs.gitbutler.com/features/branch-management/merging)                                                                                                                        | **Scope departure.** Requires actually performing a rebase.                                                                                             |
+| PR/issue dashboard across repos ("Launchpad", "Workspaces")                            | Track pull requests, issues, and work-in-progress across multiple repositories/providers in one view      | GitKraken (https://gitkraken.com/features)                                                                                                                                                       | **Scope departure** from "single local repository" — would require multi-repo and network/API integration beyond local Git.                             |
+| Side-by-side visual merge tool                                                         | Resolve merge conflicts with a dedicated side-by-side merge UI, including AI-suggested resolutions        | GitKraken (https://gitkraken.com/features)                                                                                                                                                       | **Scope departure.** Only meaningful mid-merge, which Mergentra never initiates.                                                                        |
 
 ## Differentiated ideas beyond feature parity
 
@@ -239,7 +239,7 @@ above; they are not primary-source-backed because they do not exist yet.
 
 4. **Shallow/partial-clone boundary explainer.** Rather than only marking
    history and missing-object boundaries on the graph, add a small
-   read-only panel that explains, in plain language, *why* a given boundary
+   read-only panel that explains, in plain language, _why_ a given boundary
    exists (e.g., "this clone was made with `--depth 50`" vs. "this is a
    partial clone filtering blobs") and what the user would need to do
    (outside Mergentra, since it never fetches objects beyond refs) to see
@@ -257,18 +257,18 @@ above; they are not primary-source-backed because they do not exist yet.
 
 ## Conclusion
 
-GitKraken, Fork, Tower, and GitButler are all primarily *read/write* Git
+GitKraken, Fork, Tower, and GitButler are all primarily _read/write_ Git
 clients — every one of their most distinctive documented features
 (interactive rebase, stash and reflog management, merge-conflict
 resolution, undo-anything logs, GitButler's virtual branches and
-operations-history oplog) exists specifically to help a user *change*
+operations-history oplog) exists specifically to help a user _change_
 their repository, which is the opposite of Mergentra's explicitly
 read-only design. The VS Code Git Graph extension is the closest scope
-match: its *viewing* capabilities (hover ref-membership tooltips, the Find
+match: its _viewing_ capabilities (hover ref-membership tooltips, the Find
 Widget, commit comparison diffs, issue-number linking, persistent code
 review checklists) are all compatible with a read-only viewer and
 represent genuine, currently-undocumented-for-Mergentra feature gaps; its
-*action* capabilities (branch/tag/stash/commit mutation from a context
+_action_ capabilities (branch/tag/stash/commit mutation from a context
 menu) are not. Overall, the concretely addressable gaps for Mergentra
 without a scope change are: an inline read-only diff/comparison viewer,
 full-text commit search, file-history filtering, blame/annotate, read-only
