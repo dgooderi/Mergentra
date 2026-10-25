@@ -14,6 +14,8 @@ All notable changes to Mergentra are recorded here. The format follows
 - A local Fetch guard log in Settings records each Fetch safety warning and your
   decision (names of risky settings only, never values); it is never transmitted
   and can be cleared.
+- Commit search above the graph, matching message, author, hash prefix, author date, and
+  reference or tag names, with selection that reveals commits hidden by filters.
 
 ## [1.0.0] - 2026-10-18
 

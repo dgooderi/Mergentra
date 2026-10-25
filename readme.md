@@ -106,6 +106,8 @@ The Branch health panel summarises every local branch against the selected targe
 
 Select a commit in the graph with the mouse, or focus it and press Enter or Space, to inspect its message, author, author date, full hash, parents, and references in the Review dock below the graph.
 
+Use **Search commits** above the graph to find commits by message, author name or email, hash prefix, author date (for example `2024-03`), or branch/tag name. Matching runs locally over the loaded history (up to 100 matches shown, newest first) and never changes the repository. Choosing a result selects the commit; if the reference filter or time range hides it, Mergentra shows the first reference that reaches it and narrows an out-of-range time range to the commit's day. A commit inside a compacted run is selected and its compacted count is scrolled into view. Press Escape to clear the search.
+
 Use the checkboxes beside references to filter local branches and remote-tracking references independently. The graph retains each commit reachable from at least one enabled reference, including shared ancestors; disabling all references shows an empty graph without changing repository data.
 
 Use the time-range selector to choose a rolling preset, all history, or a custom local-date range. Day and week presets are elapsed durations; month and year presets roll back by calendar periods. Custom ranges include both selected local dates. Commits outside the selected window are clipped and history continuation is marked at range boundaries. Ordinary commits on a linear path between important commits are summarized by an endpoint-exclusive count.

@@ -40,6 +40,10 @@ import { attachGraphPan } from './renderer/graph-pan.js';
 import { getPresetRange, isAxisSelectionAvailable } from './renderer/time-range.js';
 import { createReviewDock } from './renderer/review-dock.js';
 import { createBranchHealthPanel } from './renderer/branch-health-panel.js';
+import { revealCommit as revealSearchCommit } from './renderer/commit-search.js';
+import { createCommitSearch } from './renderer/commit-search-ui.js';
+import { saveViewState } from './renderer/view-state.js';
+import { localDateString } from './renderer/time-range.js';
 const reviewDock = createReviewDock({ updateTimeNavigation });
 const selectCommit = reviewDock.selectCommit;
 const branchHealthPanel = createBranchHealthPanel({ revealCommit });
@@ -66,6 +70,45 @@ function revealCommit(hash, referenceNames) {
     .querySelector(`[data-testid="commit-node"][data-commit-hash="${CSS.escape(hash)}"]`)
     ?.scrollIntoView({ block: 'center', inline: 'center' });
 }
+
+function scrollToCommit(hash) {
+  const summaryHash = state.compactedMembership.get(hash);
+  const target = [...document.querySelectorAll('[data-commit-hash], [data-summary-hash]')].find(
+    (node) =>
+      node.dataset.commitHash === hash || (summaryHash && node.dataset.summaryHash === summaryHash)
+  );
+  target?.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' });
+}
+
+// A search result may be filtered out by references or the time range: show the first reference
+// that reaches it and narrow an out-of-range time range to its day, then select it. A commit
+// hidden inside a compacted run is selected and its summary node is scrolled into view.
+function selectSearchResult(commit) {
+  const revealed = revealSearchCommit(state.currentGraph, commit.hash, {
+    visibleReferences: state.visibleReferences,
+    timeRange: state.timeRange
+  });
+  if (!revealed.changed) {
+    selectCommit(commit);
+    scrollToCommit(commit.hash);
+    return;
+  }
+  state.selectedCommit = commit;
+  if (revealed.visibleReferences !== state.visibleReferences) {
+    state.visibleReferences = revealed.visibleReferences;
+    saveViewState();
+    referencePicker.render(state.currentGraph.references);
+  }
+  if (revealed.timeRange !== state.timeRange) {
+    const day = localDateString(revealed.timeRange.start);
+    selectCustomRange({ start: day, end: day });
+  } else {
+    renderFilteredGraph();
+  }
+  scrollToCommit(commit.hash);
+}
+
+const commitSearch = createCommitSearch({ onSelect: selectSearchResult });
 
 const repositoryNoteField = enhanceNoteField(document.getElementById('repository-note'), {
   label: 'repository',
@@ -153,6 +196,7 @@ function renderGraph(graph) {
     }
   }
   state.ownerFilter = '';
+  commitSearch.clear();
   document.getElementById('time-range').value = state.selectedTimePreset;
   document.getElementById('custom-time-range').hidden = state.selectedTimePreset !== 'custom';
   document.getElementById('time-range-status').textContent = '';
