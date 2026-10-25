@@ -96,7 +96,8 @@ async function resolveRange(runGit, gitPath, repositoryPath, { commit, compareWi
 }
 
 function diffArguments(repositoryPath, { from, to }, options, filePath) {
-  const range = from === null ? ['diff-tree', '--root', '--no-commit-id', '-r', to] : ['diff', from, to];
+  const range =
+    from === null ? ['diff-tree', '--root', '--no-commit-id', '-r', to] : ['diff', from, to];
   return gitArguments(repositoryPath, [
     range[0],
     ...DIFF_FLAGS,
@@ -137,5 +138,3 @@ async function loadFilePatch(runGit, gitPath, repositoryPath, { path: filePath, 
 }
 
 module.exports = { loadChangedFiles, loadFilePatch };
-
-

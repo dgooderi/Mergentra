@@ -17,9 +17,9 @@ describe('summarizeChangedFiles', () => {
   });
 
   it('uses singular wording and reports an empty comparison', () => {
-    expect(
-      summarizeChangedFiles([{ path: 'a', additions: 1, deletions: 2, binary: false }])
-    ).toBe('1 file changed, +1 −2');
+    expect(summarizeChangedFiles([{ path: 'a', additions: 1, deletions: 2, binary: false }])).toBe(
+      '1 file changed, +1 −2'
+    );
     expect(summarizeChangedFiles([])).toBe('No changes between these commits');
   });
 });

@@ -57,9 +57,30 @@ describe('commit diff file list', () => {
     expect(diff.from).toBe(parent);
     expect(diff.to).toBe(commit);
     expect(diff.files).toEqual([
-      { path: 'gone.txt', status: 'deleted', additions: 0, deletions: 1, binary: false, submodule: false },
-      { path: 'keep.txt', status: 'modified', additions: 2, deletions: 1, binary: false, submodule: false },
-      { path: 'new.txt', status: 'added', additions: 1, deletions: 0, binary: false, submodule: false }
+      {
+        path: 'gone.txt',
+        status: 'deleted',
+        additions: 0,
+        deletions: 1,
+        binary: false,
+        submodule: false
+      },
+      {
+        path: 'keep.txt',
+        status: 'modified',
+        additions: 2,
+        deletions: 1,
+        binary: false,
+        submodule: false
+      },
+      {
+        path: 'new.txt',
+        status: 'added',
+        additions: 1,
+        deletions: 0,
+        binary: false,
+        submodule: false
+      }
     ]);
   });
 
@@ -90,7 +111,14 @@ describe('commit diff file list', () => {
 
     expect(diff.from).toBeNull();
     expect(diff.files).toEqual([
-      { path: 'first.txt', status: 'added', additions: 1, deletions: 0, binary: false, submodule: false }
+      {
+        path: 'first.txt',
+        status: 'added',
+        additions: 1,
+        deletions: 0,
+        binary: false,
+        submodule: false
+      }
     ]);
   });
 });
@@ -122,7 +150,14 @@ describe('commit diff file patch', () => {
     const result = await loadFilePatch(runGit, 'git', repository, { commit, path: 'image.bin' });
 
     expect(files.files).toEqual([
-      { path: 'image.bin', status: 'added', additions: 0, deletions: 0, binary: true, submodule: false }
+      {
+        path: 'image.bin',
+        status: 'added',
+        additions: 0,
+        deletions: 0,
+        binary: true,
+        submodule: false
+      }
     ]);
     expect(result).toEqual({ binary: true, truncated: false, patch: '' });
   });
@@ -167,7 +202,7 @@ describe('commit diff file patch', () => {
     const tip = commitFile(origin, 'a.txt', 'b\n');
     const clone = path.join(path.dirname(origin), `${path.basename(origin)}-shallow`);
     directories.push(clone);
-    git(origin, 'clone', '--depth', '1', pathToFileURL(origin).href, clone);
+    git(origin, 'clone', '--quiet', '--depth', '1', pathToFileURL(origin).href, clone);
 
     await expect(loadChangedFiles(runGit, 'git', clone, { commit: tip })).rejects.toThrow(
       'The history before this commit is not available because this is a shallow clone.'

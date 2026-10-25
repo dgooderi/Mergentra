@@ -4,6 +4,12 @@ All notable changes to Mergentra are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- Read-only commit diff viewer in the Review dock: view a selected commit's changed paths and text diff, or compare two commits. Binary files, submodules, shallow-clone boundaries and unavailable commits are explained rather than shown as misleading text (#85).
+
 ## [1.0.0] - 2026-10-18
 
 ### Added

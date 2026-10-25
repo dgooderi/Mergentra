@@ -102,7 +102,7 @@ The Worktrees list identifies the current and linked working directories; local 
 
 Merge commits use a distinct diamond with arrows from each parent, and tags are grouped beside their target commit. For local branches that diverge from `main` (or the first local branch when `main` is absent), the graph marks the first unique branch commit and labels it as an inferred divergence; Git does not record branch-creation events.
 
-Select a commit in the graph with the mouse, or focus it and press Enter or Space, to inspect its message, author, author date, full hash, parents, and references in the Review dock below the graph.
+Select a commit in the graph with the mouse, or focus it and press Enter or Space, to inspect its message, author, author date, full hash, parents, and references in the Review dock below the graph. **View changes** lists the files the commit changed against its first parent (or nothing, for a root commit) with line counts and shows a text diff for each file. **Compare with another commit** then lets you pick a second commit in the graph and shows the differences between the two trees. Diffs are read with Git's read-only plumbing, ignore external diff and text-conversion programs configured in the repository, never check out anything, and identify binary files, submodules, shallow-clone boundaries and unavailable commits instead of rendering them as text.
 
 Use the checkboxes beside references to filter local branches and remote-tracking references independently. The graph retains each commit reachable from at least one enabled reference, including shared ancestors; disabling all references shows an empty graph without changing repository data.
 

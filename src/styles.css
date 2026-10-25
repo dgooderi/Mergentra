@@ -1497,3 +1497,92 @@ main:not(:has(#repository-view:not([hidden]))) {
   max-height: 240px;
   margin-top: 8px;
 }
+
+.diff-viewer {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.diff-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.diff-toolbar h3 {
+  margin: 0 8px 0 0;
+  color: var(--heading);
+  font-size: 15px;
+}
+
+.diff-toolbar button {
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+#diff-status,
+#diff-file-note {
+  min-height: 18px;
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.diff-panes {
+  display: grid;
+  grid-template-columns: minmax(180px, 34%) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.diff-files {
+  display: grid;
+  gap: 4px;
+  max-height: 320px;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.diff-file {
+  width: 100%;
+  min-height: 30px;
+  overflow-wrap: anywhere;
+  padding: 4px 8px;
+  font-size: 12px;
+  text-align: left;
+}
+
+.diff-file[aria-pressed='true'] {
+  border-color: #2563eb;
+}
+
+.diff-patch {
+  max-height: 320px;
+  margin: 0;
+  padding: 8px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font:
+    12px/1.4 Consolas,
+    monospace;
+  white-space: pre;
+}
+
+.diff-line-added {
+  background: rgb(34 197 94 / 18%);
+}
+
+.diff-line-removed {
+  background: rgb(239 68 68 / 18%);
+}
+
+.diff-line-hunk,
+.diff-line-header {
+  color: var(--muted);
+}

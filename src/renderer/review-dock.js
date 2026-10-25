@@ -2,16 +2,22 @@ import { state } from './state.js';
 import { renderSelectedBranchNotes, setNote } from './notes-ui.js';
 import { inferBranchContext } from './branch-context.js';
 import { enhanceNoteField } from './note-field.js';
+import { createDiffViewer } from './diff-viewer.js';
 
 export function createReviewDock({ updateTimeNavigation }) {
   const dock = document.getElementById('review-dock');
+  const diffViewer = createDiffViewer();
   const commitNoteField = enhanceNoteField(document.getElementById('selected-commit-note'), {
     label: 'commit',
     previewTestId: 'selected-commit-note-preview'
   });
 
   function selectCommit(commit) {
+    if (diffViewer.consumeComparisonTarget(commit)) {
+      return;
+    }
     state.selectedCommit = commit;
+    diffViewer.setSelectedCommit(commit);
     updateTimeNavigation();
     const hash = commit?.hash;
     const commitNodes = document.querySelectorAll('[data-testid="commit-node"]');
