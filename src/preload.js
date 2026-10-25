@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('mergentra', {
     ipcRenderer.on('clone:progress', (_event, line) => callback(line));
   },
   fetchRemoteReferences: () => ipcRenderer.invoke('repository:fetch'),
+  readReflog: (ref) => ipcRenderer.invoke('reflog:read', ref),
   copyDiagnostics: (diagnostics) => ipcRenderer.invoke('diagnostics:copy', diagnostics),
   openInExplorer: () => ipcRenderer.invoke('repository:open-in-explorer'),
   getRecentRepositories: () => ipcRenderer.invoke('repository:recent'),

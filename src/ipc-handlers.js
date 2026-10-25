@@ -20,6 +20,7 @@ function registerIpcHandlers({
   window,
   openAndRememberRepository,
   fetchRemoteReferences,
+  readReflog,
   cloneRepository,
   cancelClone,
   getSettings,
@@ -142,6 +143,13 @@ function registerIpcHandlers({
     if (failure) {
       throw new Error(failure);
     }
+  });
+  ipcMain.handle('reflog:read', async (_event, ref) => {
+    const activeRepositoryPath = getActiveRepositoryPath();
+    if (!activeRepositoryPath) {
+      throw new Error('Open a repository first.');
+    }
+    return readReflog(activeRepositoryPath, ref);
   });
   ipcMain.handle('repository:recent', () => getSettings().recentRepositories);
   ipcMain.handle('repository:forget-recent', async (_event, repositoryPath) => {

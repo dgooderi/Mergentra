@@ -18,6 +18,7 @@ export default [
       'src/ipc-handlers.js',
       'src/main-window.js',
       'src/repository-output.js',
+      'src/reflog.js',
       'src/settings-store.js',
       'src/recent-repositories.js',
       'src/main-line.js',
