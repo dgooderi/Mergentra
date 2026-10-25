@@ -3,10 +3,12 @@ import { renderSelectedBranchNotes, setNote } from './notes-ui.js';
 import { inferBranchContext } from './branch-context.js';
 import { enhanceNoteField } from './note-field.js';
 import { explainHistoryBoundary } from './history-boundary-explanation.js';
+import { createDiffViewer } from './diff-viewer.js';
 
 export function createReviewDock({ updateTimeNavigation }) {
   const dock = document.getElementById('review-dock');
   const boundaryPanel = document.getElementById('boundary-explanation-panel');
+  const diffViewer = createDiffViewer();
 
   function showBoundaryExplanation(commit, requestedType) {
     const graph = state.currentGraph;
@@ -34,7 +36,11 @@ export function createReviewDock({ updateTimeNavigation }) {
   });
 
   function selectCommit(commit, { boundaryType } = {}) {
+    if (diffViewer.consumeComparisonTarget(commit)) {
+      return;
+    }
     state.selectedCommit = commit;
+    diffViewer.setSelectedCommit(commit);
     updateTimeNavigation();
     const hash = commit?.hash;
     const commitNodes = document.querySelectorAll('[data-testid="commit-node"]');

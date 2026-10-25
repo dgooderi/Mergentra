@@ -17,6 +17,7 @@ All notable changes to Mergentra are recorded here. The format follows
 - Commit search above the graph, matching message, author, hash prefix, author date, and
   reference or tag names, with selection that reveals commits hidden by filters.
 - Explanations and manual next steps for shallow and missing-object history boundaries (#93).
+- Read-only commit diff viewer in the Review dock: view a selected commit's changed paths and text diff, or compare two commits. Binary files, submodules, shallow-clone boundaries and unavailable commits are explained rather than shown as misleading text (#85).
 
 ## [1.0.0] - 2026-10-18
 

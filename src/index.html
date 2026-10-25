@@ -579,6 +579,48 @@
               ></textarea>
             </div>
           </div>
+          <div class="diff-viewer" data-testid="diff-viewer" aria-labelledby="diff-heading">
+            <div class="diff-toolbar">
+              <h3 id="diff-heading">Changes</h3>
+              <button id="view-changes" class="secondary" type="button" data-testid="view-changes">
+                View changes
+              </button>
+              <button
+                id="compare-commit"
+                class="secondary"
+                type="button"
+                data-testid="compare-commit"
+                aria-pressed="false"
+              >
+                Compare with another commit
+              </button>
+              <button
+                id="close-diff"
+                class="secondary"
+                type="button"
+                data-testid="close-diff"
+                hidden
+              >
+                Close changes
+              </button>
+            </div>
+            <p id="diff-status" data-testid="diff-status" role="status" aria-live="polite"></p>
+            <div id="diff-results" class="diff-results" hidden>
+              <p id="diff-summary" data-testid="diff-summary"></p>
+              <div class="diff-panes">
+                <ul id="diff-files" class="diff-files" data-testid="diff-files"></ul>
+                <div>
+                  <p id="diff-file-note" data-testid="diff-file-note" role="status"></p>
+                  <pre
+                    id="diff-patch"
+                    class="diff-patch"
+                    data-testid="diff-patch"
+                    tabindex="0"
+                  ></pre>
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
       </section>
     </main>
