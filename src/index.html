@@ -420,6 +420,18 @@
             </div>
             <div class="graph-heading">
               <h2>Commit graph</h2>
+              <div class="commit-search" role="search">
+                <input
+                  id="commit-search"
+                  type="search"
+                  aria-label="Search commits"
+                  placeholder="Search message, author, hash, date, reference"
+                  autocomplete="off"
+                  maxlength="200"
+                />
+                <p id="commit-search-status" role="status" aria-live="polite"></p>
+                <ul id="commit-search-results" aria-label="Search results" hidden></ul>
+              </div>
               <div class="zoom-controls" role="group" aria-label="Zoom">
                 <button
                   id="zoom-out"

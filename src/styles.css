@@ -1497,3 +1497,43 @@ main:not(:has(#repository-view:not([hidden]))) {
   max-height: 240px;
   margin-top: 8px;
 }
+
+.commit-search {
+  position: relative;
+  flex: 1;
+  max-width: 420px;
+}
+.commit-search input {
+  width: 100%;
+  box-sizing: border-box;
+  color: var(--field-text);
+  background: var(--field-background);
+  border: 1px solid var(--field-border);
+}
+#commit-search-status {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+#commit-search-results {
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  right: 0;
+  max-height: 260px;
+  margin: 0;
+  padding: 4px;
+  overflow: auto;
+  list-style: none;
+  background: var(--panel-background);
+  border: 1px solid var(--border);
+}
+#commit-search-results button {
+  display: flex;
+  width: 100%;
+  gap: 8px;
+  text-align: left;
+}
+#commit-search-results button[aria-pressed='true'] {
+  outline: 2px solid #38bdf8;
+}
