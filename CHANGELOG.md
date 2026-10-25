@@ -4,6 +4,12 @@ All notable changes to Mergentra are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- Read-only blame view in the Review dock: enter a file path to see which commit and author last changed each line at the selected commit, and select an attributed commit to jump to it in the graph.
+
 ## [1.0.0] - 2026-10-18
 
 ### Added

@@ -2,12 +2,19 @@ import { state } from './state.js';
 import { renderSelectedBranchNotes, setNote } from './notes-ui.js';
 import { inferBranchContext } from './branch-context.js';
 import { enhanceNoteField } from './note-field.js';
+import { createBlamePanel } from './blame-panel.js';
 
 export function createReviewDock({ updateTimeNavigation }) {
   const dock = document.getElementById('review-dock');
   const commitNoteField = enhanceNoteField(document.getElementById('selected-commit-note'), {
     label: 'commit',
     previewTestId: 'selected-commit-note-preview'
+  });
+
+  const blamePanel = createBlamePanel({
+    getSelectedCommit: () => state.selectedCommit,
+    findCommit: (hash) => state.currentGraph?.commits.find((commit) => commit.hash === hash),
+    selectCommit: (commit) => selectCommit(commit)
   });
 
   function selectCommit(commit) {
@@ -30,6 +37,7 @@ export function createReviewDock({ updateTimeNavigation }) {
     }
     if (!state.selectedCommit) {
       dock.hidden = true;
+      blamePanel.clear();
       renderSelectedBranchNotes();
       return;
     }
@@ -87,6 +95,7 @@ export function createReviewDock({ updateTimeNavigation }) {
   return {
     hide() {
       dock.hidden = true;
+      blamePanel.clear();
     },
     selectCommit
   };

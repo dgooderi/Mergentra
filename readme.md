@@ -102,7 +102,7 @@ The Worktrees list identifies the current and linked working directories; local 
 
 Merge commits use a distinct diamond with arrows from each parent, and tags are grouped beside their target commit. For local branches that diverge from `main` (or the first local branch when `main` is absent), the graph marks the first unique branch commit and labels it as an inferred divergence; Git does not record branch-creation events.
 
-Select a commit in the graph with the mouse, or focus it and press Enter or Space, to inspect its message, author, author date, full hash, parents, and references in the Review dock below the graph.
+Select a commit in the graph with the mouse, or focus it and press Enter or Space, to inspect its message, author, author date, full hash, parents, and references in the Review dock below the graph. Enter a file path in the dock's **Blame** section to see, for that file at the selected commit, the commit and author that last changed each line; selecting an attributed commit selects it in the graph. Blame reads the committed file from Git's object database (never your working tree or index), does not run repository-configured textconv programs, and explains binary files, paths missing at that commit, unavailable commits, files over 1 MiB or 20,000 lines, and lines attributed to the edge of a shallow clone.
 
 Use the checkboxes beside references to filter local branches and remote-tracking references independently. The graph retains each commit reachable from at least one enabled reference, including shared ancestors; disabling all references shows an empty graph without changing repository data.
 
