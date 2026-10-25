@@ -44,6 +44,7 @@ import { revealCommit as revealSearchCommit } from './renderer/commit-search.js'
 import { createCommitSearch } from './renderer/commit-search-ui.js';
 import { saveViewState } from './renderer/view-state.js';
 import { localDateString } from './renderer/time-range.js';
+import { createFileHistoryPanel } from './renderer/file-history-ui.js';
 const reviewDock = createReviewDock({ updateTimeNavigation });
 const selectCommit = reviewDock.selectCommit;
 const branchHealthPanel = createBranchHealthPanel({ revealCommit });
@@ -197,6 +198,7 @@ function renderGraph(graph) {
   }
   state.ownerFilter = '';
   commitSearch.clear();
+  fileHistoryPanel.reset();
   document.getElementById('time-range').value = state.selectedTimePreset;
   document.getElementById('custom-time-range').hidden = state.selectedTimePreset !== 'custom';
   document.getElementById('time-range-status').textContent = '';
@@ -245,7 +247,11 @@ function renderFilteredGraph() {
     state.timeRange,
     state.targetBranchName
   );
-  const displayGraph = compactSameLaneRuns(compactOrdinaryHistory(graph));
+  const displayGraph = compactSameLaneRuns(
+    compactOrdinaryHistory(
+      state.fileHistoryHashes ? { ...graph, pinnedHashes: [...state.fileHistoryHashes] } : graph
+    )
+  );
   const parentName =
     state.visibleReferences.size < state.currentGraph.references.length &&
     state.targetBranchName &&
@@ -277,6 +283,7 @@ initTimeToolbar({ renderFilteredGraph });
 initZoomControls();
 const referencePicker = createReferencePicker({ renderFilteredGraph });
 referencePicker.init();
+const fileHistoryPanel = createFileHistoryPanel({ renderFilteredGraph, selectCommit });
 
 // Owners are computed once per loaded graph; scanning every commit per branch is far too slow on large repositories.
 
@@ -412,6 +419,7 @@ function renderGraphContents(graph) {
     indexByHash,
     cutMarkersByHash,
     ownerReference,
+    fileHistoryHashes: state.fileHistoryHashes,
     width
   };
   const axisSelectionAvailable = isAxisSelectionAvailable(state.timeRange, state.axisSelectedSpan);

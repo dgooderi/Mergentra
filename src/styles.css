@@ -1679,4 +1679,29 @@ main:not(:has(#repository-view:not([hidden]))) {
 .diff-line-hunk,
 .diff-line-header {
   color: var(--muted);
+.file-history {
+  margin-bottom: 12px;
+}
+
+.file-history ul {
+  max-height: 160px;
+  margin: 8px 0 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.file-history li button {
+  width: 100%;
+  text-align: left;
+}
+
+#commit-graph [data-testid='commit-node'][data-file-history='other'] {
+  opacity: 0.25;
+}
+
+#commit-graph [data-testid='commit-node'][data-file-history='match'] circle,
+#commit-graph [data-testid='commit-node'][data-file-history='match'] path {
+  stroke: #f59e0b;
+  stroke-width: 3;
 }
