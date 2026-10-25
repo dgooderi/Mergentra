@@ -533,6 +533,9 @@ function drawCommitNode(commit, position, ctx, actions) {
     'aria-label': `Inspect ${commit.subject} (${commit.hash.slice(0, 7)})`
   });
   group.append(...createNodeBody(commit, color));
+  if (ctx.fileHistoryHashes) {
+    group.dataset.fileHistory = ctx.fileHistoryHashes.has(commit.hash) ? 'match' : 'other';
+  }
   attachNodeHandlers(group, commit, ctx, actions);
   ctx.graphElement.append(group);
 }

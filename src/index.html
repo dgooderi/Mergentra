@@ -418,6 +418,23 @@
                 <ul id="worktree-list"></ul>
               </details>
             </div>
+            <form id="file-history-form" class="file-history" data-testid="file-history-form">
+              <label for="file-history-path">File or folder history</label>
+              <div class="path-controls">
+                <input
+                  id="file-history-path"
+                  type="text"
+                  autocomplete="off"
+                  placeholder="src/app.js or src/lib"
+                />
+                <button class="secondary" type="submit">Show history</button>
+                <button id="file-history-clear" class="secondary" type="button" hidden>
+                  Clear
+                </button>
+              </div>
+              <p id="file-history-status" role="status" aria-live="polite"></p>
+              <ul id="file-history-list" data-testid="file-history-list" hidden></ul>
+            </form>
             <div class="graph-heading">
               <h2>Commit graph</h2>
               <div class="zoom-controls" role="group" aria-label="Zoom">

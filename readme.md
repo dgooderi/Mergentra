@@ -104,6 +104,8 @@ Merge commits use a distinct diamond with arrows from each parent, and tags are 
 
 Select a commit in the graph with the mouse, or focus it and press Enter or Space, to inspect its message, author, author date, full hash, parents, and references in the Review dock below the graph.
 
+Enter a repository-relative file or folder path under **File or folder history** and select **Show history** to find the commits that changed it. Matching commits are highlighted in the graph (other commits are dimmed and kept visible, never hidden inside a summary) and listed so you can select one for review; **Clear** restores the normal graph. Git follows a single file across renames, and the history comes from the same references the graph loads. A path with no matching commits is explained, and a shallow clone is flagged because older changes are not available. The query is read-only, treats the path literally, and rejects absolute paths and `..`.
+
 Use the checkboxes beside references to filter local branches and remote-tracking references independently. The graph retains each commit reachable from at least one enabled reference, including shared ancestors; disabling all references shows an empty graph without changing repository data.
 
 Use the time-range selector to choose a rolling preset, all history, or a custom local-date range. Day and week presets are elapsed durations; month and year presets roll back by calendar periods. Custom ranges include both selected local dates. Commits outside the selected window are clipped and history continuation is marked at range boundaries. Ordinary commits on a linear path between important commits are summarized by an endpoint-exclusive count.

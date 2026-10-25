@@ -8,6 +8,9 @@ export function compactOrdinaryHistory(graph) {
   for (const hash of graph.missingObjectBoundaries) {
     importantHashes.add(hash);
   }
+  for (const hash of graph.pinnedHashes ?? []) {
+    importantHashes.add(hash);
+  }
   if (graph.headDetached && graph.headHash) {
     importantHashes.add(graph.headHash);
   }
@@ -134,6 +137,7 @@ export function compactSameLaneRuns(graph) {
   const pinned = new Set([
     ...graph.shallowBoundaries,
     ...graph.missingObjectBoundaries,
+    ...(graph.pinnedHashes ?? []),
     ...graph.divergenceMarkers.map((marker) => marker.commitHash),
     ...graph.cutMarkers.map((marker) => marker.commitHash)
   ]);

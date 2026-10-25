@@ -39,6 +39,7 @@ import { branchPathToMain, parentReferenceName } from './renderer/branch-path.js
 import { attachGraphPan } from './renderer/graph-pan.js';
 import { getPresetRange, isAxisSelectionAvailable } from './renderer/time-range.js';
 import { createReviewDock } from './renderer/review-dock.js';
+import { createFileHistoryPanel } from './renderer/file-history-ui.js';
 const reviewDock = createReviewDock({ updateTimeNavigation });
 const selectCommit = reviewDock.selectCommit;
 const picker = document.getElementById('repository-picker');
@@ -139,6 +140,7 @@ function renderGraph(graph) {
     }
   }
   state.ownerFilter = '';
+  fileHistoryPanel.reset();
   document.getElementById('time-range').value = state.selectedTimePreset;
   document.getElementById('custom-time-range').hidden = state.selectedTimePreset !== 'custom';
   document.getElementById('time-range-status').textContent = '';
@@ -186,7 +188,11 @@ function renderFilteredGraph() {
     state.timeRange,
     state.targetBranchName
   );
-  const displayGraph = compactSameLaneRuns(compactOrdinaryHistory(graph));
+  const displayGraph = compactSameLaneRuns(
+    compactOrdinaryHistory(
+      state.fileHistoryHashes ? { ...graph, pinnedHashes: [...state.fileHistoryHashes] } : graph
+    )
+  );
   const parentName =
     state.visibleReferences.size < state.currentGraph.references.length &&
     state.targetBranchName &&
@@ -218,6 +224,7 @@ initTimeToolbar({ renderFilteredGraph });
 initZoomControls();
 const referencePicker = createReferencePicker({ renderFilteredGraph });
 referencePicker.init();
+const fileHistoryPanel = createFileHistoryPanel({ renderFilteredGraph, selectCommit });
 
 // Owners are computed once per loaded graph; scanning every commit per branch is far too slow on large repositories.
 
@@ -352,6 +359,7 @@ function renderGraphContents(graph) {
     indexByHash,
     cutMarkersByHash,
     ownerReference,
+    fileHistoryHashes: state.fileHistoryHashes,
     width
   };
   const axisSelectionAvailable = isAxisSelectionAvailable(state.timeRange, state.axisSelectedSpan);

@@ -64,6 +64,17 @@ describe('compactOrdinaryHistory', () => {
     }
   });
 
+  it('keeps pinned commits visible, such as those matching a file history', () => {
+    const graph = graphOf(chain(6, { c1: { tags: ['v1'] } }), {
+      references: [{ hash: 'c6' }],
+      pinnedHashes: ['c3']
+    });
+
+    const shown = compactSameLaneRuns(compactOrdinaryHistory(graph)).commits;
+
+    expect(shown.map((c) => c.hash)).toContain('c3');
+  });
+
   it('keeps merge commits and their parents visible', () => {
     const commits = [
       commit('m', ['b2', 'a2']),

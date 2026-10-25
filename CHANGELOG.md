@@ -4,6 +4,13 @@ All notable changes to Mergentra are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- File history: enter a file or folder path to highlight and list the commits that
+  changed it, following renames, with notes for missing paths and shallow history.
+
 ## [1.0.0] - 2026-10-18
 
 ### Added

@@ -117,7 +117,9 @@ describe('loading file history from a real repository', () => {
 
 describe('file history output', () => {
   const sample =
-    '\u0001ccc\n\nM\tnew.txt\n' + '\u0001bbb\n\nR100\told.txt\tnew.txt\n' + '\u0001aaa\n\nA\told.txt\n';
+    '\u0001ccc\n\nM\tnew.txt\n' +
+    '\u0001bbb\n\nR100\told.txt\tnew.txt\n' +
+    '\u0001aaa\n\nA\told.txt\n';
 
   it('lists the touching commits newest first and the renames Git followed', () => {
     expect(parseFileHistory(sample)).toEqual({
