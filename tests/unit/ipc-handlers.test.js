@@ -359,7 +359,9 @@ describe('IPC handlers', () => {
     it('inspects a stash by index and rejects anything that is not a list index', async () => {
       const runGit = stashGit({
         'rev-parse': () => ({ stdout: `${stashHash}\n` }),
-        'rev-list': () => ({ stdout: `${stashHash} ${baseHash} ${'d'.repeat(40)} ${'c'.repeat(40)}\n` }),
+        'rev-list': () => ({
+          stdout: `${stashHash} ${baseHash} ${'d'.repeat(40)} ${'c'.repeat(40)}\n`
+        }),
         'diff-tree': () => ({ stdout: 'M\0src/app.js\0' }),
         'ls-tree': () => ({ stdout: 'notes.txt\0' })
       });

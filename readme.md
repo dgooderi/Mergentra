@@ -100,6 +100,8 @@ After opening a repository, Mergentra displays its reachable commits once in par
 
 The Worktrees list identifies the current and linked working directories; local branch references show where each branch is checked out. Detached `HEAD` is marked at its commit without adding a branch, and an unborn branch shows its name with an empty graph. Shallow history boundaries and reachable missing-object boundaries in partial clones are marked. Graph inspection disables Git lazy fetching, so it does not contact a promisor remote.
 
+The Stashes panel lists existing stashes separately from branches and commits, with each stash's message, originating branch, date, and base commit. Select a stash to see its changed paths. Mergentra only reads stashes; it never applies, pops, drops, or otherwise changes one, and it reports stashes whose objects are missing.
+
 Merge commits use a distinct diamond with arrows from each parent, and tags are grouped beside their target commit. For local branches that diverge from `main` (or the first local branch when `main` is absent), the graph marks the first unique branch commit and labels it as an inferred divergence; Git does not record branch-creation events.
 
 Select a commit in the graph with the mouse, or focus it and press Enter or Space, to inspect its message, author, author date, full hash, parents, and references in the Review dock below the graph.

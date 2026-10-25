@@ -174,11 +174,7 @@ function registerIpcHandlers({
       throw new Error('Open a repository first.');
     }
     try {
-      const stashes = await listStashes(
-        { runGit },
-        getSettings().gitPath || 'git',
-        repositoryPath
-      );
+      const stashes = await listStashes({ runGit }, getSettings().gitPath || 'git', repositoryPath);
       return { stashes };
     } catch (error) {
       return { stashes: [], error: error.message };

@@ -16,6 +16,7 @@ export default [
       'src/reference-order.js',
       'src/divergence-markers.js',
       'src/ipc-handlers.js',
+      'src/stashes.js',
       'src/main-window.js',
       'src/repository-output.js',
       'src/settings-store.js',

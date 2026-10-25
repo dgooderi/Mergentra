@@ -417,6 +417,20 @@
                 </p>
                 <ul id="worktree-list"></ul>
               </details>
+              <details id="stashes-panel" class="worktrees-panel stashes-panel" hidden>
+                <summary id="stashes-heading">Stashes</summary>
+                <p class="hint">
+                  Stashes are saved work kept apart from branches and commits. Mergentra only shows
+                  them; it never applies, pops or drops a stash.
+                </p>
+                <p id="stashes-status" class="hint" role="status"></p>
+                <ul id="stash-list"></ul>
+                <section id="stash-details" class="stash-details" aria-live="polite" hidden>
+                  <h3 id="stash-details-heading"></h3>
+                  <p id="stash-details-status"></p>
+                  <ul id="stash-changes"></ul>
+                </section>
+              </details>
             </div>
             <div class="graph-heading">
               <h2>Commit graph</h2>

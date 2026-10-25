@@ -39,7 +39,9 @@ import { branchPathToMain, parentReferenceName } from './renderer/branch-path.js
 import { attachGraphPan } from './renderer/graph-pan.js';
 import { getPresetRange, isAxisSelectionAvailable } from './renderer/time-range.js';
 import { createReviewDock } from './renderer/review-dock.js';
+import { createStashPanel } from './renderer/stashes-panel.js';
 const reviewDock = createReviewDock({ updateTimeNavigation });
+const stashPanel = createStashPanel();
 const selectCommit = reviewDock.selectCommit;
 const picker = document.getElementById('repository-picker');
 const repositoryView = document.getElementById('repository-view');
@@ -144,6 +146,7 @@ function renderGraph(graph) {
   document.getElementById('time-range-status').textContent = '';
   reviewDock.hide();
   renderWorktrees(graph.worktrees);
+  void stashPanel.refresh();
   referencePicker.render(state.currentGraph.references);
   renderFilteredGraph();
 }
@@ -168,6 +171,7 @@ function refreshRepositoryGraph(repository) {
     null;
   state.visibleReferencesBeforeTarget = null;
   renderWorktrees(state.currentGraph.worktrees);
+  void stashPanel.refresh();
   referencePicker.render(state.currentGraph.references);
   renderFilteredGraph();
 }
