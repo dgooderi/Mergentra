@@ -39,8 +39,11 @@ import { branchPathToMain, parentReferenceName } from './renderer/branch-path.js
 import { attachGraphPan } from './renderer/graph-pan.js';
 import { getPresetRange, isAxisSelectionAvailable } from './renderer/time-range.js';
 import { createReviewDock } from './renderer/review-dock.js';
+import { createReflogPanel } from './renderer/reflog-panel.js';
 const reviewDock = createReviewDock({ updateTimeNavigation });
 const selectCommit = reviewDock.selectCommit;
+const reflogPanel = createReflogPanel({ selectCommit });
+reflogPanel.init();
 const picker = document.getElementById('repository-picker');
 const repositoryView = document.getElementById('repository-view');
 function focusOnCommit(commit, position) {
@@ -144,6 +147,7 @@ function renderGraph(graph) {
   document.getElementById('time-range-status').textContent = '';
   reviewDock.hide();
   renderWorktrees(graph.worktrees);
+  reflogPanel.reset(state.currentGraph);
   referencePicker.render(state.currentGraph.references);
   renderFilteredGraph();
 }
@@ -168,6 +172,7 @@ function refreshRepositoryGraph(repository) {
     null;
   state.visibleReferencesBeforeTarget = null;
   renderWorktrees(state.currentGraph.worktrees);
+  reflogPanel.reset(state.currentGraph);
   referencePicker.render(state.currentGraph.references);
   renderFilteredGraph();
 }
