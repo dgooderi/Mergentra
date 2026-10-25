@@ -29,6 +29,7 @@ function registerIpcHandlers({
   installChannel = 'installer',
   license,
   checkForUpdates,
+  fetchGuardLog,
   directoryExists = isExistingDirectory
 }) {
   // The last folder used wins; the default directory only applies when there is none.
@@ -221,6 +222,11 @@ function registerIpcHandlers({
         defaultDirectory && directoryExists(defaultDirectory) ? defaultDirectory : undefined
     });
     return result.canceled ? null : result.filePaths[0];
+  });
+  ipcMain.handle('fetch-guard-log:list', async () => fetchGuardLog.list());
+  ipcMain.handle('fetch-guard-log:clear', async () => {
+    fetchGuardLog.clear();
+    return fetchGuardLog.list();
   });
 }
 

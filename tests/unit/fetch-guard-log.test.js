@@ -33,8 +33,10 @@ describe('fetch guard log', () => {
   });
 
   it('records the time, repository, warning categories and decision of a guard event', () => {
-    const log = createFetchGuardLog('C:\\data', createFakeFileSystem(), () =>
-      new Date('2026-10-25T12:00:00.000Z')
+    const log = createFetchGuardLog(
+      'C:\\data',
+      createFakeFileSystem(),
+      () => new Date('2026-10-25T12:00:00.000Z')
     );
 
     log.record({
@@ -138,7 +140,11 @@ describe('fetch guard log', () => {
 
   it('clears the log', () => {
     const log = createFetchGuardLog('C:\\data', createFakeFileSystem());
-    log.record({ repositoryPath: 'C:\\r', findings: [{ key: 'core.askpass' }], decision: 'cancelled' });
+    log.record({
+      repositoryPath: 'C:\\r',
+      findings: [{ key: 'core.askpass' }],
+      decision: 'cancelled'
+    });
 
     log.clear();
 
@@ -155,7 +161,11 @@ describe('fetch guard log', () => {
     };
     const log = createFetchGuardLog('C:\\data', fileSystem);
 
-    log.record({ repositoryPath: 'C:\\r', findings: [{ key: 'core.askpass' }], decision: 'cancelled' });
+    log.record({
+      repositoryPath: 'C:\\r',
+      findings: [{ key: 'core.askpass' }],
+      decision: 'cancelled'
+    });
 
     expect(writes).toEqual([`${LOG_FILE}.tmp`]);
     expect(fileSystem.files.has(LOG_FILE)).toBe(true);
@@ -177,7 +187,11 @@ describe('fetch guard log', () => {
     const log = createFetchGuardLog('C:\\data', fileSystem);
 
     expect(() =>
-      log.record({ repositoryPath: 'C:\\r', findings: [{ key: 'core.askpass' }], decision: 'cancelled' })
+      log.record({
+        repositoryPath: 'C:\\r',
+        findings: [{ key: 'core.askpass' }],
+        decision: 'cancelled'
+      })
     ).toThrow('Mergentra fetch guard log could not be saved: disk full');
   });
 
@@ -185,7 +199,11 @@ describe('fetch guard log', () => {
     const log = createFetchGuardLog('C:\\data', createFakeFileSystem());
 
     expect(() =>
-      log.record({ repositoryPath: 'C:\\r', findings: [{ key: 'core.askpass' }], decision: 'maybe' })
+      log.record({
+        repositoryPath: 'C:\\r',
+        findings: [{ key: 'core.askpass' }],
+        decision: 'maybe'
+      })
     ).toThrow('decision');
   });
 });

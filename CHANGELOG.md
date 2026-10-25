@@ -4,6 +4,14 @@ All notable changes to Mergentra are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- A local Fetch guard log in Settings records each Fetch safety warning and your
+  decision (names of risky settings only, never values); it is never transmitted
+  and can be cleared.
+
 ## [1.0.0] - 2026-10-18
 
 ### Added

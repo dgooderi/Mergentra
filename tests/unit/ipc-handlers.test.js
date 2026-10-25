@@ -206,7 +206,9 @@ describe('IPC handlers', () => {
       'settings:save-git-path',
       'settings:get-default-directory',
       'settings:save-default-directory',
-      'settings:choose-default-directory'
+      'settings:choose-default-directory',
+      'fetch-guard-log:list',
+      'fetch-guard-log:clear'
     ]);
   });
 
@@ -298,5 +300,44 @@ describe('IPC handlers', () => {
     await expect(handlers.get('settings:save-git-path')(null, '  ')).resolves.toBe('');
     expect(dependencies.runGit).not.toHaveBeenCalled();
     expect(currentSettings.gitPath).toBe('');
+  });
+
+  it('lists the fetch guard log through its channel', async () => {
+    const entries = [
+      {
+        timestamp: '2026-10-25T12:00:00.000Z',
+        repository: 'C:\\repo',
+        categories: ['core.askpass'],
+        decision: 'cancelled'
+      }
+    ];
+    const { handlers } = makeIpcDependencies({
+      fetchGuardLog: { list: () => entries, clear: vi.fn() }
+    });
+
+    await expect(handlers.get('fetch-guard-log:list')()).resolves.toEqual(entries);
+  });
+
+  it('clears the fetch guard log through its channel and returns the empty list', async () => {
+    const clear = vi.fn();
+    const { handlers } = makeIpcDependencies({
+      fetchGuardLog: { list: () => [], clear }
+    });
+
+    await expect(handlers.get('fetch-guard-log:clear')()).resolves.toEqual([]);
+    expect(clear).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports a fetch guard log that cannot be cleared', async () => {
+    const { handlers } = makeIpcDependencies({
+      fetchGuardLog: {
+        list: () => [],
+        clear: () => {
+          throw new Error('Mergentra fetch guard log could not be saved: disk full');
+        }
+      }
+    });
+
+    await expect(handlers.get('fetch-guard-log:clear')()).rejects.toThrow('disk full');
   });
 });

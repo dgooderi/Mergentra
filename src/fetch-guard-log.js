@@ -36,7 +36,9 @@ function createFetchGuardLog(userDataPath, fileSystem = fs, now = () => new Date
       });
     }
     if (!Array.isArray(stored)) {
-      throw new Error('Mergentra fetch guard log has an unsupported format. Clear the log to reset it.');
+      throw new Error(
+        'Mergentra fetch guard log has an unsupported format. Clear the log to reset it.'
+      );
     }
     return stored;
   }

@@ -4,6 +4,7 @@ const path = require('node:path');
 const { createGitRunner } = require('./git-runner');
 const { loadCommitGraph } = require('./commit-graph');
 const { createSettingsStore } = require('./settings-store');
+const { createFetchGuardLog } = require('./fetch-guard-log');
 const { createAppState } = require('./app-state');
 const { registerIpcHandlers } = require('./ipc-handlers');
 const { createMainWindow } = require('./main-window');
@@ -18,6 +19,7 @@ const { validateCloneUrl, checkDestination, runClone } = require('./clone');
 const { runGit, runGitWithInput } = createGitRunner();
 // Created once the app is ready, because the settings folder is only known then.
 let state;
+let fetchGuardLog;
 
 if (process.env.MERGENTRA_USER_DATA_DIR) {
   app.setPath('userData', path.resolve(process.env.MERGENTRA_USER_DATA_DIR));
@@ -188,17 +190,28 @@ async function fetchRemoteReferences() {
 
   const gitPath = state.getSettings().gitPath || 'git';
   const activeRepositoryPath = state.getActiveRepositoryPath();
+  // A log failure is reported to the user but never changes whether Fetch is allowed to run.
+  let auditLogError;
+  const recordDecision = (findings, decision) => {
+    try {
+      fetchGuardLog.record({ repositoryPath: activeRepositoryPath, findings, decision });
+    } catch (error) {
+      auditLogError = error.message;
+    }
+  };
+  const withAuditStatus = (result) => (auditLogError ? { ...result, auditLogError } : result);
   try {
     await assertRepositoryConfigSafe(runGit, gitPath, activeRepositoryPath);
   } catch (error) {
     if (error instanceof UnsafeRepositoryConfigError) {
       const { confirmed, findingLines } = await confirmUnsafeFetch(error);
+      recordDecision(error.findings, confirmed ? 'fetched-anyway' : 'cancelled');
       if (!confirmed) {
-        return {
+        return withAuditStatus({
           success: false,
           message: error.message,
           diagnostics: findingLines
-        };
+        });
       }
     } else {
       return {
@@ -212,24 +225,24 @@ async function fetchRemoteReferences() {
   try {
     await runGit(gitPath, ['-C', activeRepositoryPath, 'fetch', '--all', '--prune', '--progress']);
   } catch (error) {
-    return {
+    return withAuditStatus({
       success: false,
       message: 'Fetch failed. Check the remote configuration and Git credentials, then try again.',
       diagnostics: errorDiagnostics(error)
-    };
+    });
   }
 
   try {
-    return {
+    return withAuditStatus({
       success: true,
       repository: await openRepository(activeRepositoryPath)
-    };
+    });
   } catch (error) {
-    return {
+    return withAuditStatus({
       success: false,
       message: 'Fetch succeeded, but Mergentra could not refresh the repository graph.',
       diagnostics: errorDiagnostics(error)
-    };
+    });
   }
 }
 
@@ -298,6 +311,7 @@ function cancelClone() {
 app.whenReady().then(() => {
   try {
     state = createAppState(createSettingsStore(app.getPath('userData')));
+    fetchGuardLog = createFetchGuardLog(app.getPath('userData'));
   } catch (error) {
     dialog.showErrorBox('Mergentra could not start', error.message);
     app.quit();
@@ -386,7 +400,8 @@ app.whenReady().then(() => {
     runGit,
     installChannel,
     license,
-    checkForUpdates: updateService.check
+    checkForUpdates: updateService.check,
+    fetchGuardLog
   });
 
   // Wait until the window is up so the check never slows startup.
