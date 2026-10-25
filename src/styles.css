@@ -864,6 +864,16 @@ button:focus-visible {
   font-weight: 600;
 }
 
+.compacted-popover [data-testid='compacted-run-summary'] {
+  margin-bottom: 8px;
+}
+
+.compacted-popover [data-testid='compacted-run-summary'] p {
+  margin: 0 0 2px;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+
 .compacted-popover ul {
   display: grid;
   gap: 4px;
