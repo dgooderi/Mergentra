@@ -2,6 +2,13 @@ const path = require('node:path');
 const fs = require('node:fs');
 const { forgetRepository, renameRepository } = require('./recent-repositories');
 const { isAutoCheckEnabled } = require('./update-policy');
+const {
+  loadChangedFiles: defaultLoadChangedFiles,
+  loadFilePatch: defaultLoadFilePatch
+} = require('./commit-diff');
+const { loadFileHistory: loadFileHistoryFromGit } = require('./file-history');
+const { readBlame } = require('./blame');
+const { listStashes, inspectStash } = require('./stashes');
 
 function isExistingDirectory(directory) {
   try {
@@ -20,6 +27,7 @@ function registerIpcHandlers({
   window,
   openAndRememberRepository,
   fetchRemoteReferences,
+  readReflog,
   cloneRepository,
   cancelClone,
   getSettings,
@@ -29,8 +37,34 @@ function registerIpcHandlers({
   installChannel = 'installer',
   license,
   checkForUpdates,
-  directoryExists = isExistingDirectory
+  fetchGuardLog,
+  loadChangedFiles = defaultLoadChangedFiles,
+  loadFilePatch = defaultLoadFilePatch,
+  directoryExists = isExistingDirectory,
+  loadFileHistory = loadFileHistoryFromGit
 }) {
+  function diffRequest(request, extraKeys = []) {
+    if (typeof request !== 'object' || request === null) {
+      throw new Error('Choose a commit from the graph.');
+    }
+    const repositoryPath = getActiveRepositoryPath();
+    if (!repositoryPath) {
+      throw new Error('Open a repository first.');
+    }
+    const picked = { commit: request.commit, compareWith: request.compareWith };
+    for (const key of extraKeys) {
+      picked[key] = request[key];
+    }
+    return [runGit, getSettings().gitPath || 'git', repositoryPath, picked];
+  }
+
+  ipcMain.handle('diff:files', async (_event, request) =>
+    loadChangedFiles(...diffRequest(request))
+  );
+  ipcMain.handle('diff:patch', async (_event, request) =>
+    loadFilePatch(...diffRequest(request, ['path']))
+  );
+
   // The last folder used wins; the default directory only applies when there is none.
   function browseStartDirectory() {
     const { lastBrowsedDirectory, defaultDirectory } = getSettings();
@@ -143,6 +177,42 @@ function registerIpcHandlers({
       throw new Error(failure);
     }
   });
+  ipcMain.handle('repository:file-history', async (_event, historyPath) => {
+    if (typeof historyPath !== 'string') {
+      throw new Error('Enter a path inside the repository.');
+    }
+    const activeRepositoryPath = getActiveRepositoryPath();
+    if (!activeRepositoryPath) {
+      throw new Error('Open a repository first.');
+    }
+    return loadFileHistory(
+      { runGit },
+      getSettings().gitPath || 'git',
+      activeRepositoryPath,
+      historyPath
+    );
+  });
+  ipcMain.handle('repository:blame', async (_event, revision, filePath) => {
+    const repositoryPath = getActiveRepositoryPath();
+    if (!repositoryPath) {
+      return { status: 'error', message: 'Open a repository first.' };
+    }
+    try {
+      return await readBlame({ runGit }, getSettings().gitPath || 'git', repositoryPath, {
+        revision,
+        path: filePath
+      });
+    } catch (error) {
+      return { status: 'error', message: `Git could not blame this file: ${error.message}` };
+    }
+  });
+  ipcMain.handle('reflog:read', async (_event, ref) => {
+    const activeRepositoryPath = getActiveRepositoryPath();
+    if (!activeRepositoryPath) {
+      throw new Error('Open a repository first.');
+    }
+    return readReflog(activeRepositoryPath, ref);
+  });
   ipcMain.handle('repository:recent', () => getSettings().recentRepositories);
   ipcMain.handle('repository:forget-recent', async (_event, repositoryPath) => {
     if (typeof repositoryPath !== 'string') {
@@ -166,6 +236,25 @@ function registerIpcHandlers({
     );
     saveSettings({ ...getSettings(), recentRepositories });
     return recentRepositories;
+  });
+  ipcMain.handle('stashes:list', async () => {
+    const repositoryPath = getActiveRepositoryPath();
+    if (!repositoryPath) {
+      throw new Error('Open a repository first.');
+    }
+    try {
+      const stashes = await listStashes({ runGit }, getSettings().gitPath || 'git', repositoryPath);
+      return { stashes };
+    } catch (error) {
+      return { stashes: [], error: error.message };
+    }
+  });
+  ipcMain.handle('stashes:inspect', (_event, stashIndex) => {
+    const repositoryPath = getActiveRepositoryPath();
+    if (!repositoryPath) {
+      throw new Error('Open a repository first.');
+    }
+    return inspectStash({ runGit }, getSettings().gitPath || 'git', repositoryPath, stashIndex);
   });
   ipcMain.handle('settings:get-git-path', () => getSettings().gitPath);
   ipcMain.handle('settings:save-git-path', async (_event, gitPath) => {
@@ -221,6 +310,11 @@ function registerIpcHandlers({
         defaultDirectory && directoryExists(defaultDirectory) ? defaultDirectory : undefined
     });
     return result.canceled ? null : result.filePaths[0];
+  });
+  ipcMain.handle('fetch-guard-log:list', async () => fetchGuardLog.list());
+  ipcMain.handle('fetch-guard-log:clear', async () => {
+    fetchGuardLog.clear();
+    return fetchGuardLog.list();
   });
 }
 

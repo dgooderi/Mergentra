@@ -8,6 +8,9 @@ export function compactOrdinaryHistory(graph) {
   for (const hash of graph.missingObjectBoundaries) {
     importantHashes.add(hash);
   }
+  for (const hash of graph.pinnedHashes ?? []) {
+    importantHashes.add(hash);
+  }
   if (graph.headDetached && graph.headHash) {
     importantHashes.add(graph.headHash);
   }
@@ -134,6 +137,7 @@ export function compactSameLaneRuns(graph) {
   const pinned = new Set([
     ...graph.shallowBoundaries,
     ...graph.missingObjectBoundaries,
+    ...(graph.pinnedHashes ?? []),
     ...graph.divergenceMarkers.map((marker) => marker.commitHash),
     ...graph.cutMarkers.map((marker) => marker.commitHash)
   ]);
@@ -227,4 +231,36 @@ export function compactSameLaneRuns(graph) {
     });
   }
   return { ...graph, commits: displayCommits };
+}
+
+// Summarises only the commits actually present in the run, so filtered, time-clipped and shallow
+// histories describe what the graph shows. Timestamps of 0 mean "unknown" and are ignored.
+export function summarizeCompactedRun(members) {
+  const timestamps = members
+    .map((member) => member.committerTimestamp)
+    .filter((timestamp) => timestamp > 0);
+  const mergeCount = members.filter(
+    (member) => (member.originalParents || member.parents).length > 1
+  ).length;
+  const commitsByAuthor = new Map();
+  for (const member of members) {
+    if (member.author) {
+      commitsByAuthor.set(member.author, (commitsByAuthor.get(member.author) || 0) + 1);
+    }
+  }
+  const authors = [...commitsByAuthor]
+    .map(([author, commitCount]) => ({
+      name: author.replace(/\s*<[^>]*>\s*$/, '') || author,
+      commitCount
+    }))
+    .sort((left, right) => right.commitCount - left.commitCount);
+  return {
+    count: members.length,
+    mergeCount,
+    ordinaryCount: members.length - mergeCount,
+    authorCount: authors.length,
+    authors,
+    firstTimestamp: timestamps.length ? Math.min(...timestamps) : 0,
+    lastTimestamp: timestamps.length ? Math.max(...timestamps) : 0
+  };
 }

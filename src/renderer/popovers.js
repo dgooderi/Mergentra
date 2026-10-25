@@ -1,4 +1,5 @@
 import { state } from './state.js';
+import { summarizeCompactedRun } from './compaction.js';
 
 export function closeGraphContextMenu() {
   document.getElementById('graph-context-menu')?.remove();
@@ -44,6 +45,35 @@ export function openCompactedPopover(summary, anchor, onSelect) {
   popover.style.top = `${Math.min(anchorBox.bottom + 6, Math.max(window.innerHeight - 270, 4))}px`;
   const heading = document.createElement('p');
   heading.textContent = `${summary.compactedCommits.length} ordinary commits`;
+  const aggregate = summarizeCompactedRun(summary.compactedCommits);
+  const details = document.createElement('div');
+  details.dataset.testid = 'compacted-run-summary';
+  const addDetail = (testid, text) => {
+    const line = document.createElement('p');
+    line.dataset.testid = testid;
+    line.textContent = text;
+    details.append(line);
+  };
+  if (aggregate.firstTimestamp > 0) {
+    const formatDate = (timestamp) => new Date(timestamp * 1000).toLocaleDateString();
+    const first = formatDate(aggregate.firstTimestamp);
+    const last = formatDate(aggregate.lastTimestamp);
+    addDetail('compacted-date-span', first === last ? first : `${first} – ${last}`);
+  }
+  addDetail(
+    'compacted-commit-kinds',
+    `${aggregate.ordinaryCount} ordinary, ${aggregate.mergeCount} merge`
+  );
+  if (aggregate.authorCount > 0) {
+    const shown = aggregate.authors.slice(0, 5).map((author) => author.name);
+    if (aggregate.authorCount > shown.length) {
+      shown.push(`…and ${aggregate.authorCount - shown.length} more`);
+    }
+    addDetail(
+      'compacted-authors',
+      `${aggregate.authorCount} ${aggregate.authorCount === 1 ? 'author' : 'authors'}: ${shown.join(', ')}`
+    );
+  }
   const list = document.createElement('ul');
   for (const commit of summary.compactedCommits) {
     const item = document.createElement('li');
@@ -63,6 +93,6 @@ export function openCompactedPopover(summary, anchor, onSelect) {
     item.append(button);
     list.append(item);
   }
-  popover.append(heading, list);
+  popover.append(heading, details, list);
   document.body.append(popover);
 }
