@@ -22,6 +22,7 @@ export default [
       'src/recent-repositories.js',
       'src/main-line.js',
       'src/clone.js',
+      'src/file-history.js',
       'src/splash.js',
       'src/app-state.js',
       'src/release-version.js',
