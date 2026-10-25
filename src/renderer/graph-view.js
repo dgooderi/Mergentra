@@ -629,7 +629,16 @@ export function drawDetachedHeadMarker({ graph, graphElement, commitPositions, o
   }
 }
 
-export function drawHistoryBoundaries({ graph, graphElement, commitPositions }) {
+export function drawHistoryBoundaries({ graph, graphElement, commitPositions }, actions = {}) {
+  function makeSelectable(marker, type, hash) {
+    marker.addEventListener('click', () => actions.selectBoundary?.(type, hash));
+    marker.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        actions.selectBoundary?.(type, hash);
+      }
+    });
+  }
   for (const hash of graph.shallowBoundaries) {
     const position = commitPositions.get(hash);
     if (!position) {
@@ -640,8 +649,9 @@ export function drawHistoryBoundaries({ graph, graphElement, commitPositions }) 
       'data-boundary-type': 'shallow',
       'data-commit-hash': hash,
       transform: `translate(${position.x} ${position.y - 25})`,
-      role: 'img',
-      'aria-label': 'Shallow history boundary'
+      role: 'button',
+      tabindex: 0,
+      'aria-label': 'Explain shallow history boundary'
     });
     const label = createSvgElement('text', {
       x: 0,
@@ -650,6 +660,7 @@ export function drawHistoryBoundaries({ graph, graphElement, commitPositions }) 
     });
     label.textContent = 'Shallow boundary';
     marker.append(label);
+    makeSelectable(marker, 'shallow', hash);
     graphElement.append(marker);
   }
 
@@ -663,8 +674,9 @@ export function drawHistoryBoundaries({ graph, graphElement, commitPositions }) 
       'data-boundary-type': 'missing-object',
       'data-commit-hash': hash,
       transform: `translate(${position.x} ${position.y - 39})`,
-      role: 'img',
-      'aria-label': 'Missing-object history boundary'
+      role: 'button',
+      tabindex: 0,
+      'aria-label': 'Explain missing-object history boundary'
     });
     const label = createSvgElement('text', {
       x: 0,
@@ -673,6 +685,7 @@ export function drawHistoryBoundaries({ graph, graphElement, commitPositions }) 
     });
     label.textContent = 'Missing-object boundary';
     marker.append(label);
+    makeSelectable(marker, 'missing-object', hash);
     graphElement.append(marker);
   }
 }

@@ -4,6 +4,12 @@ All notable changes to Mergentra are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- Explanations and manual next steps for shallow and missing-object history boundaries (#93).
+
 ## [1.0.0] - 2026-10-18
 
 ### Added

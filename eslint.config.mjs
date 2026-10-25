@@ -10,6 +10,7 @@ export default [
     files: [
       'src/main.js',
       'src/commit-graph.js',
+      'src/history-boundaries.js',
       'src/preload.js',
       'src/git-runner.js',
       'src/git-config-safety.js',
