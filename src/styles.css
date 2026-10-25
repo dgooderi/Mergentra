@@ -739,6 +739,35 @@ button:focus-visible {
   margin-bottom: 0;
 }
 
+#branch-health-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#branch-health-list li {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+}
+
+#branch-health-list li small {
+  color: var(--muted);
+}
+
+#branch-health-list li[data-uncertain='true'] [data-testid='branch-health-uncertainty'] {
+  color: var(--text);
+  font-style: italic;
+}
+
+#branch-health-list li button {
+  justify-self: start;
+}
+
 .settings-panel {
   max-width: 640px;
   margin: 56px 0 0;

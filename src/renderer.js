@@ -39,8 +39,10 @@ import { branchPathToMain, parentReferenceName } from './renderer/branch-path.js
 import { attachGraphPan } from './renderer/graph-pan.js';
 import { getPresetRange, isAxisSelectionAvailable } from './renderer/time-range.js';
 import { createReviewDock } from './renderer/review-dock.js';
+import { createBranchHealthPanel } from './renderer/branch-health-panel.js';
 const reviewDock = createReviewDock({ updateTimeNavigation });
 const selectCommit = reviewDock.selectCommit;
+const branchHealthPanel = createBranchHealthPanel({ revealCommit });
 const picker = document.getElementById('repository-picker');
 const repositoryView = document.getElementById('repository-view');
 function focusOnCommit(commit, position) {
@@ -51,6 +53,18 @@ function focusOnCommit(commit, position) {
     top: Math.max(position.y - scroller.clientHeight / 2, 0),
     behavior: 'smooth'
   });
+}
+
+function revealCommit(hash, referenceNames) {
+  const hidden = referenceNames.filter((name) => !state.visibleReferences.has(name));
+  if (hidden.length > 0) {
+    referencePicker.showOnly([...state.visibleReferences, ...hidden]);
+  }
+  const commit = state.currentGraph.commits.find((item) => item.hash === hash);
+  selectCommit(commit || null);
+  document
+    .querySelector(`[data-testid="commit-node"][data-commit-hash="${CSS.escape(hash)}"]`)
+    ?.scrollIntoView({ block: 'center', inline: 'center' });
 }
 
 const repositoryNoteField = enhanceNoteField(document.getElementById('repository-note'), {
@@ -179,6 +193,7 @@ function renderFilteredGraph() {
   state.availableReferenceNames = computeAvailableReferences(state.currentGraph, state.timeRange);
   updateTimeNavigation();
   referencePicker.refresh();
+  branchHealthPanel.refresh();
 
   const graph = buildFilteredGraph(
     state.currentGraph,

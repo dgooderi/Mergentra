@@ -417,6 +417,18 @@
                 </p>
                 <ul id="worktree-list"></ul>
               </details>
+              <details id="branch-health-panel" class="worktrees-panel branch-health-panel" hidden>
+                <summary id="branch-health-heading" data-testid="branch-health-toggle">
+                  Branch health
+                </summary>
+                <p class="hint">
+                  Local branches compared with the target branch (or the main line when none is
+                  selected). Read-only: nothing in the repository is changed. Divergence points are
+                  inferred from history, because Git does not record when a branch was created.
+                </p>
+                <p id="branch-health-note" class="hint" data-testid="branch-health-note"></p>
+                <ul id="branch-health-list" data-testid="branch-health-list"></ul>
+              </details>
             </div>
             <div class="graph-heading">
               <h2>Commit graph</h2>
