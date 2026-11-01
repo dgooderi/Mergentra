@@ -30,6 +30,7 @@ function registerIpcHandlers({
   readReflog,
   cloneRepository,
   cancelClone,
+  cancelOpenRepository,
   getSettings,
   saveSettings,
   getActiveRepositoryPath,
@@ -92,6 +93,7 @@ function registerIpcHandlers({
   ipcMain.handle('repository:open', async (_event, repositoryPath) =>
     JSON.stringify(await openAndRememberRepository(repositoryPath))
   );
+  ipcMain.handle('repository:cancel-open', () => cancelOpenRepository());
   ipcMain.handle('repository:fetch', async () => {
     const result = await fetchRemoteReferences();
     return result.repository

@@ -18,6 +18,10 @@ const { rememberRepository } = require('./recent-repositories');
 const { validateCloneUrl, checkDestination, runClone } = require('./clone');
 const { readReflog } = require('./reflog');
 const { runGit, runGitWithInput } = createGitRunner();
+const runGitProcess = runGit;
+const runGitInputProcess = runGitWithInput;
+// Aborts the repository open that is in progress, if any.
+let openController = null;
 // Created once the app is ready, because the settings folder is only known then.
 let state;
 let fetchGuardLog;
@@ -29,40 +33,68 @@ if (process.env.MERGENTRA_USER_DATA_DIR) {
 // Measured at roughly 2.6 KB of memory per commit across the main and renderer processes.
 const MEMORY_PER_COMMIT_BYTES = 2600;
 const LARGE_REPOSITORY_COMMITS = Number(process.env.MERGENTRA_LARGE_REPOSITORY_COMMITS) || 300_000;
+const MANY_REFERENCES = Number(process.env.MERGENTRA_MANY_REFERENCES) || 2000;
 
-async function confirmLargeRepository(gitPath, repositoryPath) {
+async function countCommits(runGit, gitPath, repositoryPath) {
+  const { stdout } = await runGit(
+    gitPath,
+    ['-C', repositoryPath, 'rev-list', '--count', '--branches', '--remotes'],
+    { timeout: 120_000 }
+  );
+  return Number(stdout.trim());
+}
+
+async function countReferences(runGit, gitPath, repositoryPath) {
+  const { stdout } = await runGit(
+    gitPath,
+    ['-C', repositoryPath, 'for-each-ref', '--format=x', 'refs/heads', 'refs/remotes'],
+    { timeout: 120_000, maxBuffer: 64 * 1024 * 1024 }
+  );
+  return stdout.split('\n').filter(Boolean).length;
+}
+
+async function confirmLargeRepository(runGit, gitPath, repositoryPath) {
   let commitCount;
+  let referenceCount;
   try {
-    const { stdout } = await runGit(
-      gitPath,
-      ['-C', repositoryPath, 'rev-list', '--count', '--branches', '--remotes'],
-      { timeout: 120_000 }
-    );
-    commitCount = Number(stdout.trim());
+    [commitCount, referenceCount] = await Promise.all([
+      countCommits(runGit, gitPath, repositoryPath),
+      countReferences(runGit, gitPath, repositoryPath)
+    ]);
   } catch {
     return;
   }
-  if (!(commitCount > LARGE_REPOSITORY_COMMITS)) {
+  const tooManyCommits = commitCount > LARGE_REPOSITORY_COMMITS;
+  const tooManyReferences = referenceCount > MANY_REFERENCES;
+  if (!tooManyCommits && !tooManyReferences) {
     return;
   }
 
   const formattedCount = commitCount.toLocaleString('en-US');
+  const formattedReferences = referenceCount.toLocaleString('en-US');
   const estimatedGigabytes = ((commitCount * MEMORY_PER_COMMIT_BYTES) / 1e9).toFixed(1);
+  const message = tooManyCommits
+    ? `This repository has ${formattedCount} commits${tooManyReferences ? ` and ${formattedReferences} branches and remotes` : ''}.`
+    : `This repository has ${formattedReferences} branches and remotes.`;
+  const detail = tooManyCommits
+    ? `Opening it needs roughly ${estimatedGigabytes} GB of memory and may take a minute or more. On a computer with limited memory, Mergentra may become very slow or close. Close other programs first if you continue.`
+    : 'Opening it may take a minute or more, and the branch list will be very long. Consider hiding most branches once it opens.';
   const { response } = await dialog.showMessageBox(BrowserWindow.getFocusedWindow() ?? null, {
     type: 'warning',
     title: 'Large repository',
-    message: `This repository has ${formattedCount} commits.`,
-    detail: `Opening it needs roughly ${estimatedGigabytes} GB of memory and may take a minute or more. On a computer with limited memory, Mergentra may become very slow or close. Close other programs first if you continue.`,
+    message,
+    detail,
     buttons: ['Cancel', 'Open anyway'],
     defaultId: 0,
     cancelId: 0,
     noLink: true
   });
   if (response !== 1) {
-    throw new Error(`Opening was cancelled: the repository has ${formattedCount} commits.`);
+    throw new Error(
+      `Opening was cancelled: ${message.replace(/^This repository has /, 'the repository has ')}`
+    );
   }
 }
-
 function sanitizeDiagnostics(diagnostics) {
   return diagnostics.replace(/(https?:\/\/)[^/\s@]+@/gi, '$1[redacted]@').trim();
 }
@@ -75,11 +107,25 @@ function errorDiagnostics(error) {
   );
 }
 
-async function openRepository(repositoryPath, { confirmLarge = false } = {}) {
+async function openRepository(repositoryPath, { confirmLarge = false, signal } = {}) {
   if (typeof repositoryPath !== 'string' || repositoryPath.trim() === '') {
     throw new Error('Choose a repository folder before opening it.');
   }
+  // Every Git process of this open stops as soon as the user cancels it.
+  const runGit = (gitPath, args, options) => runGitProcess(gitPath, args, { ...options, signal });
+  const runGitWithInput = (gitPath, args, input) =>
+    runGitInputProcess(gitPath, args, input, { signal });
+  try {
+    return await openRepositoryWith({ runGit, runGitWithInput }, repositoryPath, confirmLarge);
+  } catch (error) {
+    if (signal?.aborted) {
+      throw new Error('Opening was cancelled.', { cause: error });
+    }
+    throw error;
+  }
+}
 
+async function openRepositoryWith({ runGit, runGitWithInput }, repositoryPath, confirmLarge) {
   const resolvedPath = path.resolve(repositoryPath.trim());
   const { gitPath: configuredGitPath } = state.getSettings();
   const gitPath = configuredGitPath || 'git';
@@ -135,7 +181,7 @@ async function openRepository(repositoryPath, { confirmLarge = false } = {}) {
 
   const { stdout } = await runGit(gitPath, ['-C', resolvedPath, 'branch', '--show-current']);
   if (confirmLarge) {
-    await confirmLargeRepository(gitPath, resolvedPath);
+    await confirmLargeRepository(runGit, gitPath, resolvedPath);
   }
   const graph = await loadCommitGraph(
     { runGit, runGitWithInput },
@@ -152,8 +198,23 @@ async function openRepository(repositoryPath, { confirmLarge = false } = {}) {
   };
 }
 
+function cancelOpenRepository() {
+  openController?.abort();
+}
+
 async function openAndRememberRepository(repositoryPath) {
-  const repository = await openRepository(repositoryPath, { confirmLarge: true });
+  const controller = new AbortController();
+  openController?.abort();
+  openController = controller;
+  let repository;
+  try {
+    repository = await openRepository(repositoryPath, {
+      confirmLarge: true,
+      signal: controller.signal
+    });
+  } finally {
+    if (openController === controller) openController = null;
+  }
   const settings = state.getSettings();
   const recentRepositories = rememberRepository(settings.recentRepositories, repository, {
     caseInsensitive: process.platform === 'win32'
@@ -402,6 +463,7 @@ app.whenReady().then(() => {
       ),
     cloneRepository,
     cancelClone,
+    cancelOpenRepository,
     getSettings: state.getSettings,
     saveSettings: state.saveSettings,
     getActiveRepositoryPath: state.getActiveRepositoryPath,

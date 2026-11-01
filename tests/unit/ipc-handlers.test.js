@@ -187,6 +187,7 @@ describe('IPC handlers', () => {
       'diff:patch',
       'repository:choose',
       'repository:open',
+      'repository:cancel-open',
       'repository:fetch',
       'clone:choose-destination',
       'clone:start',

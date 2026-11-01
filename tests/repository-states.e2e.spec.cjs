@@ -249,6 +249,119 @@ test('opening a repository above the commit threshold asks for confirmation firs
   }
 });
 
+test('opening a repository with many branches asks for confirmation first', async () => {
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
+  const repositoryPath = path.join(testDirectory, 'branchy-repository');
+  const userDataPath = path.join(testDirectory, 'user-data');
+  fs.mkdirSync(repositoryPath);
+  let app;
+
+  const runGit = (args) =>
+    execFileSync('git', args, {
+      cwd: repositoryPath,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe']
+    }).trim();
+
+  try {
+    runGit(['init', '--initial-branch=main']);
+    runGit(['config', 'user.name', 'Mergentra E2e']);
+    runGit(['config', 'user.email', 'mergentra-e2e@example.invalid']);
+    runGit(['commit', '--allow-empty', '-m', 'First']);
+    runGit(['branch', 'one']);
+    runGit(['branch', 'two']);
+
+    app = await launchMergentra({
+      args: [path.resolve(__dirname, '..')],
+      env: {
+        ...process.env,
+        MERGENTRA_USER_DATA_DIR: userDataPath,
+        MERGENTRA_MANY_REFERENCES: '2'
+      }
+    });
+    const window = await app.firstWindow();
+    await window.getByLabel('Repository folder').fill(repositoryPath);
+
+    await app.evaluate(({ dialog }) => {
+      dialog.showMessageBox = async (...args) => {
+        globalThis.manyBranchesPrompt = args[args.length - 1];
+        return { response: 0 };
+      };
+    });
+    await window.getByRole('button', { name: 'Open repository' }).click();
+    await expect(window.locator('#status')).toContainText('Opening was cancelled');
+    const prompt = await app.evaluate(() => globalThis.manyBranchesPrompt);
+    expect(prompt.message).toContain('3 branches and remotes');
+
+    await app.evaluate(({ dialog }) => {
+      dialog.showMessageBox = async () => ({ response: 1 });
+    });
+    await window.getByRole('button', { name: 'Open repository' }).click();
+    await expect(window.getByRole('heading', { name: 'branchy-repository' })).toBeVisible();
+  } finally {
+    if (app) {
+      await app.close();
+    }
+    fs.rmSync(testDirectory, { recursive: true, force: true });
+  }
+});
+
+test('cancelling while a repository is opening stops the load', async () => {
+  const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
+  const repositoryPath = path.join(testDirectory, 'slow-repository');
+  const userDataPath = path.join(testDirectory, 'user-data');
+  fs.mkdirSync(repositoryPath);
+  let app;
+
+  const runGit = (args) =>
+    execFileSync('git', args, {
+      cwd: repositoryPath,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe']
+    }).trim();
+
+  try {
+    runGit(['init', '--initial-branch=main']);
+    runGit(['config', 'user.name', 'Mergentra E2e']);
+    runGit(['config', 'user.email', 'mergentra-e2e@example.invalid']);
+    runGit(['commit', '--allow-empty', '-m', 'First']);
+    runGit(['commit', '--allow-empty', '-m', 'Second']);
+
+    app = await launchMergentra({
+      args: [path.resolve(__dirname, '..')],
+      env: {
+        ...process.env,
+        MERGENTRA_USER_DATA_DIR: userDataPath,
+        MERGENTRA_LARGE_REPOSITORY_COMMITS: '1'
+      }
+    });
+    const window = await app.firstWindow();
+    await window.getByLabel('Repository folder').fill(repositoryPath);
+    await expect(window.locator('#cancel-repository-open')).toBeHidden();
+
+    // The warning dialog holds the open in progress long enough to cancel it.
+    await app.evaluate(({ dialog }) => {
+      dialog.showMessageBox = () =>
+        new Promise((resolve) => {
+          globalThis.releaseOpen = () => resolve({ response: 1 });
+        });
+    });
+    await window.getByRole('button', { name: 'Open repository' }).click();
+    await expect(window.locator('#cancel-repository-open')).toBeVisible();
+    await window.locator('#cancel-repository-open').click();
+    await app.evaluate(() => globalThis.releaseOpen());
+
+    await expect(window.locator('#status')).toContainText('Opening was cancelled');
+    await expect(window.locator('#cancel-repository-open')).toBeHidden();
+    await expect(window.getByRole('heading', { name: 'slow-repository' })).toHaveCount(0);
+  } finally {
+    if (app) {
+      await app.close();
+    }
+    fs.rmSync(testDirectory, { recursive: true, force: true });
+  }
+});
+
 test('detached HEAD is marked at its commit without inventing a branch', async () => {
   const testDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'mergentra-e2e-'));
   const repositoryPath = path.join(testDirectory, 'detached-repository');

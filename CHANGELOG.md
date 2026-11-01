@@ -27,6 +27,19 @@ All notable changes to Mergentra are recorded here. The format follows
   Entries can be shown in the graph when the commit is in it, and entries for
   unreachable, expired or missing commits are explained.
 
+## [1.1.0] - 2026-11-02
+
+### Added
+
+- Opening a repository can be cancelled, and repositories with very many branches ask for confirmation first.
+- Neighbouring branch lanes are recoloured by hue, saturation, and lightness so lanes that run side by side stay distinct.
+
+### Changed
+
+- Every branch merged into another gets its own lane instead of sharing one, so separate branches no longer overlap or share a colour.
+- Merge lines curve directly into the merge commit.
+- Branches are ordered and coloured by how recently their tip was committed.
+
 ## [1.0.0] - 2026-10-18
 
 ### Added

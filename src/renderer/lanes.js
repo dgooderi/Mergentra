@@ -42,17 +42,6 @@ function indexesFor(graph) {
   return indexes;
 }
 
-function firstParentContains(commitsByHash, tipHash, targetHash) {
-  let commit = commitsByHash.get(tipHash);
-  while (commit) {
-    if (commit.hash === targetHash) {
-      return true;
-    }
-    commit = commitsByHash.get(commit.parents[0]);
-  }
-  return false;
-}
-
 export function computeAvailableReferences(currentGraph, timeRange) {
   if (!currentGraph || !timeRange) {
     return null;
@@ -142,27 +131,33 @@ export function buildFilteredGraph(
     const includeUnselectedMergeHistory =
       !targetBranchName || references.length === sourceGraph.references.length;
     const walked = new Set();
+    // Every merged-in branch gets its own side lane, so separate branches never share a row,
+    // a colour, or a stretch of line.
+    let nextSideLane = references.length + 1;
     for (const reference of references) {
-      const sideLane = references.length + 1 + reference.lane;
-      const pending = [reference.hash];
+      const pending = [{ hash: reference.hash, sideLane: null }];
       while (pending.length > 0) {
-        const hash = pending.pop();
+        const { hash, sideLane: current } = pending.pop();
         const commit = commitsByHash.get(hash);
         if (!commit || walked.has(hash)) {
           continue;
         }
         walked.add(hash);
+        let sideLane = null;
         if (!laneByHash.has(hash)) {
-          if (hash !== reference.hash) {
+          if (hash === reference.hash) {
+            laneByHash.set(hash, reference.lane);
+          } else {
+            sideLane = current ?? nextSideLane++;
             sideLanes.set(sideLane, reference.lane);
+            laneByHash.set(hash, sideLane);
           }
-          laneByHash.set(hash, hash === reference.hash ? reference.lane : sideLane);
         }
-        pending.push(
-          ...commit.parents.filter(
-            (parentHash) => includeUnselectedMergeHistory || firstParentHashes.has(parentHash)
-          )
-        );
+        commit.parents.forEach((parentHash, index) => {
+          if (includeUnselectedMergeHistory || firstParentHashes.has(parentHash)) {
+            pending.push({ hash: parentHash, sideLane: index === 0 ? sideLane : null });
+          }
+        });
       }
     }
   }
@@ -190,15 +185,23 @@ export function buildFilteredGraph(
   );
   const inRangeHashes = new Set(commitsInRange.map((commit) => commit.hash));
   const visibleNames = new Set(references.map((reference) => reference.name));
+  // Counting tips down each first-parent chain in one pass (children before parents) keeps this
+  // linear; testing every pair of references is quadratic and stalls on repositories with
+  // thousands of branches.
+  const tipsThrough = new Map();
+  for (const reference of references) {
+    tipsThrough.set(reference.hash, (tipsThrough.get(reference.hash) || 0) + 1);
+  }
+  for (let index = sourceGraph.commits.length - 1; index >= 0; index -= 1) {
+    const commit = sourceGraph.commits[index];
+    const count = tipsThrough.get(commit.hash);
+    if (count && commitsByHash.has(commit.parents[0])) {
+      tipsThrough.set(commit.parents[0], (tipsThrough.get(commit.parents[0]) || 0) + count);
+    }
+  }
   const branchContinuations = references
     .filter((reference) => reference.name !== mainReference?.name)
-    .filter((reference) =>
-      references.some(
-        (child) =>
-          child.name !== reference.name &&
-          firstParentContains(commitsByHash, child.hash, reference.hash)
-      )
-    )
+    .filter((reference) => tipsThrough.get(reference.hash) > 1)
     .map((reference) => ({ targetHash: reference.hash, parent: reference }));
   const graph = {
     ...sourceGraph,

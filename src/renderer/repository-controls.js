@@ -10,6 +10,8 @@ export function createRepositoryControls({ showRepository }) {
   const gitPathInput = document.getElementById('git-executable-path');
   const defaultDirectoryInput = document.getElementById('default-directory');
   const statusMessage = document.getElementById('status');
+  const cancelButton = document.getElementById('cancel-repository-open');
+  cancelButton.addEventListener('click', () => window.mergentra.cancelOpenRepository());
 
   function setStatus(message) {
     statusMessage.textContent = message;
@@ -24,6 +26,7 @@ export function createRepositoryControls({ showRepository }) {
     }
     setStatus('');
     progress.textContent = 'Loading repository history…';
+    cancelButton.hidden = false;
 
     try {
       showRepository(await loadRepository(repositoryPath));
@@ -32,6 +35,7 @@ export function createRepositoryControls({ showRepository }) {
       progress.textContent = '';
       setStatus(error.message);
     } finally {
+      cancelButton.hidden = true;
       for (const button of buttons) {
         button.disabled = false;
       }

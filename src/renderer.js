@@ -1,6 +1,8 @@
 import { compactOrdinaryHistory, compactSameLaneRuns } from './renderer/compaction.js';
 import { buildFilteredGraph, computeAvailableReferences } from './renderer/lanes.js';
 import { computeGraphLayout } from './renderer/layout.js';
+import { separateRowColors } from './renderer/row-colors.js';
+import { sideLaneColor } from './renderer/side-lane-color.js';
 import {
   appendDefinitions,
   drawCheckedOutMarker,
@@ -408,9 +410,61 @@ function renderGraphContents(graph) {
   closeCompactedPopover();
   state.compactedMembership = new Map();
 
-  const ownerReference = (lane) => graph.references[graph.sideLanes?.get(lane) ?? lane];
+  const baseReference = (lane) => {
+    const ownerLane = graph.sideLanes?.get(lane);
+    if (ownerLane === undefined) {
+      return graph.references[lane];
+    }
+    const owner = graph.references[ownerLane];
+    return owner && { ...owner, color: sideLaneColor(owner.color) };
+  };
   const { axisHeight, indexByHash, cutMarkersByHash, commitPositions, width, height } =
     computeGraphLayout(graph);
+  // A local branch and its remote counterpart share a colour on purpose.
+  const isCounterpart = (laneA, laneB) => {
+    const [a, b] = [graph.references[laneA], graph.references[laneB]];
+    return Boolean(a && b && (b.name.endsWith(`/${a.name}`) || a.name.endsWith(`/${b.name}`)));
+  };
+  // Filtered views keep each branch's fixed colour so it matches the full view.
+  const showingAllReferences =
+    state.visibleReferences.size >= (state.currentGraph?.references.length ?? 0);
+  const separated = separateRowColors({
+    commits: graph.commits,
+    commitPositions,
+    colorOf: (lane) => baseReference(lane)?.color,
+    mayShare: isCounterpart
+  });
+  // Filtered views keep each branch's fixed colour, but side lanes only exist in this view, so
+  // they are always separated from their neighbours.
+  const rowColors = new Map(
+    [...separated].filter(([lane]) => showingAllReferences || graph.sideLanes?.has(lane))
+  );
+  for (const [lane, color] of rowColors) {
+    const reference = graph.references[lane];
+    const source =
+      reference && state.currentGraph.references.find((r) => r.name === reference.name);
+    if (!source || graph.sideLanes?.has(lane)) {
+      continue;
+    }
+    source.color = color;
+    reference.color = color;
+    const legend = [...document.querySelectorAll('#reference-lanes li')].find(
+      (item) => item.dataset.refName === source.name
+    );
+    if (legend) {
+      legend.dataset.color = color;
+      legend.querySelector('svg line')?.setAttribute('stroke', color);
+    }
+  }
+  const laneReferences = new Map();
+  const ownerReference = (lane) => {
+    if (!laneReferences.has(lane)) {
+      const reference = baseReference(lane);
+      const color = rowColors.get(lane);
+      laneReferences.set(lane, reference && color ? { ...reference, color } : reference);
+    }
+    return laneReferences.get(lane);
+  };
   graphElement.dataset.baseWidth = String(width);
   graphElement.dataset.baseHeight = String(height);
   graphElement.setAttribute('width', String(Math.round(width * state.zoomLevel)));
