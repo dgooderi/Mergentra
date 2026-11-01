@@ -8,11 +8,16 @@ function createGitRunner({
   spawnProcess = spawn,
   getEnvironment = () => process.env
 } = {}) {
-  async function runGit(gitPath, args, { timeout = 30_000, maxBuffer = OUTPUT_LIMIT } = {}) {
+  async function runGit(
+    gitPath,
+    args,
+    { timeout = 30_000, maxBuffer = OUTPUT_LIMIT, signal } = {}
+  ) {
     return execFileAsync(gitPath, args, {
       windowsHide: true,
       timeout,
       maxBuffer,
+      signal,
       env: {
         ...getEnvironment(),
         GIT_NO_LAZY_FETCH: '1',
@@ -21,10 +26,11 @@ function createGitRunner({
     });
   }
 
-  async function runGitWithInput(gitPath, args, input) {
+  async function runGitWithInput(gitPath, args, input, { signal } = {}) {
     return new Promise((resolve, reject) => {
       const child = spawnProcess(gitPath, args, {
         windowsHide: true,
+        signal,
         env: {
           ...getEnvironment(),
           GIT_NO_LAZY_FETCH: '1',

@@ -185,6 +185,7 @@ describe('IPC handlers', () => {
     expect([...handlers.keys()]).toEqual([
       'repository:choose',
       'repository:open',
+      'repository:cancel-open',
       'repository:fetch',
       'clone:choose-destination',
       'clone:start',
