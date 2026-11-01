@@ -65,6 +65,20 @@ interface Release {
 export class ReleaseNotesComponent {
   protected readonly releases: Release[] = [
     {
+      version: '1.1.0',
+      date: 'November 2, 2026',
+      summary: 'Clearer branch lanes and safer repository opening',
+      added: [
+        'Cancel opening a repository, with a confirmation for repositories that have very many branches.',
+        'Neighbouring lanes are recoloured by hue, saturation, and lightness to stay distinct.'
+      ],
+      changed: [
+        'Each merged-in branch gets its own lane, so branches no longer overlap or share a colour.',
+        'Merge lines curve directly into the merge commit.',
+        'Branches are ordered and coloured by how recently their tip was committed.'
+      ]
+    },
+    {
       version: '1.0.0',
       date: 'October 18, 2026',
       summary: 'The first stable public release',
