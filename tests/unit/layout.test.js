@@ -37,7 +37,6 @@ describe('computeGraphLayout', () => {
     expect(y('m')).toBe(y('b'));
   });
 
-
   it('keeps main on the top row and puts an overlapping branch below it', () => {
     const commits = [commit('m', ['f1', 'b'], 1), commit('f1', ['b'], 0), commit('b', [], 1)];
     const layout = computeGraphLayout(graphOf(commits, references));
