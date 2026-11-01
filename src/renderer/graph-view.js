@@ -4,9 +4,6 @@ import { computeTimeAxisTicks, dateRangeFromAxisDrag } from './time-axis.js';
 import { findMainReference } from './lanes.js';
 import { markdownToPlainText } from './markdown.js';
 
-// Merge lines longer than this leave their branch with a visible curve instead of running along its row.
-const MERGE_CURVE_AT_START_SPAN = 400;
-
 export function createSvgElement(name, attributes = {}) {
   const element = document.createElementNS('http://www.w3.org/2000/svg', name);
   for (const [attribute, value] of Object.entries(attributes)) {
@@ -189,8 +186,7 @@ export function drawEdges(ctx, actions) {
         continue;
       }
       const isMergeIn = commit.parents.length > 1 && parentHash !== commit.parents[0];
-      const curvesAtEnd =
-        isMergeIn && childPosition.x - parentPosition.x <= MERGE_CURVE_AT_START_SPAN;
+      const curvesAtEnd = isMergeIn;
       const bend = Math.min(curvesAtEnd ? 176 : 48, childPosition.x - parentPosition.x);
       let pathData;
       if (parentPosition.y === childPosition.y) {
@@ -198,13 +194,6 @@ export function drawEdges(ctx, actions) {
       } else if (curvesAtEnd) {
         const turn = childPosition.x - bend;
         pathData = `M ${parentPosition.x} ${parentPosition.y} L ${turn} ${parentPosition.y} C ${turn + bend * 0.8} ${parentPosition.y}, ${turn + bend * 0.2} ${childPosition.y}, ${childPosition.x} ${childPosition.y}`;
-      } else if (isMergeIn) {
-        // A long merge line leaves its source, runs on its own track beside the target lane, and drops vertically into the merge node.
-        const side = Math.sign(parentPosition.y - childPosition.y) || -1;
-        const trackY = childPosition.y + side * (26 + (indexByHash.get(commit.hash) % 5) * 16);
-        const turn = parentPosition.x + bend;
-        const dropX = childPosition.x - 30;
-        pathData = `M ${parentPosition.x} ${parentPosition.y} C ${parentPosition.x + bend * 0.8} ${parentPosition.y}, ${parentPosition.x + bend * 0.2} ${trackY}, ${turn} ${trackY} L ${dropX} ${trackY} Q ${childPosition.x} ${trackY} ${childPosition.x} ${childPosition.y + side * 11}`;
       } else {
         const turn = parentPosition.x + bend;
         pathData = `M ${parentPosition.x} ${parentPosition.y} C ${parentPosition.x + bend * 0.8} ${parentPosition.y}, ${parentPosition.x + bend * 0.2} ${childPosition.y}, ${turn} ${childPosition.y} L ${childPosition.x} ${childPosition.y}`;
@@ -311,7 +300,13 @@ export function drawEdges(ctx, actions) {
   }
 }
 
-export function drawParentContinuations({ graph, graphElement, commitPositions, width }) {
+export function drawParentContinuations({
+  graph,
+  graphElement,
+  commitPositions,
+  width,
+  ownerReference
+}) {
   for (const continuation of graph.parentContinuations || []) {
     const position = commitPositions.get(continuation.targetHash);
     if (!position) {
@@ -323,7 +318,7 @@ export function drawParentContinuations({ graph, graphElement, commitPositions, 
         y1: position.y,
         x2: width,
         y2: position.y,
-        stroke: continuation.parent.color,
+        stroke: ownerReference(continuation.parent.lane)?.color || continuation.parent.color,
         'stroke-width': 3,
         'stroke-opacity': 0.25,
         'stroke-dasharray': '8 8',
@@ -346,7 +341,7 @@ export function drawParentContinuations({ graph, graphElement, commitPositions, 
         y1: position.y,
         x2: width,
         y2: position.y,
-        stroke: continuation.parent.color,
+        stroke: ownerReference(continuation.parent.lane)?.color || continuation.parent.color,
         'stroke-width': 3,
         'stroke-opacity': 0.65,
         'stroke-dasharray': '2 8',
@@ -506,14 +501,7 @@ function createNodeBody(commit, color) {
     fill: 'none',
     'aria-hidden': 'true'
   });
-  const label = createSvgElement('text', {
-    x: 0,
-    y: 23,
-    'text-anchor': 'middle',
-    class: 'hash-label'
-  });
-  label.textContent = commit.hash.slice(0, 7);
-  return [title, hitTarget, selectionRing, createNodeShape(commit, color), label];
+  return [title, hitTarget, selectionRing, createNodeShape(commit, color)];
 }
 
 function drawCommitNode(commit, position, ctx, actions) {
@@ -711,26 +699,40 @@ export function drawDivergenceMarkers({ graph, graphElement, commitPositions }) 
 }
 
 export function drawCutMarkers({ graph, graphElement, commitPositions }) {
+  // A full label is about 175px wide, wider than the commit spacing, so a label that would
+  // overlap the previous one on its row collapses to an ellipsis (the full text stays as a tooltip).
+  const labelHalfWidth = 90;
+  const labelEndByRow = new Map();
   for (const marker of graph.cutMarkers) {
     const position = commitPositions.get(marker.commitHash);
     if (!position) {
       continue;
     }
+    const text = `${marker.direction === 'older' ? 'Earlier' : 'Later'} history continues`;
+    const fits = position.x - labelHalfWidth > (labelEndByRow.get(position.y) ?? -Infinity);
+    if (fits) {
+      labelEndByRow.set(position.y, position.x + labelHalfWidth);
+    }
     const cutMarker = createSvgElement('g', {
       'data-testid': 'history-cut-marker',
       'data-direction': marker.direction,
       'data-commit-hash': marker.commitHash,
-      transform: `translate(${position.x} ${position.y + 34})`,
+      transform: `translate(${position.x} ${position.y + 26})`,
       role: 'img',
-      'aria-label': `${marker.direction === 'older' ? 'Earlier' : 'Later'} history continues`
+      'aria-label': text
     });
     const label = createSvgElement('text', {
       x: 0,
       y: 0,
       'text-anchor': 'middle'
     });
-    label.textContent = `${marker.direction === 'older' ? 'Earlier' : 'Later'} history continues`;
+    label.textContent = fits ? text : '…';
     cutMarker.append(label);
+    if (!fits) {
+      const title = createSvgElement('title');
+      title.textContent = text;
+      cutMarker.append(title);
+    }
     graphElement.append(cutMarker);
   }
 }

@@ -24,6 +24,20 @@ describe('computeGraphLayout', () => {
     expect(a.y).toBe(b.y);
   });
 
+  it('keeps commits of a lane on one straight line when no history boundary is shown', () => {
+    const commits = [
+      commit('f2', ['f1'], 0),
+      commit('f1', ['b'], 0),
+      commit('m', ['b'], 1),
+      commit('b', [], 1)
+    ];
+    const layout = computeGraphLayout(graphOf(commits, references));
+    const y = (hash) => layout.commitPositions.get(hash).y;
+    expect(y('f2')).toBe(y('f1'));
+    expect(y('m')).toBe(y('b'));
+  });
+
+
   it('keeps main on the top row and puts an overlapping branch below it', () => {
     const commits = [commit('m', ['f1', 'b'], 1), commit('f1', ['b'], 0), commit('b', [], 1)];
     const layout = computeGraphLayout(graphOf(commits, references));
@@ -54,6 +68,14 @@ describe('computeGraphLayout', () => {
     expect(layout.cutMarkersByHash.get('a')).toEqual([marker]);
     expect(layout.width).toBe(232);
     expect(layout.height).toBeGreaterThan(106);
+  });
+
+  it('keeps commits with history boundaries on their lane row', () => {
+    const commits = [commit('c', ['b'], 0), commit('b', ['a'], 0), commit('a', [], 0)];
+    const markers = commits.map(({ hash }) => ({ commitHash: hash, direction: 'older' }));
+    const layout = computeGraphLayout(graphOf(commits, [{ name: 'main', lane: 0 }], markers));
+    const ys = commits.map(({ hash }) => layout.commitPositions.get(hash).y);
+    expect(new Set(ys).size).toBe(1);
   });
 
   it('keeps master on the top row whichever branch is checked out', () => {
