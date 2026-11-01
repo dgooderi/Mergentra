@@ -30,6 +30,9 @@ A named reference to a commit, commonly used to mark a release. Unlike a branch,
 **Worktree**:
 A working directory linked to a repository's shared Git history. A repository can have multiple worktrees checked out at different branches or commits.
 
+**Stash**:
+Saved work-in-progress changes kept by Git outside any branch's history. A stash records the commit it was based on; it is not a branch or a commit in the commit graph.
+
 **Shallow clone**:
 A clone whose recorded history intentionally stops before the full ancestry of its commits.
 
@@ -41,6 +44,10 @@ A state where `HEAD` points directly to a commit instead of naming a local branc
 
 **Unborn branch**:
 The named branch for an empty repository before its first commit, when the branch reference does not yet point to a commit.
+
+**Reflog**:
+A local record of where a reference, such as `HEAD` or a branch, pointed before each update. It lists commits that may no longer be reachable from any reference, and Git removes old entries over time, so it is not a complete history.
+_Avoid_: History (when the commit graph is meant)
 
 ## Implementation map
 
