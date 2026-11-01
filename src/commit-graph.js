@@ -47,7 +47,7 @@ function readGitOutputs({ runGit }, gitPath, repositoryPath, headHash) {
         'log',
         '--no-show-signature',
         ...logRoots,
-        '--topo-order',
+        '--date-order',
         '--reverse',
         '--format=%H%x00%T%x00%P%x00%s%x00%an%x00%ae%x00%aI%x00%ct'
       ],
@@ -150,11 +150,15 @@ async function loadCommitGraph(git, gitPath, repositoryPath, branchName, current
 
   const shallowBoundaries = readShallowBoundaries(repositoryPath, shallowPathResult.stdout);
   const worktrees = parseWorktrees(worktreesResult.stdout, currentWorktreePath, process.platform);
-  const orderedReferences = orderReferences(
-    parseReferences(refsResult.stdout, branchName, worktrees)
-  );
   const commits = parseCommitLog(logResult.stdout);
   const commitsByHash = new Map(commits.map((commit) => [commit.hash, commit]));
+  // The tip's commit time tells which branches are still active and so keep their colours.
+  const orderedReferences = orderReferences(
+    parseReferences(refsResult.stdout, branchName, worktrees).map((reference) => ({
+      ...reference,
+      tipTimestamp: commitsByHash.get(reference.hash)?.committerTimestamp
+    }))
+  );
   const missingObjectBoundaries = await findMissingObjectBoundaries(
     git,
     gitPath,
