@@ -609,3 +609,58 @@ h2 {
     margin-top: 10px;
   }
 }
+
+.contact-section {
+  padding-bottom: 64px;
+}
+
+.contact-form {
+  display: grid;
+  gap: 10px;
+  max-width: 640px;
+
+  label {
+    font-weight: 600;
+    margin-top: 8px;
+  }
+
+  input,
+  select,
+  textarea {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--ink);
+    font: inherit;
+    padding: 10px 12px;
+    width: 100%;
+  }
+
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid var(--blue);
+  }
+
+  .button {
+    justify-self: start;
+    margin-top: 12px;
+  }
+}
+
+.contact-trap {
+  height: 0;
+  left: -10000px;
+  overflow: hidden;
+  position: absolute;
+  width: 0;
+}
+
+.contact-status {
+  color: var(--green);
+  min-height: 1.5em;
+
+  &.error {
+    color: var(--pink);
+  }
+}

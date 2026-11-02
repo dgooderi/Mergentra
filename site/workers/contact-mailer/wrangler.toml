@@ -1,0 +1,8 @@
+# Secrets, set with `wrangler secret put` and never committed: CONTACT_TO, CONTACT_FROM
+name = "mergentra-contact-mailer"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+workers_dev = false
+
+[[send_email]]
+name = "EMAIL"

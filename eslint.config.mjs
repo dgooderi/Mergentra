@@ -47,6 +47,10 @@ export default [
     languageOptions: { globals: { ...globals.node } }
   },
   {
+    files: ['site/functions/**/*.js', 'site/workers/**/*.js'],
+    languageOptions: { sourceType: 'module', globals: { ...globals.serviceworker } }
+  },
+  {
     files: ['tests/**/*.cjs'],
     languageOptions: { globals: { ...globals.browser } }
   },
