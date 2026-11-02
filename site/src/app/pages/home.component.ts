@@ -8,7 +8,7 @@ import { RouterLink } from '@angular/router';
     <section class="hero shell">
       <div class="hero-copy">
         <p class="eyebrow">
-          <span class="status-dot"></span> Mergentra 1.0 is available for Windows
+          <span class="status-dot"></span> Mergentra 1.2 is available for Windows
         </p>
         <h1>See your Git history <em>clearly.</em></h1>
         <p class="hero-text">
@@ -128,7 +128,7 @@ import { RouterLink } from '@angular/router';
         <div>
           <p class="eyebrow">Start exploring</p>
           <h2>Make Git history make sense.</h2>
-          <p>Mergentra 1.0 is free to download for Windows. Git for Windows is required.</p>
+          <p>Mergentra 1.2 is free to download for Windows. Git for Windows is required.</p>
         </div>
         <a class="button button-primary" routerLink="/download"
           >View downloads <span aria-hidden="true">→</span></a
