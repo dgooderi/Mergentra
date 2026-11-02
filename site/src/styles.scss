@@ -473,6 +473,43 @@ h2 {
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
+.experimental {
+  padding-bottom: 20px;
+}
+.experimental-note {
+  color: var(--muted);
+  max-width: 760px;
+}
+.experimental-note code,
+.file-list code {
+  color: var(--blue);
+}
+.experimental-grid {
+  padding: 18px 0 20px;
+}
+.download-card h3 {
+  font-size: 1.3rem;
+  margin-top: 0;
+}
+.file-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.file-list li {
+  margin: 0 0 16px;
+}
+.file-list a {
+  color: var(--text, #fff);
+  font-weight: 700;
+}
+.file-list code {
+  display: block;
+  font-size: 0.68rem;
+  line-height: 1.5;
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+}
 .download-details {
   border-top: 1px solid var(--line);
   padding: 55px 0 100px;
