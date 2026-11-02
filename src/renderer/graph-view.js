@@ -3,6 +3,7 @@
 import { computeTimeAxisTicks, dateRangeFromAxisDrag } from './time-axis.js';
 import { findMainReference } from './lanes.js';
 import { markdownToPlainText } from './markdown.js';
+import { sideLaneNames } from './branch-context.js';
 import { showBranchTooltip, moveBranchTooltip, hideBranchTooltip } from './branch-tooltip.js';
 
 export function createSvgElement(name, attributes = {}) {
@@ -179,6 +180,7 @@ export function appendDefinitions(graphElement) {
 
 export function drawEdges(ctx, actions) {
   const { graph, graphElement, definitions, commitPositions, indexByHash, ownerReference } = ctx;
+  const sideNames = sideLaneNames(graph);
   for (const commit of graph.commits) {
     const childPosition = commitPositions.get(commit.hash);
     for (const parentHash of commit.parents) {
@@ -261,10 +263,13 @@ export function drawEdges(ctx, actions) {
           'data-child-hash': commit.hash
         })
       );
-      const hoverReference = ownerReference(
-        isMergeIn && parentCommit ? parentCommit.lane : commit.lane
-      );
+      const hoverLane = isMergeIn && parentCommit ? parentCommit.lane : commit.lane;
+      const hoverReference = ownerReference(hoverLane);
       if (hoverReference) {
+        const isSideLane = graph.sideLanes?.has(hoverLane);
+        const hoverName = isSideLane
+          ? (sideNames.get(hoverLane) ?? `Branch merged into ${hoverReference.name}`)
+          : hoverReference.name;
         const hit = createSvgElement('path', {
           d: pathData,
           fill: 'none',
@@ -280,8 +285,8 @@ export function drawEdges(ctx, actions) {
           if (!actions.isBranchHoverEnabled()) {
             return;
           }
-          const note = actions.getNotes().branches[hoverReference.name];
-          showBranchTooltip(event, hoverReference.name, note ? markdownToPlainText(note) : '');
+          const note = isSideLane ? '' : actions.getNotes().branches[hoverReference.name];
+          showBranchTooltip(event, hoverName, note ? markdownToPlainText(note) : '');
         });
         hit.addEventListener('pointermove', moveBranchTooltip);
         hit.addEventListener('pointerleave', hideBranchTooltip);
