@@ -1,0 +1,39 @@
+name: Linux experimental release
+
+# Push a tag such as v1.1.0-linux.1 to build the Linux packages and publish them as a pre-release.
+# Pre-releases are never "latest", so the in-app update check ignores them.
+on:
+  push:
+    tags:
+      - 'v*-linux.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint -- src
+      - run: npm run test:unit
+      - run: npm run build:linux
+      - name: Write checksums
+        working-directory: dist
+        run: sha256sum *.AppImage *.deb *.rpm > SHA256SUMS.txt
+      - name: Publish pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --prerelease \
+            --title "Mergentra ${GITHUB_REF_NAME#v} (experimental Linux build)" \
+            --notes "Experimental Linux build (AppImage, deb, rpm). It has not been tested on a real Linux desktop yet. Windows users should use the regular releases. On Ubuntu 24.04 and other distributions that restrict user namespaces, run the AppImage with --no-sandbox." \
+            dist/*.AppImage dist/*.deb dist/*.rpm dist/SHA256SUMS.txt
