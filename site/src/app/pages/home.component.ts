@@ -117,7 +117,7 @@ import { RouterLink } from '@angular/router';
       <figure class="screenshot-frame">
         <img
           src="assets/mergentra-current.png"
-          alt="Mergentra showing a current target branch graph and Review panel"
+          alt="Mergentra showing the commit graph of a large repository, with coloured branch lanes and merge lines"
           loading="lazy"
         />
         <figcaption>A clear visual map for complicated Git history.</figcaption>
