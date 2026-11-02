@@ -724,15 +724,6 @@ export function drawDivergenceMarkers({ graph, graphElement, commitPositions }) 
       'pointer-events': 'none',
       'aria-label': `Branch diverges: ${marker.branchName}`
     });
-    const label = createSvgElement('text', {
-      x: 0,
-      y: 0,
-      'text-anchor': 'middle'
-    });
-    const title = createSvgElement('title');
-    title.textContent = `Inferred branch divergence for ${marker.branchName}; Git does not record branch creation`;
-    label.textContent = `Branch diverges: ${marker.branchName}`;
-    markerGroup.append(title, label);
     graphElement.append(markerGroup);
   }
 }

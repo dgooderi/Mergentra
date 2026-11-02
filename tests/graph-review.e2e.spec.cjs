@@ -266,7 +266,8 @@ test('divergent branches show inferred markers at their first unique commits', a
     await expect(marker).toHaveAttribute('data-branch-name', 'feature');
     await expect(marker).toHaveAttribute('data-ancestor-hash', sharedAncestor);
     await expect(marker).toHaveAttribute('data-commit-hash', featureCommit);
-    await expect(marker).toContainText('Branch diverges: feature');
+    await expect(marker).toHaveAttribute('aria-label', 'Branch diverges: feature');
+    await expect(marker).toHaveText('');
     await expect(
       window.locator(`[data-testid="commit-node"][data-commit-hash="${mainCommit}"]`)
     ).toBeVisible();
