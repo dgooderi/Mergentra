@@ -6,6 +6,26 @@ All notable changes to Mergentra are recorded here. The format follows
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-02
+
+### Added
+
+- Hovering a branch line shows its name (and your note for it, if any) in a tooltip. Side lanes are named from the merge that brought them in and describe the segment ("branched from", "merging into"). Turn it off with "Show branch names on hover" in Settings (#108).
+- The Large repository warning is now an in-app dialog styled like the rest of the app instead of a native message box, so it no longer clashes with the dark theme (#107).
+
+### Fixed
+
+- Selecting a merge commit in a large repository no longer freezes the window; branch inference now builds a per-graph index once instead of walking history for every reference (#109).
+- Hovering a merged-in branch no longer labels every side lane with the name of the branch it merged into.
+
+### Changed
+
+- Removed the permanent "Branch diverges" label above branch points; the divergence marker remains for screen readers.
+
+### Security
+
+- Updated dependencies to resolve Dependabot alerts: electron 44.10.1, undici, fast-uri, and vite 8.3.5 (the website build pins it with an override); the lint tooling uses minimatch 11.0.1 (#84, #110).
+
 ## [1.2.0] - 2026-11-02
 
 ### Added

@@ -65,6 +65,21 @@ interface Release {
 export class ReleaseNotesComponent {
   protected readonly releases: Release[] = [
     {
+      version: '1.3.0',
+      date: 'November 2, 2026',
+      summary: 'Branch names on hover, a calmer large-repository warning, and a freeze fix',
+      added: [
+        'Hover a branch line to see its name and note; merged-in branches are named from their merge. Turn it off in Settings.',
+        'The large repository warning is an in-app dialog that matches the dark theme.'
+      ],
+      changed: ['The permanent "Branch diverges" label above branch points was removed.'],
+      fixed: [
+        'Selecting a merge commit in a large repository no longer freezes the window.',
+        'Hovering a merged-in branch no longer shows the name of the branch it merged into.',
+        'Updated dependencies to resolve security alerts, including Electron 44.10.1.'
+      ]
+    },
+    {
       version: '1.2.0',
       date: 'November 2, 2026',
       summary: 'Deeper history tools, plus experimental Linux and Windows on ARM builds',
