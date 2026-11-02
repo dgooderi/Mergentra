@@ -6,6 +6,8 @@ All notable changes to Mergentra are recorded here. The format follows
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-02
+
 ### Added
 
 - Experimental Linux builds (AppImage, `.deb`, `.rpm`) for x64 and arm64 via `npm run build:linux`, with an Ubuntu CI job that runs the unit tests and builds the packages. AppImage installs can download updates; package installs leave updating to the package manager (#103).

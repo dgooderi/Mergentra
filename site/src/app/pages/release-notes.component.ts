@@ -65,6 +65,23 @@ interface Release {
 export class ReleaseNotesComponent {
   protected readonly releases: Release[] = [
     {
+      version: '1.2.0',
+      date: 'November 2, 2026',
+      summary: 'Deeper history tools, plus experimental Linux and Windows on ARM builds',
+      added: [
+        'Commit search by message, author, hash, date, and reference or tag names.',
+        'Read-only commit diff viewer, file history with rename following, and blame view.',
+        'Read-only Stashes and Reflog panels, and a Branch health report.',
+        'Explanations for shallow and missing-object history boundaries, and a summary popover for compacted commits.',
+        'A local Fetch guard log in Settings.',
+        'Experimental Linux builds (AppImage, deb, rpm) for x64 and arm64.',
+        'Experimental Windows on ARM installer, portable, and MSI builds.'
+      ],
+      changed: [
+        'The updater picks the file that matches your architecture, and package-manager installs on Linux leave updating to the package manager.'
+      ]
+    },
+    {
       version: '1.1.0',
       date: 'November 2, 2026',
       summary: 'Clearer branch lanes and safer repository opening',
