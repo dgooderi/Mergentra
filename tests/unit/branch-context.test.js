@@ -90,4 +90,24 @@ describe('inferBranchContext', () => {
     );
     expect(inferBranchContext(commits[2], graph)?.destination).toBe('master');
   });
+
+  it('answers quickly on a large graph with thousands of references', () => {
+    const count = 40_000;
+    const many = [];
+    for (let index = 0; index < count; index += 1) {
+      many.push(commit(`c${index}`, index === 0 ? [] : [`c${index - 1}`]));
+    }
+    many.push(commit('side', ['c0']));
+    many.push(commit('big-merge', [`c${count - 1}`, 'side'], 'Combine work'));
+    const refs = [{ name: 'main', hash: 'big-merge', remote: false }];
+    for (let index = 0; index < 3_000; index += 1) {
+      refs.push({ name: `origin/topic-${index}`, hash: `c${index * 10}`, remote: true });
+    }
+    const graph = graphOf(many, refs);
+    const started = performance.now();
+    const first = inferBranchContext(many.at(-1), graph);
+    inferBranchContext(many.at(-1), graph);
+    expect(performance.now() - started).toBeLessThan(1000);
+    expect(first).toEqual({ kind: 'merge', source: null, destination: 'main' });
+  });
 });
