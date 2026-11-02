@@ -1749,6 +1749,52 @@ main:not(:has(#repository-view:not([hidden]))) {
   background: #ffffff;
 }
 
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(0 0 0 / 45%);
+}
+
+.confirm-card {
+  display: grid;
+  gap: 10px;
+  width: min(460px, 100%);
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-left: 4px solid #d4a72c;
+  border-radius: 8px;
+  background: var(--field-background);
+  color: var(--text);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 35%);
+}
+
+.confirm-card h2 {
+  margin: 0;
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.confirm-message {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--heading);
+}
+
+.confirm-detail {
+  margin: 0;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.confirm-card .license-actions {
+  margin-top: 6px;
+}
+
 .license-text {
   margin: 0;
   overflow: auto;

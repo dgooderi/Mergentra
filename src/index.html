@@ -30,6 +30,22 @@
         </div>
       </div>
     </div>
+    <div
+      id="confirm-dialog"
+      class="confirm-overlay"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="confirm-heading"
+      aria-describedby="confirm-message"
+      hidden
+    >
+      <div class="confirm-card">
+        <h2 id="confirm-heading"></h2>
+        <p id="confirm-message" class="confirm-message"></p>
+        <p id="confirm-detail" class="confirm-detail" hidden></p>
+        <div id="confirm-actions" class="license-actions"></div>
+      </div>
+    </div>
     <main id="app-main">
       <div class="app-toolbar">
         <button id="open-explorer" class="secondary" type="button">Open in Explorer</button>
