@@ -25,7 +25,8 @@
     "test:unit": "vitest run",
     "build:win:portable": "electron-builder --win portable --publish never",
     "build:win:msi": "node scripts/build-msi.cjs",
-    "build:linux": "electron-builder --linux AppImage deb rpm --publish never"
+    "build:linux": "electron-builder --linux AppImage deb rpm --x64 --arm64 --publish never",
+    "build:win:arm64": "node scripts/build-win-arm64.cjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -67,7 +68,7 @@
       "artifactName": "${productName}-${version}-linux-${arch}.${ext}"
     },
     "appImage": {
-      "artifactName": "${productName}-${version}-x86_64.${ext}"
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
     },
     "nsis": {
       "oneClick": false,

@@ -35,5 +35,27 @@ jobs:
           gh release create "$GITHUB_REF_NAME" \
             --prerelease \
             --title "Mergentra ${GITHUB_REF_NAME#v} (experimental Linux build)" \
-            --notes "Experimental Linux build (AppImage, deb, rpm). It has not been tested on a real Linux desktop yet. Windows users should use the regular releases. On Ubuntu 24.04 and other distributions that restrict user namespaces, run the AppImage with --no-sandbox." \
+            --notes "Experimental Linux build for x64 and arm64 (AppImage, deb, rpm); experimental Windows on ARM installer and portable builds are attached too. It has not been tested on a real Linux desktop yet. Windows users should use the regular releases. On Ubuntu 24.04 and other distributions that restrict user namespaces, run the AppImage with --no-sandbox." \
             dist/*.AppImage dist/*.deb dist/*.rpm dist/SHA256SUMS.txt
+
+  windows-arm64:
+    needs: release
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build:win:arm64
+      - name: Upload to the pre-release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd dist
+          sha256sum *-arm64-Setup.exe *-arm64-Portable.exe > SHA256SUMS-windows-arm64.txt
+          gh release upload "$GITHUB_REF_NAME" *-arm64-Setup.exe *-arm64-Portable.exe SHA256SUMS-windows-arm64.txt

@@ -402,7 +402,8 @@ app.whenReady().then(() => {
     resourcesPath: process.resourcesPath,
     env: process.env,
     fileSystem: fs,
-    platform: process.platform
+    platform: process.platform,
+    arch: process.arch
   });
 
   // Automated tests set MERGENTRA_SKIP_LICENSE; managed installs accept by MERGENTRA_ACCEPT_LICENSE.

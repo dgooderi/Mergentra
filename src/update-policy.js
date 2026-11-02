@@ -6,9 +6,18 @@ const DOWNLOAD_PREFIX = 'https://github.com/dgooderi/Mergentra/releases/download
 
 // The channel says how Mergentra was installed: 'installer' (NSIS), 'portable' or 'msi' (managed) on
 // Windows; on Linux 'appimage' (self-contained) or 'package' (deb/rpm, updated by the package manager).
-function detectInstallChannel({ resourcesPath, env, fileSystem, platform = 'win32' }) {
+function detectInstallChannel({
+  resourcesPath,
+  env,
+  fileSystem,
+  platform = 'win32',
+  arch = 'x64'
+}) {
   if (platform === 'linux') {
-    return env.APPIMAGE ? 'appimage' : 'package';
+    if (!env.APPIMAGE) {
+      return 'package';
+    }
+    return arch === 'arm64' ? 'appimage-arm64' : 'appimage';
   }
   try {
     const marker = fileSystem.readFileSync(path.join(resourcesPath, 'install-channel'), 'utf8');
@@ -18,7 +27,8 @@ function detectInstallChannel({ resourcesPath, env, fileSystem, platform = 'win3
   } catch {
     // No marker: not an MSI install.
   }
-  return env.PORTABLE_EXECUTABLE_FILE ? 'portable' : 'installer';
+  const windowsChannel = env.PORTABLE_EXECUTABLE_FILE ? 'portable' : 'installer';
+  return arch === 'arm64' ? `${windowsChannel}-arm64` : windowsChannel;
 }
 
 function isAutoCheckEnabled(settings, channel) {
@@ -67,7 +77,10 @@ const ASSET_SUFFIX = {
   installer: 'Setup.exe',
   portable: 'Portable.exe',
   msi: 'x64.msi',
-  appimage: 'x86_64.AppImage'
+  'installer-arm64': 'arm64-Setup.exe',
+  'portable-arm64': 'arm64-Portable.exe',
+  appimage: 'x86_64.AppImage',
+  'appimage-arm64': 'arm64.AppImage'
 };
 
 function pickInstallerAsset(release, channel) {
@@ -87,7 +100,7 @@ function actionsForChannel(channel) {
   if (channel === 'package') {
     return ['notes', 'skip', 'later'];
   }
-  return channel === 'installer'
+  return channel === 'installer' || channel === 'installer-arm64'
     ? ['install', 'download', 'notes', 'skip', 'later']
     : ['download', 'notes', 'skip', 'later'];
 }
