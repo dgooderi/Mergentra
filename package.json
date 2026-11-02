@@ -25,6 +25,7 @@
     "test:unit": "vitest run",
     "build:win:portable": "electron-builder --win portable --publish never",
     "build:win:msi": "node scripts/build-msi.cjs",
+    "build:win:msi:arm64": "node scripts/build-msi.cjs --arm64",
     "build:linux": "electron-builder --linux AppImage deb rpm --x64 --arm64 --publish never",
     "build:win:arm64": "node scripts/build-win-arm64.cjs"
   },

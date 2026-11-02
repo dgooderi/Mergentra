@@ -9,7 +9,7 @@ All notable changes to Mergentra are recorded here. The format follows
 ### Added
 
 - Experimental Linux builds (AppImage, `.deb`, `.rpm`) for x64 and arm64 via `npm run build:linux`, with an Ubuntu CI job that runs the unit tests and builds the packages. AppImage installs can download updates; package installs leave updating to the package manager (#103).
-- Experimental Windows on ARM installer and portable builds via `npm run build:win:arm64`; the updater picks the matching arm64 file.
+- Experimental Windows on ARM installer, portable and MSI builds via `npm run build:win:arm64` and `npm run build:win:msi:arm64`; the updater picks the matching arm64 file.
 - The compacted-commit popover summarizes the hidden run: date span, ordinary and merge
   commit counts, and distinct authors, computed from the commits currently shown.
 - Read-only Branch health report comparing each local branch with the target branch (or the main line): unique and behind commit counts, last commit date, and an inferred divergence point that selects the commit in the graph. Shallow or partial history is flagged as uncertain, and branches with no meaningful comparison are explained (#91).

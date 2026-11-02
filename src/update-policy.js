@@ -22,7 +22,7 @@ function detectInstallChannel({
   try {
     const marker = fileSystem.readFileSync(path.join(resourcesPath, 'install-channel'), 'utf8');
     if (marker.trim() === 'msi') {
-      return 'msi';
+      return arch === 'arm64' ? 'msi-arm64' : 'msi';
     }
   } catch {
     // No marker: not an MSI install.
@@ -34,7 +34,7 @@ function detectInstallChannel({
 function isAutoCheckEnabled(settings, channel) {
   return typeof settings.autoUpdateCheck === 'boolean'
     ? settings.autoUpdateCheck
-    : channel !== 'msi' && channel !== 'package';
+    : !channel.startsWith('msi') && channel !== 'package';
 }
 
 function isCheckDue(settings, channel, now) {
@@ -77,6 +77,7 @@ const ASSET_SUFFIX = {
   installer: 'Setup.exe',
   portable: 'Portable.exe',
   msi: 'x64.msi',
+  'msi-arm64': 'arm64.msi',
   'installer-arm64': 'arm64-Setup.exe',
   'portable-arm64': 'arm64-Portable.exe',
   appimage: 'x86_64.AppImage',
