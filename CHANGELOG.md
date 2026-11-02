@@ -6,6 +6,17 @@ All notable changes to Mergentra are recorded here. The format follows
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-11-03
+
+### Changed
+
+- The website's navigation bar now stays fixed at the top while scrolling.
+- Updated the website with a new screenshot and a download section for the experimental Linux (x64 and arm64) and Windows on ARM builds, which asks for testers and issue reports (#112, #113).
+
+### Security
+
+- Updated dependencies so no known Dependabot alerts remain: the build tooling now uses minimatch 11.0.1 (#114).
+
 ## [1.3.0] - 2026-11-02
 
 ### Added

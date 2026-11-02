@@ -65,6 +65,16 @@ interface Release {
 export class ReleaseNotesComponent {
   protected readonly releases: Release[] = [
     {
+      version: '1.3.1',
+      date: 'November 3, 2026',
+      summary: 'Dependency security updates and experimental build downloads',
+      changed: [
+        'The website navigation bar now stays fixed at the top while scrolling.',
+        'The website now lists the experimental Linux (x64 and arm64) and Windows on ARM downloads, and has a new screenshot.'
+      ],
+      fixed: ['Updated build dependencies (minimatch 11.0.1) so no known security alerts remain.']
+    },
+    {
       version: '1.3.0',
       date: 'November 2, 2026',
       summary: 'Branch names on hover, a calmer large-repository warning, and a freeze fix',

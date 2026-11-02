@@ -16,6 +16,7 @@
 }
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 90px;
 }
 body {
   margin: 0;
@@ -38,7 +39,12 @@ a {
   margin: 0 auto;
 }
 .site-header {
+  background: rgba(10, 20, 36, 0.92);
+  backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 .header-inner {
   align-items: center;
@@ -361,7 +367,7 @@ h2 {
   display: grid;
   gap: 12px;
   position: sticky;
-  top: 25px;
+  top: 100px;
 }
 .docs-nav a {
   color: var(--muted);
