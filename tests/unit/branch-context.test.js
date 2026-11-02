@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { inferBranchContext } from '../../src/renderer/branch-context.js';
+import { inferBranchContext, sideLaneNames } from '../../src/renderer/branch-context.js';
 
 function commit(hash, parents, subject = hash) {
   return { hash, parents, subject };
@@ -89,5 +89,33 @@ describe('inferBranchContext', () => {
       [{ branchName: 'feature', ancestorHash: 'base', commitHash: 'f1', inferred: true }]
     );
     expect(inferBranchContext(commits[2], graph)?.destination).toBe('master');
+  });
+
+  it('names each side lane from its own merge instead of the owning branch', () => {
+    const merge = (hash, side, subject) => ({
+      ...commit(hash, ['m1', side], subject),
+      lane: 0
+    });
+    const sideCommits = [
+      { ...commit('a1', ['base']), lane: 2 },
+      { ...commit('b1', ['base']), lane: 3 },
+      { ...commit('m1', ['base']), lane: 0 },
+      { ...commit('base', []), lane: 0 },
+      merge('mergeA', 'a1', "Merge branch 'alpha'"),
+      merge('mergeB', 'b1', "Merge branch 'beta'")
+    ];
+    const graph = {
+      ...graphOf(sideCommits, [{ name: 'main', hash: 'mergeB', remote: false }]),
+      sideLanes: new Map([
+        [2, 0],
+        [3, 0]
+      ])
+    };
+    expect(sideLaneNames(graph)).toEqual(
+      new Map([
+        [2, 'alpha'],
+        [3, 'beta']
+      ])
+    );
   });
 });

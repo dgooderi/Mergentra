@@ -3,6 +3,8 @@
 import { computeTimeAxisTicks, dateRangeFromAxisDrag } from './time-axis.js';
 import { findMainReference } from './lanes.js';
 import { markdownToPlainText } from './markdown.js';
+import { sideLaneNames } from './branch-context.js';
+import { showBranchTooltip, moveBranchTooltip, hideBranchTooltip } from './branch-tooltip.js';
 
 export function createSvgElement(name, attributes = {}) {
   const element = document.createElementNS('http://www.w3.org/2000/svg', name);
@@ -176,8 +178,20 @@ export function appendDefinitions(graphElement) {
   return definitions;
 }
 
+function describeSideLaneEdge({ name, isMergeIn, isFork, target }) {
+  const into = target ? ` ${target}` : '';
+  if (isMergeIn) {
+    return name ? `${name} merging into${into}` : `Branch merging into${into}`;
+  }
+  if (isFork) {
+    return name ? `${name} (branched from${into})` : `Branched from${into}`;
+  }
+  return name || 'Branch';
+}
+
 export function drawEdges(ctx, actions) {
   const { graph, graphElement, definitions, commitPositions, indexByHash, ownerReference } = ctx;
+  const sideNames = sideLaneNames(graph);
   for (const commit of graph.commits) {
     const childPosition = commitPositions.get(commit.hash);
     for (const parentHash of commit.parents) {
@@ -260,10 +274,18 @@ export function drawEdges(ctx, actions) {
           'data-child-hash': commit.hash
         })
       );
-      const hoverReference = ownerReference(
-        isMergeIn && parentCommit ? parentCommit.lane : commit.lane
-      );
+      const hoverLane = isMergeIn && parentCommit ? parentCommit.lane : commit.lane;
+      const hoverReference = ownerReference(hoverLane);
       if (hoverReference) {
+        const isSideLane = graph.sideLanes?.has(hoverLane);
+        const hoverName = isSideLane
+          ? describeSideLaneEdge({
+              name: sideNames.get(hoverLane),
+              isMergeIn,
+              isFork: !isMergeIn && parentCommit && parentCommit.lane !== commit.lane,
+              target: ownerReference(isMergeIn ? commit.lane : (parentCommit?.lane ?? -1))?.name
+            })
+          : hoverReference.name;
         const hit = createSvgElement('path', {
           d: pathData,
           fill: 'none',
@@ -275,14 +297,15 @@ export function drawEdges(ctx, actions) {
           'data-child-hash': commit.hash,
           'data-ref-name': hoverReference.name
         });
-        const title = createSvgElement('title');
-        hit.append(title);
-        hit.addEventListener('pointerenter', () => {
-          const note = actions.getNotes().branches[hoverReference.name];
-          title.textContent = note
-            ? `${hoverReference.name}\n${markdownToPlainText(note)}`
-            : hoverReference.name;
+        hit.addEventListener('pointerenter', (event) => {
+          if (!actions.isBranchHoverEnabled()) {
+            return;
+          }
+          const note = isSideLane ? '' : actions.getNotes().branches[hoverReference.name];
+          showBranchTooltip(event, hoverName, note ? markdownToPlainText(note) : '');
         });
+        hit.addEventListener('pointermove', moveBranchTooltip);
+        hit.addEventListener('pointerleave', hideBranchTooltip);
         hit.addEventListener('click', () => actions.editBranchColor(hoverReference.name));
         if (isMergeIn) {
           hit.addEventListener('contextmenu', (event) =>
@@ -701,15 +724,6 @@ export function drawDivergenceMarkers({ graph, graphElement, commitPositions }) 
       'pointer-events': 'none',
       'aria-label': `Branch diverges: ${marker.branchName}`
     });
-    const label = createSvgElement('text', {
-      x: 0,
-      y: 0,
-      'text-anchor': 'middle'
-    });
-    const title = createSvgElement('title');
-    title.textContent = `Inferred branch divergence for ${marker.branchName}; Git does not record branch creation`;
-    label.textContent = `Branch diverges: ${marker.branchName}`;
-    markerGroup.append(title, label);
     graphElement.append(markerGroup);
   }
 }

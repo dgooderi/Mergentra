@@ -195,6 +195,8 @@ describe('IPC handlers', () => {
       'clone:cancel',
       'settings:get-auto-update-check',
       'settings:save-auto-update-check',
+      'settings:get-branch-hover',
+      'settings:save-branch-hover',
       'license:get',
       'license:accept',
       'license:decline',
