@@ -9,6 +9,7 @@ const {
 } = require('./repository-output');
 const { computeDivergenceMarkers } = require('./divergence-markers');
 const { orderReferences } = require('./reference-order');
+const { inspectHistoryBoundaryFacts } = require('./history-boundaries');
 
 const LOG_LIMITS = { timeout: 300_000, maxBuffer: 400 * 1024 * 1024 };
 
@@ -47,7 +48,7 @@ function readGitOutputs({ runGit }, gitPath, repositoryPath, headHash) {
         'log',
         '--no-show-signature',
         ...logRoots,
-        '--topo-order',
+        '--date-order',
         '--reverse',
         '--format=%H%x00%T%x00%P%x00%s%x00%an%x00%ae%x00%aI%x00%ct'
       ],
@@ -150,17 +151,22 @@ async function loadCommitGraph(git, gitPath, repositoryPath, branchName, current
 
   const shallowBoundaries = readShallowBoundaries(repositoryPath, shallowPathResult.stdout);
   const worktrees = parseWorktrees(worktreesResult.stdout, currentWorktreePath, process.platform);
-  const orderedReferences = orderReferences(
-    parseReferences(refsResult.stdout, branchName, worktrees)
-  );
   const commits = parseCommitLog(logResult.stdout);
   const commitsByHash = new Map(commits.map((commit) => [commit.hash, commit]));
+  // The tip's commit time tells which branches are still active and so keep their colours.
+  const orderedReferences = orderReferences(
+    parseReferences(refsResult.stdout, branchName, worktrees).map((reference) => ({
+      ...reference,
+      tipTimestamp: commitsByHash.get(reference.hash)?.committerTimestamp
+    }))
+  );
   const missingObjectBoundaries = await findMissingObjectBoundaries(
     git,
     gitPath,
     repositoryPath,
     commits
   );
+  const historyBoundaryFacts = await inspectHistoryBoundaryFacts(git, gitPath, repositoryPath);
 
   assignLanes(commits, commitsByHash, orderedReferences);
   labelCommits(commits, commitsByHash, orderedReferences, tagsResult.stdout);
@@ -179,6 +185,7 @@ async function loadCommitGraph(git, gitPath, repositoryPath, branchName, current
     worktrees,
     shallowBoundaries,
     missingObjectBoundaries,
+    historyBoundaryFacts,
     headHash,
     headDetached: Boolean(headHash && !branchName),
     divergenceMarkers: computeDivergenceMarkers(commits, orderedReferences),

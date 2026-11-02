@@ -27,7 +27,7 @@ describe('createViewStorage', () => {
   it('round-trips notes under the existing key', () => {
     const storage = memoryStorage();
     const views = createViewStorage(storage);
-    const notes = { commits: { abc: 'hi' }, branches: {} };
+    const notes = { commits: { abc: 'hi' }, branches: {}, colors: {} };
     views.saveNotes('/repo', notes);
     expect(storage.data.has('mergentra:notes:/repo')).toBe(true);
     expect(views.loadNotes('/repo')).toEqual(notes);
@@ -36,10 +36,15 @@ describe('createViewStorage', () => {
   it('returns empty notes when nothing valid is stored', () => {
     expect(createViewStorage(memoryStorage()).loadNotes('/repo')).toEqual({
       commits: {},
-      branches: {}
+      branches: {},
+      colors: {}
     });
     const corrupt = memoryStorage({ 'mergentra:notes:/repo': '{not json' });
-    expect(createViewStorage(corrupt).loadNotes('/repo')).toEqual({ commits: {}, branches: {} });
+    expect(createViewStorage(corrupt).loadNotes('/repo')).toEqual({
+      commits: {},
+      branches: {},
+      colors: {}
+    });
   });
 
   it('round-trips view state and returns null when missing or corrupt', () => {
@@ -67,12 +72,12 @@ describe('createViewStorage', () => {
   it('never throws when storage fails', () => {
     const views = createViewStorage(brokenStorage);
     expect(() => {
-      views.saveNotes('/r', { commits: {}, branches: {} });
+      views.saveNotes('/r', { commits: {}, branches: {}, colors: {} });
       views.saveViewState('/r', {});
       views.writeRepositoryNote('/r', 'x');
     }).not.toThrow();
     expect(views.loadViewState('/r')).toBeNull();
     expect(views.readRepositoryNote('/r')).toBe('');
-    expect(views.loadNotes('/r')).toEqual({ commits: {}, branches: {} });
+    expect(views.loadNotes('/r')).toEqual({ commits: {}, branches: {}, colors: {} });
   });
 });

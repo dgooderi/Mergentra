@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  branchLabelNames,
-  computeGraphLayout,
-  truncateBranchName
-} from '../../src/renderer/layout.js';
+import { computeGraphLayout } from '../../src/renderer/layout.js';
 
 function commit(hash, parents, lane, extra = {}) {
   return { hash, parents, lane, tags: [], references: [], ...extra };
@@ -12,29 +8,6 @@ function commit(hash, parents, lane, extra = {}) {
 function graphOf(commits, references, cutMarkers = []) {
   return { commits, references, cutMarkers };
 }
-
-describe('branchLabelNames', () => {
-  it('excludes tags and collapses a remote branch paired with its local branch', () => {
-    const names = branchLabelNames(
-      commit('a', [], 0, {
-        references: ['main', 'origin/main', 'v1', 'origin/other'],
-        tags: ['v1']
-      })
-    );
-    expect(names.branchNames).toEqual(['main', 'origin/main', 'origin/other']);
-    expect(names.shortNames).toEqual(['main', 'origin/other']);
-    expect(names.hasPairedRemote).toBe(true);
-  });
-});
-
-describe('truncateBranchName', () => {
-  it('keeps the end of long names', () => {
-    expect(truncateBranchName('short')).toBe('short');
-    const long = 'feature/' + 'x'.repeat(30);
-    expect(truncateBranchName(long)).toHaveLength(22);
-    expect(truncateBranchName(long).startsWith('\u2026')).toBe(true);
-  });
-});
 
 describe('computeGraphLayout', () => {
   const references = [
@@ -49,6 +22,19 @@ describe('computeGraphLayout', () => {
     const [b, a] = ['b', 'a'].map((hash) => layout.commitPositions.get(hash));
     expect(a.x - b.x).toBe(88);
     expect(a.y).toBe(b.y);
+  });
+
+  it('keeps commits of a lane on one straight line when no history boundary is shown', () => {
+    const commits = [
+      commit('f2', ['f1'], 0),
+      commit('f1', ['b'], 0),
+      commit('m', ['b'], 1),
+      commit('b', [], 1)
+    ];
+    const layout = computeGraphLayout(graphOf(commits, references));
+    const y = (hash) => layout.commitPositions.get(hash).y;
+    expect(y('f2')).toBe(y('f1'));
+    expect(y('m')).toBe(y('b'));
   });
 
   it('keeps main on the top row and puts an overlapping branch below it', () => {
@@ -81,6 +67,14 @@ describe('computeGraphLayout', () => {
     expect(layout.cutMarkersByHash.get('a')).toEqual([marker]);
     expect(layout.width).toBe(232);
     expect(layout.height).toBeGreaterThan(106);
+  });
+
+  it('keeps commits with history boundaries on their lane row', () => {
+    const commits = [commit('c', ['b'], 0), commit('b', ['a'], 0), commit('a', [], 0)];
+    const markers = commits.map(({ hash }) => ({ commitHash: hash, direction: 'older' }));
+    const layout = computeGraphLayout(graphOf(commits, [{ name: 'main', lane: 0 }], markers));
+    const ys = commits.map(({ hash }) => layout.commitPositions.get(hash).y);
+    expect(new Set(ys).size).toBe(1);
   });
 
   it('keeps master on the top row whichever branch is checked out', () => {

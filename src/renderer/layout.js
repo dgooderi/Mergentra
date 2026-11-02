@@ -51,8 +51,6 @@ export function computeGraphLayout(graph) {
     rowByLane.set(lane, row);
   }
   const rowCount = Math.max(rowEnds.length, 1);
-  // History boundary labels can be wider than the hash beneath a commit, so reserve another
-  // level only when they would overlap the previous boundary marker.
   const cutMarkersByHash = new Map();
   for (const marker of graph.cutMarkers) {
     cutMarkersByHash.set(marker.commitHash, [
@@ -60,33 +58,9 @@ export function computeGraphLayout(graph) {
       marker
     ]);
   }
-  const commitLevels = new Map();
-  const levelEnds = Array.from({ length: rowCount }, () => []);
-  const rowMaxLevel = Array.from({ length: rowCount }, () => 0);
-  const rowLabelHeight = Array.from({ length: rowCount }, () => 0);
-  graph.commits.forEach((commit, index) => {
-    const row = rowByLane.get(commit.lane);
-    const centre = leftPadding + index * columnWidth;
-    const hasCut = cutMarkersByHash.has(commit.hash);
-    const textLength = Math.max(7, hasCut ? 'Earlier history continues'.length : 0);
-    const half = (textLength * 7) / 2 + 6;
-    const ends = levelEnds[row];
-    let level = ends.findIndex((end) => end < centre - half);
-    if (level === -1) {
-      level = ends.length;
-    }
-    ends[level] = centre + half;
-    commitLevels.set(commit.hash, level);
-    rowMaxLevel[row] = Math.max(rowMaxLevel[row], level);
-    rowLabelHeight[row] = Math.max(rowLabelHeight[row], hasCut ? 1 : 0);
-  });
-  const levelStepByRow = rowLabelHeight.map((lines) => rowHeight + Math.max(lines - 1, 0) * 13);
-  const rowTops = [];
-  let totalRowsHeight = 0;
-  for (let row = 0; row < rowCount; row += 1) {
-    rowTops.push(totalRowsHeight);
-    totalRowsHeight += rowHeight + rowMaxLevel[row] * levelStepByRow[row];
-  }
+  // Every commit stays on its lane's row so each branch is one straight line.
+  const rowTops = Array.from({ length: rowCount }, (_, row) => row * rowHeight);
+  const totalRowsHeight = rowCount * rowHeight;
   const width = Math.max(
     144,
     leftPadding + rightPadding + Math.max(graph.commits.length - 1, 0) * columnWidth
@@ -98,11 +72,7 @@ export function computeGraphLayout(graph) {
       commit.hash,
       {
         x: leftPadding + index * columnWidth,
-        y:
-          34 +
-          axisHeight +
-          rowTops[rowByLane.get(commit.lane)] +
-          commitLevels.get(commit.hash) * levelStepByRow[rowByLane.get(commit.lane)]
+        y: 34 + axisHeight + rowTops[rowByLane.get(commit.lane)]
       }
     ])
   );

@@ -14,17 +14,22 @@ export function createRepositoryActions({ refreshRepositoryGraph }) {
   async function fetchReferences(event) {
     const button = event.currentTarget;
     const fetchStatus = document.getElementById('fetch-status');
+    const auditStatus = document.getElementById('fetch-audit-status');
     const diagnosticsPanel = document.getElementById('fetch-diagnostics-panel');
     const diagnostics = document.getElementById('fetch-diagnostics');
     button.disabled = true;
     clearTimeout(fetchStatusTimer);
     fetchStatus.textContent = 'Fetching remote references…';
+    auditStatus.textContent = '';
     diagnosticsPanel.hidden = true;
     diagnostics.textContent = '';
     document.getElementById('diagnostics-copy-status').textContent = '';
 
     try {
       const result = await fetchRemoteReferences();
+      if (result.auditLogError) {
+        auditStatus.textContent = `This decision was not logged. ${result.auditLogError}`;
+      }
       if (!result.success) {
         fetchStatus.textContent = result.message;
         diagnostics.textContent = result.diagnostics;
@@ -94,7 +99,42 @@ export function createRepositoryActions({ refreshRepositoryGraph }) {
     }
   }
 
+  function renderFetchGuardLog(entries) {
+    const status = document.getElementById('fetch-guard-log-status');
+    const list = document.getElementById('fetch-guard-log-entries');
+    list.replaceChildren(
+      ...entries.map((entry) => {
+        const item = document.createElement('li');
+        item.textContent = `${entry.timestamp} · ${entry.repository} · ${entry.categories.join(', ')} · ${entry.decision}`;
+        return item;
+      })
+    );
+    status.textContent = entries.length === 0 ? 'No fetch guard events recorded.' : '';
+  }
+
+  async function loadFetchGuardLog() {
+    try {
+      renderFetchGuardLog(await window.mergentra.getFetchGuardLog());
+    } catch (error) {
+      document.getElementById('fetch-guard-log-status').textContent =
+        `Could not read the fetch guard log: ${error.message}`;
+    }
+  }
+
+  async function clearFetchGuardLog() {
+    try {
+      renderFetchGuardLog(await window.mergentra.clearFetchGuardLog());
+    } catch (error) {
+      document.getElementById('fetch-guard-log-status').textContent =
+        `Could not clear the fetch guard log: ${error.message}`;
+    }
+  }
+
   function init() {
+    document.getElementById('fetch-guard-log').addEventListener('toggle', (event) => {
+      if (event.currentTarget.open) void loadFetchGuardLog();
+    });
+    document.getElementById('clear-fetch-guard-log').addEventListener('click', clearFetchGuardLog);
     document.getElementById('open-explorer').addEventListener('click', openInExplorer);
     document.getElementById('fetch-button').addEventListener('click', fetchReferences);
     document

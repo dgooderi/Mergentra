@@ -78,9 +78,7 @@ describe('buildFilteredGraph', () => {
       null
     );
 
-    expect(graph.branchContinuations).toEqual([
-      expect.objectContaining({ targetHash: 'b2' })
-    ]);
+    expect(graph.branchContinuations).toEqual([expect.objectContaining({ targetHash: 'b2' })]);
     expect(graph.branchContinuations[0].parent.name).toBe('upgrade');
   });
 
@@ -92,6 +90,27 @@ describe('buildFilteredGraph', () => {
     expect(lane.f2).toBe(2);
     expect(lane.f1).toBe(2);
     expect(graph.sideLanes.get(2)).toBe(0);
+  });
+
+  it('gives each merged-in branch its own side lane', () => {
+    const history = [
+      commit('m', ['m2', 'g2'], 6, ['main']),
+      commit('m2', ['m1', 'f2'], 5),
+      commit('f2', ['f1'], 4),
+      commit('g2', ['g1'], 4),
+      commit('f1', ['m1'], 3),
+      commit('g1', ['m1'], 3),
+      commit('m1', [], 1)
+    ];
+    const graph = buildFilteredGraph(
+      graphOf(history, [{ name: 'main', hash: 'm', lane: 0 }]),
+      new Set(['main']),
+      null
+    );
+    const lane = Object.fromEntries(graph.commits.map((c) => [c.hash, c.lane]));
+    expect(lane.f2).toBe(lane.f1);
+    expect(lane.g2).toBe(lane.g1);
+    expect(lane.f2).not.toBe(lane.g2);
   });
 
   it('drops branches that are not selected and their exclusive commits', () => {

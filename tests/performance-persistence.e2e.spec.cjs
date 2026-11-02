@@ -417,8 +417,7 @@ test('collapsed commit groups list their commits and highlight with the selectio
     await expect(summary).toHaveAttribute('aria-pressed', 'false');
     await expect(window.getByTestId('compacted-popover')).toHaveCount(0);
 
-    const hashLabel = window.locator('.hash-label').first();
-    await expect(hashLabel).toBeVisible();
+    await expect(window.locator('.hash-label')).toHaveCount(0);
     await expect(window.getByTestId('commit-branch-label')).toHaveCount(0);
     await expect(window.getByTestId('commit-tag')).toHaveCount(0);
     await expect(window.getByTestId('note-marker')).toHaveCount(0);

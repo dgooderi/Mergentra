@@ -76,9 +76,7 @@ export function parentReferenceName(graph, referenceName) {
     let commit = commitsByHash.get(candidate.hash);
     while (commit) {
       const distance = targetDistances.get(commit.hash);
-      if (
-        distance !== undefined
-      ) {
+      if (distance !== undefined) {
         const candidateIsDirectAncestor = targetDistances.has(candidate.hash);
         if (
           !parent ||

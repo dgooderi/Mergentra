@@ -2,16 +2,52 @@ import { state } from './state.js';
 import { renderSelectedBranchNotes, setNote } from './notes-ui.js';
 import { inferBranchContext } from './branch-context.js';
 import { enhanceNoteField } from './note-field.js';
+import { explainHistoryBoundary } from './history-boundary-explanation.js';
+import { createDiffViewer } from './diff-viewer.js';
+import { createBlamePanel } from './blame-panel.js';
 
 export function createReviewDock({ updateTimeNavigation }) {
   const dock = document.getElementById('review-dock');
+  const boundaryPanel = document.getElementById('boundary-explanation-panel');
+  const diffViewer = createDiffViewer();
+
+  function showBoundaryExplanation(commit, requestedType) {
+    const graph = state.currentGraph;
+    const type =
+      requestedType ||
+      (graph?.shallowBoundaries.includes(commit.hash)
+        ? 'shallow'
+        : graph?.missingObjectBoundaries.includes(commit.hash)
+          ? 'missing-object'
+          : null);
+    const explanation = type
+      ? explainHistoryBoundary(type, graph?.historyBoundaryFacts || {})
+      : null;
+    boundaryPanel.hidden = !explanation;
+    if (explanation) {
+      document.getElementById('boundary-explanation-title').textContent = explanation.title;
+      document.getElementById('boundary-explanation').textContent = explanation.explanation;
+      document.getElementById('boundary-next-steps').textContent = explanation.nextSteps;
+    }
+  }
+
   const commitNoteField = enhanceNoteField(document.getElementById('selected-commit-note'), {
     label: 'commit',
     previewTestId: 'selected-commit-note-preview'
   });
 
-  function selectCommit(commit) {
+  const blamePanel = createBlamePanel({
+    getSelectedCommit: () => state.selectedCommit,
+    findCommit: (hash) => state.currentGraph?.commits.find((commit) => commit.hash === hash),
+    selectCommit: (commit) => selectCommit(commit)
+  });
+
+  function selectCommit(commit, { boundaryType } = {}) {
+    if (diffViewer.consumeComparisonTarget(commit)) {
+      return;
+    }
     state.selectedCommit = commit;
+    diffViewer.setSelectedCommit(commit);
     updateTimeNavigation();
     const hash = commit?.hash;
     const commitNodes = document.querySelectorAll('[data-testid="commit-node"]');
@@ -29,11 +65,14 @@ export function createReviewDock({ updateTimeNavigation }) {
       item.setAttribute('aria-pressed', String(item.dataset.commitHash === hash));
     }
     if (!state.selectedCommit) {
+      boundaryPanel.hidden = true;
       dock.hidden = true;
+      blamePanel.clear();
       renderSelectedBranchNotes();
       return;
     }
 
+    showBoundaryExplanation(state.selectedCommit, boundaryType);
     const noteInput = document.getElementById('selected-commit-note');
     noteInput.value = state.notes.commits[state.selectedCommit.hash] || '';
     commitNoteField.showEditor();
@@ -86,8 +125,16 @@ export function createReviewDock({ updateTimeNavigation }) {
 
   return {
     hide() {
+      boundaryPanel.hidden = true;
       dock.hidden = true;
+      blamePanel.clear();
     },
-    selectCommit
+    selectCommit,
+    selectBoundary(type, hash) {
+      const commit = state.currentGraph?.commits.find((candidate) => candidate.hash === hash);
+      if (commit) {
+        selectCommit(commit, { boundaryType: type });
+      }
+    }
   };
 }

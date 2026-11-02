@@ -4,6 +4,42 @@ All notable changes to Mergentra are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- The compacted-commit popover summarizes the hidden run: date span, ordinary and merge
+  commit counts, and distinct authors, computed from the commits currently shown.
+- Read-only Branch health report comparing each local branch with the target branch (or the main line): unique and behind commit counts, last commit date, and an inferred divergence point that selects the commit in the graph. Shallow or partial history is flagged as uncertain, and branches with no meaningful comparison are explained (#91).
+- A local Fetch guard log in Settings records each Fetch safety warning and your
+  decision (names of risky settings only, never values); it is never transmitted
+  and can be cleared.
+- Commit search above the graph, matching message, author, hash prefix, author date, and
+  reference or tag names, with selection that reveals commits hidden by filters.
+- Explanations and manual next steps for shallow and missing-object history boundaries (#93).
+- Read-only commit diff viewer in the Review dock: view a selected commit's changed paths and text diff, or compare two commits. Binary files, submodules, shallow-clone boundaries and unavailable commits are explained rather than shown as misleading text (#85).
+- File history: enter a file or folder path to highlight and list the commits that
+  changed it, following renames, with notes for missing paths and shallow history.
+- Read-only blame view in the Review dock: enter a file path to see which commit and author last changed each line at the selected commit, and select an attributed commit to jump to it in the graph.
+- A read-only Stashes panel listing each stash with its message, originating branch, date, and base commit. Selecting a stash shows its changed paths; unreadable or missing stash objects are reported clearly.
+- Read-only Reflog panel listing the entries of `HEAD` or a local branch with their
+  action, time and commit, including commits no longer reachable from any reference.
+  Entries can be shown in the graph when the commit is in it, and entries for
+  unreachable, expired or missing commits are explained.
+
+## [1.1.0] - 2026-11-02
+
+### Added
+
+- Opening a repository can be cancelled, and repositories with very many branches ask for confirmation first.
+- Neighbouring branch lanes are recoloured by hue, saturation, and lightness so lanes that run side by side stay distinct.
+
+### Changed
+
+- Every branch merged into another gets its own lane instead of sharing one, so separate branches no longer overlap or share a colour.
+- Merge lines curve directly into the merge commit.
+- Branches are ordered and coloured by how recently their tip was committed.
+
 ## [1.0.0] - 2026-10-18
 
 ### Added

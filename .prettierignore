@@ -1,4 +1,5 @@
 node_modules
+.angular
 dist
 playwright-report
 test-results

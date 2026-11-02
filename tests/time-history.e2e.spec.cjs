@@ -35,18 +35,9 @@ test('time presets and custom local dates filter by committer timestamp', async 
     execFileSync('git', ['config', 'user.email', 'mergentra-e2e@example.invalid'], {
       cwd: repositoryPath
     });
-    const oldestCommit = commitAt(
-      'Oldest commit',
-      new Date(2026, 4, 14, 10, 0, 0)
-    );
-    const middleCommit = commitAt(
-      'Middle commit',
-      new Date(2026, 4, 15, 6, 0, 0)
-    );
-    const recentCommit = commitAt(
-      'Recent commit',
-      new Date(2026, 4, 16, 13, 0, 0)
-    );
+    const oldestCommit = commitAt('Oldest commit', new Date(2026, 4, 14, 10, 0, 0));
+    const middleCommit = commitAt('Middle commit', new Date(2026, 4, 15, 6, 0, 0));
+    const recentCommit = commitAt('Recent commit', new Date(2026, 4, 16, 13, 0, 0));
     const tipCommit = commitAt('Tip commit', new Date(2026, 4, 16, 21, 0, 0));
 
     app = await launchMergentra(userDataPath);
