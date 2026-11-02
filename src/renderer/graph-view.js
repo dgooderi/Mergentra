@@ -178,6 +178,17 @@ export function appendDefinitions(graphElement) {
   return definitions;
 }
 
+function describeSideLaneEdge({ name, isMergeIn, isFork, target }) {
+  const into = target ? ` ${target}` : '';
+  if (isMergeIn) {
+    return name ? `${name} merging into${into}` : `Branch merging into${into}`;
+  }
+  if (isFork) {
+    return name ? `${name} (branched from${into})` : `Branched from${into}`;
+  }
+  return name || 'Branch';
+}
+
 export function drawEdges(ctx, actions) {
   const { graph, graphElement, definitions, commitPositions, indexByHash, ownerReference } = ctx;
   const sideNames = sideLaneNames(graph);
@@ -268,7 +279,12 @@ export function drawEdges(ctx, actions) {
       if (hoverReference) {
         const isSideLane = graph.sideLanes?.has(hoverLane);
         const hoverName = isSideLane
-          ? (sideNames.get(hoverLane) ?? `Branch merged into ${hoverReference.name}`)
+          ? describeSideLaneEdge({
+              name: sideNames.get(hoverLane),
+              isMergeIn,
+              isFork: !isMergeIn && parentCommit && parentCommit.lane !== commit.lane,
+              target: ownerReference(isMergeIn ? commit.lane : (parentCommit?.lane ?? -1))?.name
+            })
           : hoverReference.name;
         const hit = createSvgElement('path', {
           d: pathData,
