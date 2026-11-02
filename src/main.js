@@ -53,6 +53,37 @@ async function countReferences(runGit, gitPath, repositoryPath) {
   return stdout.split('\n').filter(Boolean).length;
 }
 
+const pendingConfirmations = new Map();
+let nextConfirmationId = 1;
+
+// Asks inside the app window so the dialog matches the app theme; falls back to a native box
+// when there is no window to show it in.
+function askInApp(options) {
+  const target = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
+  if (!target || target.isDestroyed()) {
+    return dialog.showMessageBox(null, options);
+  }
+  const id = nextConfirmationId++;
+  return new Promise((resolve) => {
+    pendingConfirmations.set(id, resolve);
+    target.webContents.send('confirm:request', {
+      id,
+      title: options.title,
+      message: options.message,
+      detail: options.detail,
+      buttons: options.buttons
+    });
+  });
+}
+
+ipcMain.on('confirm:respond', (_event, id, response) => {
+  const resolve = pendingConfirmations.get(id);
+  if (resolve) {
+    pendingConfirmations.delete(id);
+    resolve({ response: Number.isInteger(response) ? response : 0 });
+  }
+});
+
 async function confirmLargeRepository(runGit, gitPath, repositoryPath) {
   let commitCount;
   let referenceCount;
@@ -79,15 +110,11 @@ async function confirmLargeRepository(runGit, gitPath, repositoryPath) {
   const detail = tooManyCommits
     ? `Opening it needs roughly ${estimatedGigabytes} GB of memory and may take a minute or more. On a computer with limited memory, Mergentra may become very slow or close. Close other programs first if you continue.`
     : 'Opening it may take a minute or more, and the branch list will be very long. Consider hiding most branches once it opens.';
-  const { response } = await dialog.showMessageBox(BrowserWindow.getFocusedWindow() ?? null, {
-    type: 'warning',
+  const { response } = await askInApp({
     title: 'Large repository',
     message,
     detail,
-    buttons: ['Cancel', 'Open anyway'],
-    defaultId: 0,
-    cancelId: 0,
-    noLink: true
+    buttons: ['Cancel', 'Open anyway']
   });
   if (response !== 1) {
     throw new Error(

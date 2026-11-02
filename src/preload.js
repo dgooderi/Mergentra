@@ -43,5 +43,10 @@ contextBridge.exposeInMainWorld('mergentra', {
     ipcRenderer.invoke('settings:save-default-directory', directory),
   chooseDefaultDirectory: () => ipcRenderer.invoke('settings:choose-default-directory'),
   getFetchGuardLog: () => ipcRenderer.invoke('fetch-guard-log:list'),
-  clearFetchGuardLog: () => ipcRenderer.invoke('fetch-guard-log:clear')
+  clearFetchGuardLog: () => ipcRenderer.invoke('fetch-guard-log:clear'),
+  onConfirmRequest: (callback) => {
+    ipcRenderer.removeAllListeners('confirm:request');
+    ipcRenderer.on('confirm:request', (_event, request) => callback(request));
+  },
+  respondToConfirm: (id, response) => ipcRenderer.send('confirm:respond', id, response)
 });
