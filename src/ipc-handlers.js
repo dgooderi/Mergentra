@@ -135,6 +135,14 @@ function registerIpcHandlers({
     saveSettings({ ...getSettings(), autoUpdateCheck: enabled });
     return enabled;
   });
+  ipcMain.handle('settings:get-branch-hover', () => getSettings().showBranchHover !== false);
+  ipcMain.handle('settings:save-branch-hover', (_event, enabled) => {
+    if (typeof enabled !== 'boolean') {
+      throw new Error('The branch name on hover setting must be on or off.');
+    }
+    saveSettings({ ...getSettings(), showBranchHover: enabled });
+    return enabled;
+  });
   ipcMain.handle('license:get', () => license.describe());
   ipcMain.handle('license:accept', () => license.accept());
   ipcMain.handle('license:decline', () => license.decline());

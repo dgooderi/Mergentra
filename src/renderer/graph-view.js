@@ -3,6 +3,7 @@
 import { computeTimeAxisTicks, dateRangeFromAxisDrag } from './time-axis.js';
 import { findMainReference } from './lanes.js';
 import { markdownToPlainText } from './markdown.js';
+import { showBranchTooltip, moveBranchTooltip, hideBranchTooltip } from './branch-tooltip.js';
 
 export function createSvgElement(name, attributes = {}) {
   const element = document.createElementNS('http://www.w3.org/2000/svg', name);
@@ -275,14 +276,15 @@ export function drawEdges(ctx, actions) {
           'data-child-hash': commit.hash,
           'data-ref-name': hoverReference.name
         });
-        const title = createSvgElement('title');
-        hit.append(title);
-        hit.addEventListener('pointerenter', () => {
+        hit.addEventListener('pointerenter', (event) => {
+          if (!actions.isBranchHoverEnabled()) {
+            return;
+          }
           const note = actions.getNotes().branches[hoverReference.name];
-          title.textContent = note
-            ? `${hoverReference.name}\n${markdownToPlainText(note)}`
-            : hoverReference.name;
+          showBranchTooltip(event, hoverReference.name, note ? markdownToPlainText(note) : '');
         });
+        hit.addEventListener('pointermove', moveBranchTooltip);
+        hit.addEventListener('pointerleave', hideBranchTooltip);
         hit.addEventListener('click', () => actions.editBranchColor(hoverReference.name));
         if (isMergeIn) {
           hit.addEventListener('contextmenu', (event) =>

@@ -2,6 +2,7 @@ import { viewStorage } from './app-storage.js';
 import { renderRecentRepositories } from './recent-repositories.js';
 import { cloneRepository, openRepository as loadRepository } from './repository-api.js';
 import { state } from './state.js';
+import { hideBranchTooltip } from './branch-tooltip.js';
 
 export function createRepositoryControls({ showRepository }) {
   const picker = document.getElementById('repository-picker');
@@ -46,6 +47,16 @@ export function createRepositoryControls({ showRepository }) {
     try {
       document.getElementById('auto-update-check').checked =
         await window.mergentra.getAutoUpdateCheck();
+    } catch (error) {
+      document.getElementById('update-status').textContent = error.message;
+    }
+  }
+
+  async function loadBranchHover() {
+    try {
+      const enabled = await window.mergentra.getBranchHover();
+      state.showBranchHover = enabled;
+      document.getElementById('branch-hover-names').checked = enabled;
     } catch (error) {
       document.getElementById('update-status').textContent = error.message;
     }
@@ -101,6 +112,7 @@ export function createRepositoryControls({ showRepository }) {
     }
     await loadDefaultDirectory();
     await loadAutoUpdateCheck();
+    await loadBranchHover();
   }
 
   function initModeTabs() {
@@ -251,6 +263,18 @@ export function createRepositoryControls({ showRepository }) {
         await window.mergentra.saveAutoUpdateCheck(event.currentTarget.checked);
       } catch (error) {
         event.currentTarget.checked = !event.currentTarget.checked;
+        document.getElementById('update-status').textContent = error.message;
+      }
+    });
+    document.getElementById('branch-hover-names').addEventListener('change', async (event) => {
+      const checkbox = event.currentTarget;
+      try {
+        state.showBranchHover = await window.mergentra.saveBranchHover(checkbox.checked);
+        if (!state.showBranchHover) {
+          hideBranchTooltip();
+        }
+      } catch (error) {
+        checkbox.checked = !checkbox.checked;
         document.getElementById('update-status').textContent = error.message;
       }
     });
