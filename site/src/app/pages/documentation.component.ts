@@ -37,9 +37,38 @@ import { Component } from '@angular/core';
         <section id="reading-the-graph">
           <h2>Reading the graph</h2>
           <p>
-            Each horizontal lane represents a branch reference. Commits show their hashes, while
-            curved connectors make branch divergence and merge relationships visible. Tags,
+            Each horizontal lane represents a branch. Commits are drawn as nodes along their lane,
+            and curved connectors make branch divergence and merge relationships visible. Tags,
             worktrees, and the checked-out branch are shown alongside the graph.
+          </p>
+          <ul class="graph-legend">
+            <li>
+              <svg viewBox="-14 -14 28 28" width="30" height="30" aria-hidden="true">
+                <circle r="8" fill="#ffc517" stroke="#111827" stroke-width="2" />
+              </svg>
+              <span>
+                <strong>Commit.</strong> A circle marks an ordinary commit with a single parent.
+              </span>
+            </li>
+            <li>
+              <svg viewBox="-14 -14 28 28" width="30" height="30" aria-hidden="true">
+                <polygon
+                  points="0,-11 11,0 0,11 -11,0"
+                  fill="#ff7fae"
+                  stroke="#111827"
+                  stroke-width="2"
+                />
+              </svg>
+              <span>
+                <strong>Merge.</strong> A diamond marks a merge commit, where two or more lines of
+                history join. The curved connector shows the branch that was merged in.
+              </span>
+            </li>
+          </ul>
+          <p>
+            Commits do not carry a hash label on the graph. Hover over a commit to see its message
+            and short hash, or select it to read its details in the Review panel. Hover over a
+            branch line to see the branch name; you can turn this off in Settings.
           </p>
           <p>
             Git does not record the moment a branch was created. Mergentra infers divergence from

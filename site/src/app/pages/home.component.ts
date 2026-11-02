@@ -13,8 +13,8 @@ import { RouterLink } from '@angular/router';
         </p>
         <h1>See your Git history <em>clearly.</em></h1>
         <p class="hero-text">
-          Mergentra is a Windows GitHub and Git history visualizer that turns busy repositories into
-          an interactive branch graph.
+          Mergentra is a Git history visualizer for Windows that turns busy repositories into an
+          interactive branch graph. Experimental builds are available for Linux and Windows on ARM.
         </p>
         <div class="hero-actions">
           <a class="button button-primary" routerLink="/download"
