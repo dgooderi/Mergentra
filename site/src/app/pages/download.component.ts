@@ -57,8 +57,15 @@ import { Component } from '@angular/core';
       <p class="eyebrow">Experimental</p>
       <h2>Linux and Windows on ARM</h2>
       <p class="experimental-note">
-        These builds are experimental. They are built from the same source but have not been tested
-        on real hardware, so expect rough edges. Windows is the supported platform.
+        These builds are experimental. They are built from the same source, but I don't have the
+        hardware or facilities to test them, so expect rough edges. Windows is the supported
+        platform.
+      </p>
+      <p class="experimental-note">
+        If you have the time to try one, I'd be grateful for your help. Please
+        <a href="https://github.com/dgooderi/Mergentra/issues/new">log an issue on GitHub</a> with
+        what you ran it on (distribution or Windows version, CPU architecture, and the file you
+        used) and what worked or didn't. Reports that something works are useful too.
       </p>
       <div class="download-grid experimental-grid">
         <article class="download-card">
