@@ -69,6 +69,7 @@ export class ReleaseNotesComponent {
       date: 'November 3, 2026',
       summary: 'Dependency security updates and experimental build downloads',
       changed: [
+        'The website navigation bar now stays fixed at the top while scrolling.',
         'The website now lists the experimental Linux (x64 and arm64) and Windows on ARM downloads, and has a new screenshot.'
       ],
       fixed: ['Updated build dependencies (minimatch 11.0.1) so no known security alerts remain.']

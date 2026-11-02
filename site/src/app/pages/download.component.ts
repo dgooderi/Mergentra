@@ -18,12 +18,12 @@ import { Component } from '@angular/core';
         <p>Install Mergentra for the current Windows user with Start menu and desktop shortcuts.</p>
         <a
           class="button button-primary"
-          href="https://github.com/dgooderi/Mergentra/releases/download/v1.3.0/Mergentra-1.3.0-Setup.exe"
+          href="https://github.com/dgooderi/Mergentra/releases/download/v1.3.1/Mergentra-1.3.1-Setup.exe"
           >Download Setup.exe <span aria-hidden="true">↓</span></a
         >
         <p class="checksum">
           <span>SHA-256</span>
-          <code>e4cc75d221c5a44b21575e8c0ebb572a15dc0da094023d334acf18cb5be75740</code>
+          <code>b20c3eecb3d0031860d7d2e5f9a77a23384ac5283b8402f26580329bf115b68a</code>
         </p>
       </article>
       <article class="download-card">
@@ -31,12 +31,12 @@ import { Component } from '@angular/core';
         <p>Run Mergentra without an installation. Useful for temporary or managed environments.</p>
         <a
           class="button button-secondary"
-          href="https://github.com/dgooderi/Mergentra/releases/download/v1.3.0/Mergentra-1.3.0-Portable.exe"
+          href="https://github.com/dgooderi/Mergentra/releases/download/v1.3.1/Mergentra-1.3.1-Portable.exe"
           >Download Portable.exe <span aria-hidden="true">↓</span></a
         >
         <p class="checksum">
           <span>SHA-256</span>
-          <code>6b730a792b30212ef8522ca643ddf62f067ac21339f39f2217fc9f11aab87bb1</code>
+          <code>c24c8794653079aeae88e22434c27f7d1289eb92315f44cbdd400d692615b60f</code>
         </p>
       </article>
       <article class="download-card">
@@ -44,12 +44,12 @@ import { Component } from '@angular/core';
         <p>Use the x64 MSI for managed or per-machine Windows deployments.</p>
         <a
           class="button button-secondary"
-          href="https://github.com/dgooderi/Mergentra/releases/download/v1.3.0/Mergentra-1.3.0-x64.msi"
+          href="https://github.com/dgooderi/Mergentra/releases/download/v1.3.1/Mergentra-1.3.1-x64.msi"
           >Download x64.msi <span aria-hidden="true">↓</span></a
         >
         <p class="checksum">
           <span>SHA-256</span>
-          <code>ca177a9d16a03b295e1639a955f9bc776cf1a868e9f305a15a89caf57789cd61</code>
+          <code>53968092e94d32457d54be2e735347da142790cf71f22b3ee7cb59ae73f461f7</code>
         </p>
       </article>
     </section>
@@ -73,24 +73,24 @@ import { Component } from '@angular/core';
           <ul class="file-list">
             <li>
               <a
-                href="https://github.com/dgooderi/Mergentra/releases/download/v1.3.0/Mergentra-1.3.0-x86_64.AppImage"
+                href="https://github.com/dgooderi/Mergentra/releases/download/v1.3.1/Mergentra-1.3.1-x86_64.AppImage"
                 >AppImage</a
               >
-              <code>1740247fe44a114c07099f3f7ad6986b75f8803901e9296a2d0daf54f629deaf</code>
+              <code>4aeaccd7f882b29fd950543f98e097a0b9acd40b7abf66b14707020c263b9793</code>
             </li>
             <li>
               <a
-                href="https://github.com/dgooderi/Mergentra/releases/download/v1.3.0/Mergentra-1.3.0-linux-amd64.deb"
+                href="https://github.com/dgooderi/Mergentra/releases/download/v1.3.1/Mergentra-1.3.1-linux-amd64.deb"
                 >.deb (Debian, Ubuntu)</a
               >
-              <code>65a1c6565c19af4a24c85db30daa4348269718bdc34318fb3e11063c31d6e6ca</code>
+              <code>e9c71cba246e6cad0a42c455682cfcb606d97fe88c8c3aecb1552276086d206e</code>
             </li>
             <li>
               <a
-                href="https://github.com/dgooderi/Mergentra/releases/download/v1.3.0/Mergentra-1.3.0-linux-x86_64.rpm"
+                href="https://github.com/dgooderi/Mergentra/releases/download/v1.3.1/Mergentra-1.3.1-linux-x86_64.rpm"
                 >.rpm (Fedora, openSUSE)</a
               >
-              <code>304e0f5948d7d920deae7d570fbdeb4a296193290c5350b6e82e68d53733887a</code>
+              <code>88eca0eae6ce46d4e17669a0c6e994a8cb72a06ed30bd585206d687f076e7267</code>
             </li>
           </ul>
         </article>
@@ -99,24 +99,24 @@ import { Component } from '@angular/core';
           <ul class="file-list">
             <li>
               <a
-                href="https://github.com/dgooderi/Mergentra/releases/download/v1.3.0/Mergentra-1.3.0-arm64.AppImage"
+                href="https://github.com/dgooderi/Mergentra/releases/download/v1.3.1/Mergentra-1.3.1-arm64.AppImage"
                 >AppImage</a
               >
-              <code>43f119643545cafa65e883bc5c592c4e32888642daa64d568815df0b544378da</code>
+              <code>c8abab313311581c3164b7c08ed6c42e9875b071c8530b7857e3bab45819e84c</code>
             </li>
             <li>
               <a
-                href="https://github.com/dgooderi/Mergentra/releases/download/v1.3.0/Mergentra-1.3.0-linux-arm64.deb"
+                href="https://github.com/dgooderi/Mergentra/releases/download/v1.3.1/Mergentra-1.3.1-linux-arm64.deb"
                 >.deb (Debian, Ubuntu)</a
               >
-              <code>474d79854c23427586f0aaaa049fdb7d3e4eb791f49daae3eb7e0d6557669266</code>
+              <code>e4849082c9fa39171a735daa398d1febcd8fa4a10be9f1aa8658c4e3f5825927</code>
             </li>
             <li>
               <a
-                href="https://github.com/dgooderi/Mergentra/releases/download/v1.3.0/Mergentra-1.3.0-linux-aarch64.rpm"
+                href="https://github.com/dgooderi/Mergentra/releases/download/v1.3.1/Mergentra-1.3.1-linux-aarch64.rpm"
                 >.rpm (Fedora, openSUSE)</a
               >
-              <code>ddba0f5016e211906c765b47d7e527a08785b9c2fa5eba07baec654d53f0aac3</code>
+              <code>a0bc426d5c45a4752247cf878cf281b1467591fb52bcf931a334812c2814d0f4</code>
             </li>
           </ul>
         </article>
@@ -125,24 +125,24 @@ import { Component } from '@angular/core';
           <ul class="file-list">
             <li>
               <a
-                href="https://github.com/dgooderi/Mergentra/releases/download/v1.3.0/Mergentra-1.3.0-arm64-Setup.exe"
+                href="https://github.com/dgooderi/Mergentra/releases/download/v1.3.1/Mergentra-1.3.1-arm64-Setup.exe"
                 >Setup.exe</a
               >
-              <code>9f60814b3e06cf6418602c3eb827902a939d9d7091e5d9c71b8d29ad4079d46c</code>
+              <code>197c02df041a9fc3c5d7a0e1c2d34c36c4b5c93960a45710f1ce59a3fbe784b7</code>
             </li>
             <li>
               <a
-                href="https://github.com/dgooderi/Mergentra/releases/download/v1.3.0/Mergentra-1.3.0-arm64-Portable.exe"
+                href="https://github.com/dgooderi/Mergentra/releases/download/v1.3.1/Mergentra-1.3.1-arm64-Portable.exe"
                 >Portable.exe</a
               >
-              <code>bffe86281832ef38d9f23484bcd081b11f3b9cd2a74d88089fe6668e63228a20</code>
+              <code>e0a02ac5d29025a1bdbc5a7002e5b72ff91ee7bb03be1159f186cf50fb3b79b3</code>
             </li>
             <li>
               <a
-                href="https://github.com/dgooderi/Mergentra/releases/download/v1.3.0/Mergentra-1.3.0-arm64.msi"
+                href="https://github.com/dgooderi/Mergentra/releases/download/v1.3.1/Mergentra-1.3.1-arm64.msi"
                 >arm64.msi</a
               >
-              <code>bf08a1b34a623d01d17f3a82fe9a0f6a578e2be23364736b804e0e6475272d8a</code>
+              <code>fa0eeee06e164a67b029eac699b0d41aad83b9e36b9b3c0c2d0ce063232b4373</code>
             </li>
           </ul>
         </article>
@@ -166,7 +166,7 @@ import { Component } from '@angular/core';
         <li>Compare the downloaded file's SHA-256 value with the checksum shown above.</li>
         <li>
           Read the complete
-          <a href="https://github.com/dgooderi/Mergentra/releases/tag/v1.3.0"
+          <a href="https://github.com/dgooderi/Mergentra/releases/tag/v1.3.1"
             >release notes on GitHub</a
           >.
         </li>
