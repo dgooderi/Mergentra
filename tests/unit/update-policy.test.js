@@ -21,7 +21,8 @@ function release(overrides = {}) {
     assets: [
       asset('Mergentra-0.11.0-Setup.exe'),
       asset('Mergentra-0.11.0-Portable.exe'),
-      asset('Mergentra-0.11.0-x64.msi')
+      asset('Mergentra-0.11.0-x64.msi'),
+      asset('Mergentra-0.11.0-x86_64.AppImage')
     ],
     ...overrides
   };
@@ -104,6 +105,32 @@ describe('detectInstallChannel', () => {
       }
     };
     expect(detectInstallChannel({ resourcesPath: 'x', env: {}, fileSystem })).toBe('installer');
+  });
+
+  it('picks the AppImage asset for an AppImage install', () => {
+    expect(pickInstallerAsset(parseLatestRelease(release()), 'appimage').name).toBe(
+      'Mergentra-0.11.0-x86_64.AppImage'
+    );
+  });
+
+  it('reports an AppImage on Linux when the AppImage launcher variable is set', () => {
+    expect(
+      detectInstallChannel({
+        resourcesPath: '/opt',
+        env: { APPIMAGE: '/home/me/Mergentra.AppImage' },
+        fileSystem: {},
+        platform: 'linux'
+      })
+    ).toBe('appimage');
+  });
+
+  it('treats other Linux installs as package-managed, with no automatic update check', () => {
+    expect(
+      detectInstallChannel({ resourcesPath: '/opt', env: {}, fileSystem: {}, platform: 'linux' })
+    ).toBe('package');
+    expect(isCheckDue({}, 'package', NOW)).toBe(false);
+    expect(actionsForChannel('package')).toEqual(['notes', 'skip', 'later']);
+    expect(pickInstallerAsset(parseLatestRelease(release()), 'package')).toBeUndefined();
   });
 });
 

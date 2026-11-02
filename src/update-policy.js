@@ -4,8 +4,12 @@ const CHECK_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
 const RELEASE_PAGE_PREFIX = '/dgooderi/Mergentra/releases/';
 const DOWNLOAD_PREFIX = 'https://github.com/dgooderi/Mergentra/releases/download/';
 
-// The channel says how Mergentra was installed: 'installer' (NSIS), 'portable' or 'msi' (managed).
-function detectInstallChannel({ resourcesPath, env, fileSystem }) {
+// The channel says how Mergentra was installed: 'installer' (NSIS), 'portable' or 'msi' (managed) on
+// Windows; on Linux 'appimage' (self-contained) or 'package' (deb/rpm, updated by the package manager).
+function detectInstallChannel({ resourcesPath, env, fileSystem, platform = 'win32' }) {
+  if (platform === 'linux') {
+    return env.APPIMAGE ? 'appimage' : 'package';
+  }
   try {
     const marker = fileSystem.readFileSync(path.join(resourcesPath, 'install-channel'), 'utf8');
     if (marker.trim() === 'msi') {
@@ -20,7 +24,7 @@ function detectInstallChannel({ resourcesPath, env, fileSystem }) {
 function isAutoCheckEnabled(settings, channel) {
   return typeof settings.autoUpdateCheck === 'boolean'
     ? settings.autoUpdateCheck
-    : channel !== 'msi';
+    : channel !== 'msi' && channel !== 'package';
 }
 
 function isCheckDue(settings, channel, now) {
@@ -59,9 +63,17 @@ function parseLatestRelease(release) {
   };
 }
 
-const ASSET_SUFFIX = { installer: 'Setup.exe', portable: 'Portable.exe', msi: 'x64.msi' };
+const ASSET_SUFFIX = {
+  installer: 'Setup.exe',
+  portable: 'Portable.exe',
+  msi: 'x64.msi',
+  appimage: 'x86_64.AppImage'
+};
 
 function pickInstallerAsset(release, channel) {
+  if (!ASSET_SUFFIX[channel]) {
+    return undefined;
+  }
   const expectedName = `Mergentra-${release.version}-${ASSET_SUFFIX[channel]}`;
   return release.assets.find(
     (asset) =>
@@ -72,6 +84,9 @@ function pickInstallerAsset(release, channel) {
 }
 
 function actionsForChannel(channel) {
+  if (channel === 'package') {
+    return ['notes', 'skip', 'later'];
+  }
   return channel === 'installer'
     ? ['install', 'download', 'notes', 'skip', 'later']
     : ['download', 'notes', 'skip', 'later'];

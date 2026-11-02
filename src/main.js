@@ -107,6 +107,13 @@ function errorDiagnostics(error) {
   );
 }
 
+function gitInstallHint(platform) {
+  if (platform === 'linux') {
+    return 'Install Git with your package manager (for example "sudo apt install git"), then restart Mergentra.';
+  }
+  return 'Install Git for Windows, then restart Mergentra.';
+}
+
 async function openRepository(repositoryPath, { confirmLarge = false, signal } = {}) {
   if (typeof repositoryPath !== 'string' || repositoryPath.trim() === '') {
     throw new Error('Choose a repository folder before opening it.');
@@ -154,10 +161,9 @@ async function openRepositoryWith({ runGit, runGitWithInput }, repositoryPath, c
     await runGit(gitPath, ['--version']);
   } catch (error) {
     if (error.code === 'ENOENT' && !state.getSettings().gitPath) {
-      throw new Error(
-        'Git was not found on PATH. Install Git for Windows, then restart Mergentra.',
-        { cause: error }
-      );
+      throw new Error(`Git was not found on PATH. ${gitInstallHint(process.platform)}`, {
+        cause: error
+      });
     }
     throw new Error(`Git could not be started: ${error.message}`, { cause: error });
   }
@@ -395,7 +401,8 @@ app.whenReady().then(() => {
   const installChannel = detectInstallChannel({
     resourcesPath: process.resourcesPath,
     env: process.env,
-    fileSystem: fs
+    fileSystem: fs,
+    platform: process.platform
   });
 
   // Automated tests set MERGENTRA_SKIP_LICENSE; managed installs accept by MERGENTRA_ACCEPT_LICENSE.

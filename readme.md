@@ -12,7 +12,7 @@ Mergentra is a Windows-first Electron app for exploring the history of one local
 
 Mergentra **1.0.0** is the first stable public release.
 
-- **Platform:** Windows is the supported and tested platform. The app is built with Electron, so other platforms may run it, but they are untested and no installers are produced for them.
+- **Platform:** Windows is the supported and tested platform. Linux (x64) packages — AppImage, `.deb` and `.rpm` — are built from the same source and are experimental. macOS is not supported yet.
 - **Website:** the static product and download site is available at [mergentra.ourhh.net](https://mergentra.ourhh.net/).
 - **Installer:** the Windows installers are currently **unsigned**, so Windows SmartScreen may warn when you run them. Authenticode signing is planned for a future release.
 - **Updates:** Mergentra checks GitHub Releases for a newer version once a week (turn this off in Settings; it is off by default for MSI installs) and asks before downloading or installing anything. **Check for updates** in Settings checks on demand.
@@ -21,7 +21,9 @@ Mergentra **1.0.0** is the first stable public release.
 
 ## Requirements
 
-You do not need Node.js to run Mergentra; Electron bundles its own runtime. You do need [Git for Windows](https://gitforwindows.org/) installed. Mergentra uses your installed Git and does not bundle it. If Git is not on `PATH`, enter the full path to `git.exe` in the app.
+You do not need Node.js to run Mergentra; Electron bundles its own runtime. You do need Git installed ([Git for Windows](https://gitforwindows.org/), or `git` from your Linux package manager). Mergentra uses your installed Git and does not bundle it. If Git is not on `PATH`, enter the full path to the git executable in the app.
+
+On Linux, install the `.deb` or `.rpm` with your package manager (updates then come from it), or run the AppImage after `chmod +x`. On distributions that restrict unprivileged user namespaces (for example Ubuntu 24.04), the AppImage may need to be started with `--no-sandbox`. Build the packages on Linux with `npm run build:linux`.
 
 ## Download
 

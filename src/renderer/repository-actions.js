@@ -131,6 +131,9 @@ export function createRepositoryActions({ refreshRepositoryGraph }) {
   }
 
   function init() {
+    const openFolderLabels = { win32: 'Open in Explorer', darwin: 'Reveal in Finder' };
+    document.getElementById('open-explorer').textContent =
+      openFolderLabels[window.mergentra.platform] ?? 'Open folder';
     document.getElementById('fetch-guard-log').addEventListener('toggle', (event) => {
       if (event.currentTarget.open) void loadFetchGuardLog();
     });
