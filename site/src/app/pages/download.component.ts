@@ -18,12 +18,12 @@ import { Component } from '@angular/core';
         <p>Install Mergentra for the current Windows user with Start menu and desktop shortcuts.</p>
         <a
           class="button button-primary"
-          href="https://github.com/dgooderi/Mergentra/releases/download/v1.0.0.0/Mergentra-1.0.0-Setup.exe"
+          href="https://github.com/dgooderi/Mergentra/releases/download/v1.2.0/Mergentra-1.2.0-Setup.exe"
           >Download Setup.exe <span aria-hidden="true">↓</span></a
         >
         <p class="checksum">
           <span>SHA-256</span>
-          <code>90cbad41b962f5abd08e1d2ce0535c75f25d4c5e75457e8f23c1f489f4a7c364</code>
+          <code>96469500f78bb1ea10faf9e3419057bfa7da933d1f525a257957c894f4dbc084</code>
         </p>
       </article>
       <article class="download-card">
@@ -31,12 +31,12 @@ import { Component } from '@angular/core';
         <p>Run Mergentra without an installation. Useful for temporary or managed environments.</p>
         <a
           class="button button-secondary"
-          href="https://github.com/dgooderi/Mergentra/releases/download/v1.0.0.0/Mergentra-1.0.0-Portable.exe"
+          href="https://github.com/dgooderi/Mergentra/releases/download/v1.2.0/Mergentra-1.2.0-Portable.exe"
           >Download Portable.exe <span aria-hidden="true">↓</span></a
         >
         <p class="checksum">
           <span>SHA-256</span>
-          <code>42e8edd1a5339bc97e26bc3079f96601dadf5a6f9a417ea63cd29a71b0d0ca33</code>
+          <code>37cf158af515dcd3f2d81ad74fe5de6f7ff5d4cd3b50694ed1361d54d11d001a</code>
         </p>
       </article>
       <article class="download-card">
@@ -44,12 +44,12 @@ import { Component } from '@angular/core';
         <p>Use the x64 MSI for managed or per-machine Windows deployments.</p>
         <a
           class="button button-secondary"
-          href="https://github.com/dgooderi/Mergentra/releases/download/v1.0.0.0/Mergentra-1.0.0-x64.msi"
+          href="https://github.com/dgooderi/Mergentra/releases/download/v1.2.0/Mergentra-1.2.0-x64.msi"
           >Download x64.msi <span aria-hidden="true">↓</span></a
         >
         <p class="checksum">
           <span>SHA-256</span>
-          <code>6804f7ef5dfbaff5539d60e60f7312599fae9ae2a039d5a606e1000dd738d063</code>
+          <code>0a843d56d95b2f6e66174daf7ee274323e046f8b595986f631d07df28bdc4729</code>
         </p>
       </article>
     </section>
@@ -57,12 +57,17 @@ import { Component } from '@angular/core';
       <h2>Before you install</h2>
       <ul>
         <li>Windows is the supported and tested platform.</li>
+        <li>
+          Experimental Linux (x64 and arm64) and Windows on ARM builds are on the
+          <a href="https://github.com/dgooderi/Mergentra/releases/tag/v1.2.0">release page</a>. They
+          have not been tested on real hardware.
+        </li>
         <li>Install Git for Windows separately; Mergentra uses your installed Git.</li>
         <li>The packages are currently unsigned, so Windows SmartScreen may show a warning.</li>
         <li>Compare the downloaded file's SHA-256 value with the checksum shown above.</li>
         <li>
           Read the complete
-          <a href="https://github.com/dgooderi/Mergentra/releases/tag/v1.0.0.0"
+          <a href="https://github.com/dgooderi/Mergentra/releases/tag/v1.2.0"
             >release notes on GitHub</a
           >.
         </li>
