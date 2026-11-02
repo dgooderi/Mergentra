@@ -38,6 +38,8 @@ contextBridge.exposeInMainWorld('mergentra', {
   checkForUpdates: () => ipcRenderer.invoke('updates:check'),
   getAutoUpdateCheck: () => ipcRenderer.invoke('settings:get-auto-update-check'),
   saveAutoUpdateCheck: (enabled) => ipcRenderer.invoke('settings:save-auto-update-check', enabled),
+  getBranchHover: () => ipcRenderer.invoke('settings:get-branch-hover'),
+  saveBranchHover: (enabled) => ipcRenderer.invoke('settings:save-branch-hover', enabled),
   getDefaultDirectory: () => ipcRenderer.invoke('settings:get-default-directory'),
   saveDefaultDirectory: (directory) =>
     ipcRenderer.invoke('settings:save-default-directory', directory),

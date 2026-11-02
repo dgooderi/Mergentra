@@ -174,6 +174,25 @@ test('merge commits and grouped tags are annotated in the commit graph', async (
     const mergeLine = window.locator(
       `[data-testid="commit-edge-hover"][data-child-hash="${mergeCommit}"][data-parent-hash="${featureCommit}"]`
     );
+    const hover = (type) =>
+      mergeLine.evaluate(
+        (path, eventType) =>
+          path.dispatchEvent(new PointerEvent(eventType, { clientX: 300, clientY: 300 })),
+        type
+      );
+    await hover('pointerenter');
+    await expect(window.locator('.branch-tooltip')).toHaveText('feature');
+    await hover('pointerleave');
+    await expect(window.locator('.branch-tooltip')).toBeHidden();
+
+    await window.getByRole('button', { name: 'Settings' }).click();
+    const hoverSetting = window.getByLabel('Show the branch name when hovering');
+    await expect(hoverSetting).toBeChecked();
+    await hoverSetting.uncheck();
+    await window.getByRole('button', { name: 'Settings' }).click();
+    await hover('pointerenter');
+    await expect(window.locator('.branch-tooltip')).toBeHidden();
+
     await mergeLine.evaluate((path) =>
       path.dispatchEvent(
         new MouseEvent('contextmenu', {
@@ -247,7 +266,8 @@ test('divergent branches show inferred markers at their first unique commits', a
     await expect(marker).toHaveAttribute('data-branch-name', 'feature');
     await expect(marker).toHaveAttribute('data-ancestor-hash', sharedAncestor);
     await expect(marker).toHaveAttribute('data-commit-hash', featureCommit);
-    await expect(marker).toContainText('Branch diverges: feature');
+    await expect(marker).toHaveAttribute('aria-label', 'Branch diverges: feature');
+    await expect(marker).toHaveText('');
     await expect(
       window.locator(`[data-testid="commit-node"][data-commit-hash="${mainCommit}"]`)
     ).toBeVisible();

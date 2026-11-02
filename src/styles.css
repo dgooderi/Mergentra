@@ -1749,6 +1749,28 @@ main:not(:has(#repository-view:not([hidden]))) {
   background: #ffffff;
 }
 
+.branch-tooltip {
+  position: fixed;
+  z-index: 1200;
+  display: grid;
+  gap: 2px;
+  max-width: 320px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--field-background);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.4;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 30%);
+  pointer-events: none;
+  overflow-wrap: anywhere;
+}
+
+.branch-tooltip strong {
+  color: var(--heading);
+}
+
 .confirm-overlay {
   position: fixed;
   inset: 0;

@@ -13,6 +13,7 @@ export const state = {
   fileHistoryHashes: null,
   notes: { commits: {}, branches: {}, colors: {} },
   zoomLevel: 1,
+  showBranchHover: true,
   compactedMembership: new Map(),
   availableReferenceNames: null,
   targetBranchName: null,

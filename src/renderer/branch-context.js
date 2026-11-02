@@ -84,6 +84,30 @@ function inferMerge(commit, graph, parents) {
   return { kind: 'merge', source, destination };
 }
 
+// Side lanes belong to a branch that was merged into another one, so they carry the owner's
+// reference. This names each from the merge that brought it in, to avoid labelling them all
+// with the owner's name. Lanes whose name cannot be inferred are absent from the map.
+export function sideLaneNames(graph) {
+  const names = new Map();
+  if (!graph.sideLanes || graph.sideLanes.size === 0) {
+    return names;
+  }
+  const commitsByHash = new Map(graph.commits.map((item) => [item.hash, item]));
+  for (const commit of graph.commits) {
+    const parents = commit.originalParents || commit.parents;
+    for (const parentHash of parents.slice(1)) {
+      const lane = commitsByHash.get(parentHash)?.lane;
+      if (lane !== undefined && graph.sideLanes.has(lane) && !names.has(lane)) {
+        const source = inferBranchContext(commit, graph)?.source;
+        if (source) {
+          names.set(lane, source);
+        }
+      }
+    }
+  }
+  return names;
+}
+
 export function inferBranchContext(commit, graph) {
   const parents = commit.originalParents || commit.parents;
   if (parents.length > 1) {

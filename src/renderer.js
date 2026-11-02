@@ -378,6 +378,7 @@ function renderWorktrees(worktrees) {
 
 const graphActions = {
   getNotes: () => state.notes,
+  isBranchHoverEnabled: () => state.showBranchHover,
   getSelectedCommit: () => state.selectedCommit,
   selectCommit: (commit) => selectCommit(commit),
   selectBoundary: (type, hash) => reviewDock.selectBoundary(type, hash),
