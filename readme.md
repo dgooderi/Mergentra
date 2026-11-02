@@ -10,9 +10,9 @@ Mergentra is a Windows-first Electron app for exploring the history of one local
 
 ## Status
 
-Mergentra **1.0.0** is the first stable public release.
+Mergentra **1.3.0** is the current release.
 
-- **Platform:** Windows is the supported and tested platform. Linux (x64) packages — AppImage, `.deb` and `.rpm` — are built from the same source and are experimental. macOS is not supported yet.
+- **Platform:** Windows is the supported and tested platform. Linux (x64 and arm64) packages — AppImage, `.deb` and `.rpm` — and Windows on ARM builds are built from the same source and are experimental. macOS is not supported yet.
 - **Website:** the static product and download site is available at [mergentra.ourhh.net](https://mergentra.ourhh.net/).
 - **Installer:** the Windows installers are currently **unsigned**, so Windows SmartScreen may warn when you run them. Authenticode signing is planned for a future release.
 - **Updates:** Mergentra checks GitHub Releases for a newer version once a week (turn this off in Settings; it is off by default for MSI installs) and asks before downloading or installing anything. **Check for updates** in Settings checks on demand.
@@ -27,7 +27,7 @@ On Linux, install the `.deb` or `.rpm` with your package manager (updates then c
 
 ## Download
 
-Download the Windows packages from the [Mergentra 1.0.0 release](https://github.com/dgooderi/Mergentra/releases/tag/v1.0.0.0):
+Download the Windows packages from the [Mergentra 1.3.0 release](https://github.com/dgooderi/Mergentra/releases/tag/v1.3.0):
 
 - **Setup.exe** installs Mergentra for the current Windows user.
 - **Portable.exe** runs without installation.
