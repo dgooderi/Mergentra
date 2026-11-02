@@ -1,7 +1,7 @@
 {
   "name": "mergentra",
-  "version": "1.1.0",
-  "description": "A Windows-first desktop app for exploring local Git history.",
+  "version": "1.2.0",
+  "description": "A desktop app for exploring local Git history on Windows and Linux.",
   "author": "Mergentra contributors",
   "license": "RPL-1.5",
   "homepage": "https://github.com/dgooderi/Mergentra#readme",
@@ -24,7 +24,10 @@
     "format:check": "prettier --check .",
     "test:unit": "vitest run",
     "build:win:portable": "electron-builder --win portable --publish never",
-    "build:win:msi": "node scripts/build-msi.cjs"
+    "build:win:msi": "node scripts/build-msi.cjs",
+    "build:win:msi:arm64": "node scripts/build-msi.cjs --arm64",
+    "build:linux": "electron-builder --linux AppImage deb rpm --x64 --arm64 --publish never",
+    "build:win:arm64": "node scripts/build-win-arm64.cjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -52,6 +55,21 @@
       "target": "nsis",
       "icon": "assets/icons/mergentra.ico",
       "artifactName": "${productName}-${version}-Setup.${ext}"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb",
+        "rpm"
+      ],
+      "icon": "assets/icons/mergentra-256.png",
+      "category": "Development",
+      "maintainer": "Mergentra contributors <noreply@users.noreply.github.com>",
+      "synopsis": "Explore local Git history",
+      "artifactName": "${productName}-${version}-linux-${arch}.${ext}"
+    },
+    "appImage": {
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
     },
     "nsis": {
       "oneClick": false,

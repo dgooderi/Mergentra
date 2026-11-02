@@ -102,8 +102,11 @@ function createUpdateService({
           (newTerms
             ? '\n\nThis version comes with new licence terms, which you will be asked to accept.'
             : '') +
-          (channel === 'msi'
+          (channel.startsWith('msi')
             ? '\n\nThis is a managed (MSI) installation, so updates are normally deployed by your administrator.'
+            : '') +
+          (channel === 'package'
+            ? '\n\nThis copy was installed with your package manager, so update it there.'
             : ''),
         buttons: actions.map((action) => BUTTON_LABELS[action]),
         defaultId: 0,

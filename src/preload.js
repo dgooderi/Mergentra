@@ -1,6 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('mergentra', {
+  platform: process.platform,
   chooseRepository: () => ipcRenderer.invoke('repository:choose'),
   getAppVersion: () => ipcRenderer.invoke('app:version'),
   openRelease: (releaseUrl) => ipcRenderer.invoke('external:open-release', releaseUrl),

@@ -64,14 +64,15 @@ describe('IPC handlers', () => {
 
     it('remembers the folder containing the chosen repository for next time', async () => {
       const { handlers, dependencies, currentSettings } = choose({}, {});
+      const repository = path.join(path.resolve('code'), 'project');
       dependencies.dialog.showOpenDialog.mockResolvedValueOnce({
         canceled: false,
-        filePaths: ['E:\\code\\project']
+        filePaths: [repository]
       });
 
       await handlers.get('repository:choose')();
 
-      expect(currentSettings.lastBrowsedDirectory).toBe('E:\\code');
+      expect(currentSettings.lastBrowsedDirectory).toBe(path.dirname(repository));
     });
 
     it('falls back to the normal dialog when the saved folders no longer exist', async () => {

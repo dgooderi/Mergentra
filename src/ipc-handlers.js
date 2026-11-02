@@ -261,7 +261,7 @@ function registerIpcHandlers({
   ipcMain.handle('settings:get-git-path', () => getSettings().gitPath);
   ipcMain.handle('settings:save-git-path', async (_event, gitPath) => {
     if (typeof gitPath !== 'string') {
-      throw new Error('Enter the full path to git.exe.');
+      throw new Error('Enter the full path to the git executable.');
     }
 
     if (gitPath.trim() === '') {

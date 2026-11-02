@@ -21,7 +21,11 @@ function release(overrides = {}) {
     assets: [
       asset('Mergentra-0.11.0-Setup.exe'),
       asset('Mergentra-0.11.0-Portable.exe'),
-      asset('Mergentra-0.11.0-x64.msi')
+      asset('Mergentra-0.11.0-x64.msi'),
+      asset('Mergentra-0.11.0-x86_64.AppImage'),
+      asset('Mergentra-0.11.0-arm64.AppImage'),
+      asset('Mergentra-0.11.0-arm64-Setup.exe'),
+      asset('Mergentra-0.11.0-arm64.msi')
     ],
     ...overrides
   };
@@ -104,6 +108,73 @@ describe('detectInstallChannel', () => {
       }
     };
     expect(detectInstallChannel({ resourcesPath: 'x', env: {}, fileSystem })).toBe('installer');
+  });
+
+  it('picks the AppImage asset for an AppImage install', () => {
+    expect(pickInstallerAsset(parseLatestRelease(release()), 'appimage').name).toBe(
+      'Mergentra-0.11.0-x86_64.AppImage'
+    );
+  });
+
+  it('picks the arm64 MSI for a managed install on Windows on ARM', () => {
+    const channel = detectInstallChannel({
+      resourcesPath: 'x',
+      env: {},
+      fileSystem: { readFileSync: () => 'msi' },
+      arch: 'arm64'
+    });
+    expect(channel).toBe('msi-arm64');
+    expect(isAutoCheckEnabled({}, channel)).toBe(false);
+    expect(pickInstallerAsset(parseLatestRelease(release()), channel).name).toBe(
+      'Mergentra-0.11.0-arm64.msi'
+    );
+  });
+
+  it('picks the arm64 installer on Windows on ARM', () => {
+    const channel = detectInstallChannel({
+      resourcesPath: 'x',
+      env: {},
+      fileSystem: { readFileSync: () => '' },
+      arch: 'arm64'
+    });
+    expect(channel).toBe('installer-arm64');
+    expect(pickInstallerAsset(parseLatestRelease(release()), channel).name).toBe(
+      'Mergentra-0.11.0-arm64-Setup.exe'
+    );
+  });
+
+  it('picks the arm64 AppImage for an arm64 AppImage install', () => {
+    const channel = detectInstallChannel({
+      resourcesPath: '/opt',
+      env: { APPIMAGE: '/home/me/Mergentra.AppImage' },
+      fileSystem: {},
+      platform: 'linux',
+      arch: 'arm64'
+    });
+    expect(channel).toBe('appimage-arm64');
+    expect(pickInstallerAsset(parseLatestRelease(release()), channel).name).toBe(
+      'Mergentra-0.11.0-arm64.AppImage'
+    );
+  });
+
+  it('reports an AppImage on Linux when the AppImage launcher variable is set', () => {
+    expect(
+      detectInstallChannel({
+        resourcesPath: '/opt',
+        env: { APPIMAGE: '/home/me/Mergentra.AppImage' },
+        fileSystem: {},
+        platform: 'linux'
+      })
+    ).toBe('appimage');
+  });
+
+  it('treats other Linux installs as package-managed, with no automatic update check', () => {
+    expect(
+      detectInstallChannel({ resourcesPath: '/opt', env: {}, fileSystem: {}, platform: 'linux' })
+    ).toBe('package');
+    expect(isCheckDue({}, 'package', NOW)).toBe(false);
+    expect(actionsForChannel('package')).toEqual(['notes', 'skip', 'later']);
+    expect(pickInstallerAsset(parseLatestRelease(release()), 'package')).toBeUndefined();
   });
 });
 
