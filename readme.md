@@ -6,7 +6,7 @@ Mergentra is a Windows-first Electron app for exploring the history of one local
 
 ## Screenshot
 
-![Mergentra showing a repository's commit graph](./docs/images/mergentra-screenshot.png)
+![Mergentra showing a repository's commit graph](./site/public/assets/mergentra-current.png)
 
 ## Status
 
